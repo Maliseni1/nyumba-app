@@ -52,8 +52,12 @@ const RegisterPage = () => {
             </form>
              <div className="mt-4 text-center">
                 <p>Already have an account? <Link to="/login" className="text-blue-500">Login here</Link></p>
-                <div className="my-4">OR</div>
-                <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => { toast.error('Google Sign-Up Failed'); }} />
+                {import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'placeholder-google-client-id' && (
+                    <>
+                        <div className="my-4">OR</div>
+                        <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => { toast.error('Google Sign-Up Failed'); }} />
+                    </>
+                )}
             </div>
         </div>
     );

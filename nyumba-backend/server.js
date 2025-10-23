@@ -5,8 +5,10 @@ const connectDB = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 
-dotenv.config();
+// Configure dotenv to load from the correct path
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const requiredEnvVars = [
     'MONGO_URI',
@@ -16,7 +18,13 @@ const requiredEnvVars = [
     'CLOUDINARY_API_KEY',
     'CLOUDINARY_API_SECRET'
 ];
-const missingVars = requiredEnvVars.filter(varName => !process.env[varName] || process.env[varName].trim() === '');
+
+// Allow placeholder values for development
+const isValidEnvVar = (value) => {
+    return value && value.trim() !== '' && value !== 'undefined';
+};
+
+const missingVars = requiredEnvVars.filter(varName => !isValidEnvVar(process.env[varName]));
 if (missingVars.length > 0) {
     console.error("FATAL ERROR: Missing required environment variables!");
     console.error("Please make sure your backend/.env file contains all of the following:");

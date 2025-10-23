@@ -43,15 +43,19 @@ const LoginPage = () => {
                     </button>
                 </form>
                 <div className="text-center mt-4 text-slate-400">No account? <Link to="/register" className="text-sky-400 hover:underline">Create one</Link></div>
-                <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-slate-700"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                        <span className="bg-slate-900/80 px-2 text-slate-500">OR</span>
-                    </div>
-                </div>
-                <GoogleLoginButton />
+                {import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'placeholder-google-client-id' && (
+                    <>
+                        <div className="relative my-6">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-slate-700"></div>
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="bg-slate-900/80 px-2 text-slate-500">OR</span>
+                            </div>
+                        </div>
+                        <GoogleLoginButton />
+                    </>
+                )}
             </div>
         </div>
     );
