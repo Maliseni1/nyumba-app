@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-color: #020617; /* Slate 950 */
+  --card-color: rgba(30, 41, 59, 0.5); /* Slate 800 with transparency */
+  --border-color: rgba(51, 65, 85, 0.7); /* Slate 700 with transparency */
+  --text-color: #e2e8f0; /* Slate 200 */
+  --subtle-text-color: #94a3b8; /* Slate 400 */
+  --accent-color: #38bdf8; /* Sky 400 */
+  --accent-hover-color: #0ea5e9; /* Sky 500 */
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Aurora background effect */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  right: -50%;
+  bottom: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.15) 0%, rgba(139, 92, 246, 0.1) 25%, transparent 50%);
+  animation: rotate 25s linear infinite;
+  z-index: -1;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.logo-glow {
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.7)) drop-shadow(0 0 3px rgba(56, 189, 248, 0.5));
+  transition: filter 0.3s ease-in-out;
+}
+
+.logo-glow:hover {
+  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.9)) drop-shadow(0 0 5px rgba(56, 189, 248, 0.7));
+}
+
+/* Custom Toastify dark, glassmorphism theme */
+.Toastify__toast-container {
+  padding: 1rem;
+}
+
+.Toastify__toast {
+  background: rgba(30, 41, 59, 0.7) !important;
+  color: var(--text-color) !important;
+  font-family: 'Inter', sans-serif !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.Toastify__toast--success {
+    background: rgba(22, 163, 74, 0.7) !important;
+    border-color: rgba(34, 197, 94, 0.5) !important;
+}
+.Toastify__toast--error {
+    background: rgba(220, 38, 38, 0.7) !important;
+    border-color: rgba(239, 68, 68, 0.5) !important;
+}
+.Toastify__toast--info {
+    background: rgba(59, 130, 246, 0.7) !important;
+    border-color: rgba(96, 165, 250, 0.5) !important;
+}
+.Toastify__toast--warning {
+    background: rgba(234, 179, 8, 0.7) !important;
+    border-color: rgba(250, 204, 21, 0.5) !important;
+}
+
+.Toastify__progress-bar {
+  background: var(--accent-color) !important;
+}
+.Toastify__close-button {
+  color: var(--subtle-text-color) !important;
+  opacity: 0.7 !important;
+}
+.Toastify__close-button:hover {
+  opacity: 1 !important;
+}
+
+/* Custom react-confirm-alert dark, glassmorphism theme */
+.react-confirm-alert-overlay {
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+}
+
+.react-confirm-alert-body {
+  background: rgba(30, 41, 59, 0.8) !important;
+  color: var(--text-color) !important;
+  font-family: 'Inter', sans-serif !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 30px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  max-width: 450px !important;
+}
+
+.react-confirm-alert-body h1 {
+  color: var(--accent-color) !important;
+  font-size: 1.8rem !important;
+  margin-bottom: 15px !important;
+  font-weight: 700 !important;
+}
+
+.react-confirm-alert-body p {
+  color: var(--subtle-text-color) !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  margin-bottom: 25px !important;
+}
+
+.react-confirm-alert-button-group button {
+  background: var(--card-color) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px !important;
+  padding: 10px 20px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.2s ease-in-out !important;
+  min-width: 120px;
+}
+
+.react-confirm-alert-button-group button:hover {
+  background: rgba(51, 65, 85, 0.8) !important;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3) !important;
+}
+
+.react-confirm-alert-button-group button:first-of-type {
+  background: var(--accent-color) !important;
+  border-color: var(--accent-color) !important;
+  color: white !important;
+}
+
+.react-confirm-alert-button-group button:first-of-type:hover {
+  background: var(--accent-hover-color) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5) !important;
+}
+
+.react-confirm-alert-button-group button:last-of-type {
+  background: rgba(100, 116, 139, 0.5) !important;
+  border-color: rgba(148, 163, 184, 0.5) !important;
+}
+
+.react-confirm-alert-button-group button:last-of-type:hover {
+  background: rgba(100, 116, 139, 0.7) !important;
+  border-color: rgba(148, 163, 184, 0.7) !important;
+}
+
+/* Custom CSS for Chat Bubble Tails */
+/* For messages sent by me (chat-end) */
+.chat.chat-end .chat-bubble:before {
+    content: '';
+    position: absolute;
+    bottom: 0; /* Position at the bottom of the bubble */
+    right: -8px; /* Offset to the right */
+    width: 0;
+    height: 0;
+    border-bottom: 10px solid transparent; /* Transparent top border */
+    border-left: 10px solid #a855f7; /* Color matching the bubble's right side (from-purple-500 to-pink-500, so pink-500 is dominant on right) */
+    border-right: 0px solid transparent; /* No right border */
+    border-top: 10px solid transparent; /* Transparent bottom border */
+    transform: translateY(0%); /* Adjust vertical position */
+    /* To match gradient, we might pick a dominant end color or slightly adjust */
+    /* Let's pick a strong pink-500 for now. You can fine-tune this color to match the gradient blend perfectly. */
+    border-left-color: #ec4899; /* This matches pink-500 for the right bubble */
+}
+
+/* For messages sent to me (chat-start) */
+.chat.chat-start .chat-bubble:before {
+    content: '';
+    position: absolute;
+    bottom: 0; /* Position at the bottom of the bubble */
+    left: -8px; /* Offset to the left */
+    width: 0;
+    height: 0;
+    border-bottom: 10px solid transparent; /* Transparent top border */
+    border-right: 10px solid #3b82f6; /* Color matching the bubble's left side (from-sky-400 to-blue-500, so sky-400 is dominant on left) */
+    border-left: 0px solid transparent; /* No left border */
+    border-top: 10px solid transparent; /* Transparent bottom border */
+    transform: translateY(0%); /* Adjust vertical position */
+    /* This matches sky-400 for the left bubble */
+    border-right-color: #38bdf8; 
+}

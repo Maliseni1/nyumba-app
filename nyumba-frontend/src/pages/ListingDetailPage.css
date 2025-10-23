@@ -1,0 +1,16 @@
+.detail-page-container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+.back-link { display: inline-block; margin-bottom: 1rem; color: #007bff; text-decoration: none; }
+.listing-detail-card { background-color: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
+.listing-detail-image { width: 100%; height: 400px; object-fit: cover; }
+.listing-detail-content { padding: 2rem; }
+.listing-detail-title { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.listing-detail-address { color: #6c757d; margin-bottom: 1rem; font-size: 1.1rem; }
+.listing-detail-specs { margin-bottom: 1.5rem; color: #495057; }
+.listing-detail-description { line-height: 1.7; margin-bottom: 1.5rem; }
+.listing-detail-rent { font-size: 2rem; font-weight: bold; color: #28a745; margin-bottom: 2rem; }
+.landlord-contact-card { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 1.5rem; border-radius: 8px; }
+.landlord-contact-card h3 { margin-top: 0; }
+.landlord-name { font-size: 1.2rem; font-weight: 500; margin-bottom: 1rem; }
+.whatsapp-button { display: inline-block; background-color: #25D366; color: white; padding: 0.75rem 1.5rem; border-radius: 5px; text-decoration: none; font-weight: bold; transition: background-color 0.2s; }
+.whatsapp-button:hover { background-color: #128C7E; }
+.loading-message { text-align: center; font-size: 1.2rem; margin-top: 3rem; }

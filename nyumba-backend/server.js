@@ -1,0 +1,79 @@
+const express = require('express');
+const dotenv = require('dotenv');
+const cors = require('cors');
+const connectDB = require('./config/db');
+const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+const http = require('http');
+const { Server } = require('socket.io');
+
+dotenv.config();
+
+const requiredEnvVars = [
+    'MONGO_URI',
+    'JWT_SECRET',
+    'GOOGLE_CLIENT_ID',
+    'CLOUDINARY_CLOUD_NAME',
+    'CLOUDINARY_API_KEY',
+    'CLOUDINARY_API_SECRET'
+];
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingVars.length > 0) {
+    console.error("FATAL ERROR: Missing required environment variables!");
+    console.error("Please make sure your backend/.env file contains all of the following:");
+    missingVars.forEach(varName => console.error(`- ${varName}`));
+    process.exit(1);
+}
+
+const userRoutes = require('./routes/userRoutes');
+const listingRoutes = require('./routes/listingRoutes');
+const messageRoutes = require('./routes/messageRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+
+connectDB();
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: ['http://localhost:5173', 'https://nyumba-app.vercel.app'],
+        methods: ["GET", "POST"]
+    },
+    transports: ['websocket']
+});
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+const userSocketMap = {};
+app.set('io', io);
+app.set('userSocketMap', userSocketMap);
+
+app.use('/api/users', userRoutes);
+app.use('/api/listings', listingRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/payments', paymentRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 5000;
+
+io.on('connection', (socket) => {
+    const userId = socket.handshake.query.userId;
+    if (userId && userId !== "undefined") {
+        userSocketMap[userId] = socket.id;
+    }
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+    socket.on('disconnect', () => {
+        if (userId && userId !== "undefined") {
+            delete userSocketMap[userId];
+        }
+        io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    });
+});
+
+server.listen(PORT, () => {
+    console.log(`Nyumba backend server is running successfully on port ${PORT}`);
+});

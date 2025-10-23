@@ -1,0 +1,20 @@
+{
+  "name": "nyumba-app",
+  "version": "1.0.0",
+  "description": "Nyumba is a platform revolutionizing house renting by connecting property owners and seekers. It offers features like comprehensive listings, advanced search, verified profiles and streamlined communication to make rental experiences efficient and stress-free.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "nodemon nyumba-backend/server.js",
+    "frontend": "npm run dev --prefix nyumba-frontend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^9.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

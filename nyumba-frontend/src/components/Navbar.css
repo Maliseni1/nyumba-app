@@ -1,0 +1,54 @@
+/* nyumba-frontend/src/components/Navbar.css */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+.navbar__logo {
+    font-weight: bold;
+    font-size: 1.5rem;
+    text-decoration: none;
+    color: #333;
+}
+.navbar__links {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+.navbar__link {
+    text-decoration: none;
+    color: #555;
+    font-weight: 500;
+}
+.navbar__greeting {
+    color: #333;
+}
+.navbar__logout-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #dc3545;
+    font-size: 1rem;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 0;
+}
+
+/* --- Media Query for Navbar --- */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column; /* Stack logo and links vertically */
+        gap: 1rem;
+        padding: 1rem;
+    }
+    .navbar__links {
+        flex-direction: column; /* Stack the links themselves */
+        width: 100%;
+        align-items: center;
+        gap: 0.75rem;
+    }
+}

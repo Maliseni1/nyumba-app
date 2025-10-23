@@ -1,0 +1,78 @@
+/* nyumba-frontend/src/components/ListingCard.css */
+.listing-card {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 10px;
+    width: 320px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+.listing-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.listing-card__image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+.listing-card__details {
+    flex-grow: 1; /* Pushes the buttons to the bottom */
+    display: flex;
+    flex-direction: column;
+}
+.listing-card__title {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+}
+.listing-card__address {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+}
+.listing-card__specs {
+    color: #495057;
+    margin-bottom: 1rem;
+}
+.listing-card__rent {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #28a745;
+    margin-top: auto; /* Pushes rent to the bottom of the details section */
+}
+.listing-card__buttons {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+.listing-card__button {
+    flex-grow: 1;
+    padding: 0.6rem 1rem;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+.listing-card__button:hover {
+    opacity: 0.85;
+}
+.edit-button { background-color: #007bff; }
+.delete-button { background-color: #dc3545; }
+
+@media (max-width: 768px) {
+  .listing-card {
+    width: 90%; /* Make the card take up most of the screen width */
+    margin: 10px auto; /* Center the card on the screen */
+  }
+}

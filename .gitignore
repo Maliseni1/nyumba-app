@@ -1,0 +1,10 @@
+# Dependencies
+/node_modules
+/nyumba-frontend/node_modules
+/nyumba-backend/node_modules
+
+# Environment files
+.env
+.env.*
+/nyumba-frontend/.env.*
+/nyumba-backend/.env.*
