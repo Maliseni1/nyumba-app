@@ -16,7 +16,7 @@ const requiredEnvVars = [
     'CLOUDINARY_API_KEY',
     'CLOUDINARY_API_SECRET'
 ];
-const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName] || process.env[varName].trim() === '');
 if (missingVars.length > 0) {
     console.error("FATAL ERROR: Missing required environment variables!");
     console.error("Please make sure your backend/.env file contains all of the following:");
