@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { BasePayButton } from '@base-org/account-ui/react';
-import paymentService from '../services/paymentService';
+import { pay, getPaymentStatus } from '@base-org/account'; // <--- ADD THIS
 import { toast } from 'react-toastify';
+
+// Make sure your paymentService has this helper, or just use a simple regex
+const isValidAddress = (address) => /^0x[a-fA-F0-9]{40}$/.test(address);
 
 const PaymentButton = ({ 
   amount, 
@@ -12,76 +15,77 @@ const PaymentButton = ({
   className = '',
   colorScheme = 'light',
   children,
-  payerInfo = null,
   customText = null
+  // The 'payerInfo' prop is handled by the Base Pay popup, so we don't need it
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // This is the new payment handler using the official SDK
   const handlePayment = async () => {
     if (!amount || !recipientAddress) {
       toast.error('Payment information is incomplete');
       return;
     }
 
-    if (!paymentService.isValidAddress(recipientAddress)) {
-      toast.error('Invalid recipient address');
+    if (!isValidAddress(recipientAddress)) {
+      toast.error(`Invalid recipient address: ${recipientAddress}`);
       return;
     }
 
     setIsProcessing(true);
+    const processingToast = toast.loading('Waiting for wallet confirmation...');
     
+    // --- START: NEW BASE PAY SDK LOGIC ---
     try {
-      // Show processing toast
-      const processingToast = toast.loading('Processing payment...');
+      // Set to false for your live app
+      const IS_TESTNET = import.meta.env.VITE_APP_ENV !== 'production'; 
 
-      // Process the payment
-      const paymentResult = await paymentService.processPayment({
-        amount,
+      // 1. Trigger the payment
+      const payment = await pay({
+        amount: amount.toString(),
         to: recipientAddress,
-        payerInfo
+        testnet: IS_TESTNET 
       });
 
-      if (!paymentResult.success) {
-        toast.dismiss(processingToast);
-        toast.error(paymentResult.message);
-        onPaymentError?.(paymentResult);
-        return;
-      }
-
-      // Update toast to show polling status
+      // 2. Poll for status
       toast.update(processingToast, {
         render: 'Confirming payment on blockchain...',
-        type: 'info',
         isLoading: true
       });
+      
+      const { status, L2TransactionHash } = await getPaymentStatus({ 
+        id: payment.id,
+        testnet: IS_TESTNET
+      });
 
-      // Poll for payment status
-      const statusResult = await paymentService.pollPaymentStatus(paymentResult.transactionId);
-
-      toast.dismiss(processingToast);
-
-      if (statusResult.success && statusResult.status === 'completed') {
-        toast.success('Payment completed successfully! 🎉');
-        onPaymentSuccess?.({
-          ...paymentResult,
-          ...statusResult,
-          payerInfo: paymentResult.payerInfo
+      if (status === 'completed') {
+        toast.dismiss(processingToast);
+        toast.success('Payment completed! 🎉');
+        
+        // Send the transaction hash and status back to the modal
+        onPaymentSuccess?.({ 
+          transactionId: payment.id, 
+          L2TransactionHash: L2TransactionHash,
+          status: status 
         });
       } else {
-        toast.error(statusResult.message);
-        onPaymentError?.(statusResult);
+        toast.dismiss(processingToast);
+        toast.error(`Payment status: ${status}`);
+        onPaymentError?.({ message: `Payment status: ${status}` });
       }
 
     } catch (error) {
-      console.error('Payment error:', error);
-      toast.error('Payment failed. Please try again.');
+      console.error('Payment failed:', error);
+      toast.dismiss(processingToast);
+      toast.error(`Payment failed: ${error.message}`);
       onPaymentError?.({ error: error.message });
     } finally {
       setIsProcessing(false);
     }
+    // --- END: NEW BASE PAY SDK LOGIC ---
   };
 
-  // If custom children are provided, render custom button
+  // If custom children are provided (like for the subscription button)
   if (children) {
     return (
       <button
@@ -106,7 +110,7 @@ const PaymentButton = ({
     );
   }
 
-  // Use the official BasePayButton with custom wrapper
+  // Use the official BasePayButton (for rental payments)
   return (
     <div className={`relative ${className}`}>
       {isProcessing && (
@@ -122,7 +126,8 @@ const PaymentButton = ({
         style={{
           opacity: disabled || isProcessing ? 0.5 : 1,
           cursor: disabled || isProcessing ? 'not-allowed' : 'pointer',
-          transition: 'all 0.2s ease'
+          transition: 'all 0.2s ease',
+          width: '100%' // Ensure it fills the container
         }}
       />
       

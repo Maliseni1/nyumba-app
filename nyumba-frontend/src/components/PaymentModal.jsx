@@ -16,6 +16,7 @@ const PaymentModal = ({
   subscriptionData = null
 }) => {
   const [paymentType, setPaymentType] = useState(initialPaymentType);
+  const RECIPIENT_ADDRESS = import.meta.env.VITE_RECIPIENT_WALLET_ADDRESS;
   const [userInfo, setUserInfo] = useState({
     email: '',
     firstName: '',
@@ -114,6 +115,7 @@ const PaymentModal = ({
             <div className="space-y-4">
               <PaymentButton
                 amount={currentAmount}
+                recipientAddress={RECIPIENT_ADDRESS}
                 currency="USDC"
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
