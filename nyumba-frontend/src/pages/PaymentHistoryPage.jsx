@@ -149,7 +149,7 @@ const PaymentHistoryPage = () => {
         );
     });
 
-    if (!user) {
+    if (!authUser) {
         return (
             <div className="payment-history-page">
                 <div className="auth-required">
