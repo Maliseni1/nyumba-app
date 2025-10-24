@@ -34,3 +34,4 @@ export const markConversationAsRead = (conversationId) => API.put(`/messages/con
 
 // --- THIS IS THE MISSING FUNCTION ---
 export const getUnreadMessageCount = () => API.get('/users/unread-count');
+export const getPaymentHistory = (params) => API.get('/payments/history', { params });
