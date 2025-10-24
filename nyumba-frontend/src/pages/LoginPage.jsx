@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { loginUser } from '../services/api';
 import { toast } from 'react-toastify';
 import GoogleLoginButton from '../components/GoogleLoginButton';
+
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    const redirectTo = location.state?.redirectTo || '/';
 
     useEffect(() => {
         if (localStorage.getItem('user')) {
@@ -22,7 +25,7 @@ const LoginPage = () => {
         try {
             const { data } = await loginUser({ email, password });
             localStorage.setItem('user', JSON.stringify(data));
-            navigate('/');
+            navigate(redirectTo);
             window.location.reload();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Login failed');

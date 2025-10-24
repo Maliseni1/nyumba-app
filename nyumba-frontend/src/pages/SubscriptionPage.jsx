@@ -4,12 +4,17 @@ import { toast } from 'react-toastify';
 import PaymentModal from '../components/PaymentModal';
 import PaymentConfirmation from '../components/PaymentConfirmation';
 import paymentService from '../services/paymentService';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const SubscriptionPage = () => {
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const { authUser } = useAuth();
+  const navigate = useNavigate();
 
   // Subscription plans configuration
   const subscriptionPlans = {
@@ -57,6 +62,14 @@ const SubscriptionPage = () => {
   };
 
   const handleSubscribe = async (plan) => {
+
+    if (!authUser) {
+      toast.info("Please log in to subscribe.");
+      // Send user to login, and tell login page to redirect to /payments after
+      navigate('/login', { state: { redirectTo: '/payments' } });
+      return;
+    }
+
     try {
       setShowPaymentModal(true);
       

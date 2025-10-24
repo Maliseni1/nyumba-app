@@ -158,7 +158,7 @@ const PaymentHistoryPage = () => {
                 
                 {/* --- HERE IS THE NEW BUTTON --- */}
                 <Link 
-                    to="/subscribe" 
+                    to="/subscription" 
                     className="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-500 transition-all duration-150 text-center"
                 >
                     Make a New Payment
