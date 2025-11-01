@@ -4,12 +4,13 @@ const Listing = require('../models/listingModel');
 const Conversation = require('../models/conversationModel');
 const Message = require('../models/messageModel');
 const generateToken = require('../utils/generateToken');
+const sendEmail = require('../utils/sendEmail'); // <-- 1. IMPORT SENDMAIL
 const { OAuth2Client } = require('google-auth-library');
+const crypto = require('crypto'); // <-- 2. IMPORT CRYPTO
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const registerUser = asyncHandler(async (req, res) => {
-    // --- UPDATED ---
     const { name, email, password, whatsappNumber, role } = req.body;
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -39,7 +40,6 @@ const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (user && (await user.matchPassword(password))) {
-        // --- UPDATED (sends full user object) ---
         res.json({
             _id: user._id,
             name: user.name,
@@ -66,16 +66,14 @@ const googleLogin = asyncHandler(async (req, res) => {
     const { name, email, picture } = ticket.getPayload();
     let user = await User.findOne({ email });
     if (!user) {
-        // --- UPDATED (sets default role) ---
         user = await User.create({
             name,
             email,
             password: Math.random().toString(36).slice(-8),
             profilePicture: picture,
-            role: 'tenant', // Google sign-ups default to tenant
+            role: 'tenant', 
         });
     }
-    // --- UPDATED (sends full user object) ---
     res.json({
         _id: user._id,
         name: user.name,
@@ -88,6 +86,88 @@ const googleLogin = asyncHandler(async (req, res) => {
         token: generateToken(user._id),
     });
 });
+
+// --- 3. NEW FUNCTION ---
+const forgotPassword = asyncHandler(async (req, res) => {
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+        res.status(404);
+        throw new Error('There is no user with that email');
+    }
+
+    // Get reset token from the user model method
+    const resetToken = user.getResetPasswordToken();
+
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset URL
+    // This goes to the frontend page, which we will build
+    const resetUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
+
+    const message = `
+        <h1>You have requested a password reset</h1>
+        <p>Please go to this link to reset your password:</p>
+        <a href="${resetUrl}" clicktracking="off">${resetUrl}</a>
+        <p>This link will expire in 10 minutes.</p>
+    `;
+
+    try {
+        await sendEmail({
+            email: user.email,
+            subject: 'Password Reset Token',
+            html: message,
+        });
+
+        res.status(200).json({ success: true, data: 'Email sent' });
+    } catch (err) {
+        console.error(err);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+        await user.save({ validateBeforeSave: false });
+        throw new Error('Email could not be sent');
+    }
+});
+
+// --- 4. NEW FUNCTION ---
+const resetPassword = asyncHandler(async (req, res) => {
+    // Get hashed token
+    const resetPasswordToken = crypto
+        .createHash('sha256')
+        .update(req.params.resettoken)
+        .digest('hex');
+
+    const user = await User.findOne({
+        resetPasswordToken,
+        resetPasswordExpire: { $gt: Date.now() }, // Check if token is not expired
+    });
+
+    if (!user) {
+        res.status(400);
+        throw new Error('Invalid or expired token');
+    }
+
+    // Set new password
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    // Send back a new login token
+    res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture,
+        bio: user.bio,
+        savedListings: user.savedListings,
+        role: user.role,
+        isAdmin: user.isAdmin,
+        token: generateToken(user._id),
+    });
+});
+
+// --- (All other functions remain the same) ---
 
 const getUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id)
@@ -102,7 +182,6 @@ const getUserProfile = asyncHandler(async (req, res) => {
             .populate('owner', 'name profilePicture')
             .sort({ createdAt: -1 });
 
-        // --- UPDATED (sends full user object) ---
         res.json({
             _id: user._id,
             name: user.name,
@@ -122,7 +201,6 @@ const getUserProfile = asyncHandler(async (req, res) => {
 });
 
 const getPublicUserProfile = asyncHandler(async (req, res) => {
-    // --- UPDATED (now sends listings too) ---
     const user = await User.findById(req.params.id).select('-password');
     if (user) {
         const ownedListings = await Listing.find({ owner: user._id })
@@ -157,7 +235,6 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             user.profilePicture = req.file.path;
         }
         const updatedUser = await user.save();
-        // --- UPDATED (sends full user object) ---
         res.json({
             _id: updatedUser._id,
             name: updatedUser.name,
@@ -170,7 +247,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             token: generateToken(updatedUser._id),
         });
     } else {
-        res.status(4404);
+        res.status(404);
         throw new Error('User not found');
     }
 });
@@ -216,6 +293,8 @@ module.exports = {
     registerUser,
     loginUser,
     googleLogin,
+    forgotPassword, // <-- Add new function
+    resetPassword, // <-- Add new function
     getUserProfile,
     getPublicUserProfile,
     updateUserProfile,

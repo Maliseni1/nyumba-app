@@ -3,30 +3,32 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { loginUser } from '../services/api';
 import { toast } from 'react-toastify';
 import GoogleLoginButton from '../components/GoogleLoginButton';
-
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation(); // Use location, not useLocation()
+    const { login, authUser } = useAuth(); // Get login and authUser from context
 
     const redirectTo = location.state?.redirectTo || '/';
 
     useEffect(() => {
-        if (localStorage.getItem('user')) {
+        if (authUser) { // Check authUser from context
             navigate('/');
         }
-    }, [navigate]);
+    }, [authUser, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
             const { data } = await loginUser({ email, password });
-            localStorage.setItem('user', JSON.stringify(data));
+            login(data); // Use the login function from context
             navigate(redirectTo);
-            window.location.reload();
+            // window.location.reload() is no longer needed
         } catch (error) {
             toast.error(error.response?.data?.message || 'Login failed');
         } finally {
@@ -41,6 +43,14 @@ const LoginPage = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 bg-slate-800/50 rounded-md border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 text-white" required />
                     <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 bg-slate-800/50 rounded-md border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 text-white" required />
+
+                    {/* --- FORGOT PASSWORD LINK --- */}
+                    <div className="text-right">
+                        <Link to="/forgotpassword" className="text-sm text-sky-400 hover:underline">
+                            Forgot Password?
+                        </Link>
+                    </div>
+
                     <button type="submit" disabled={loading} className="w-full bg-sky-500 text-white font-bold py-3 rounded-md hover:bg-sky-600 transition-colors disabled:bg-slate-600">
                         {loading ? 'Authenticating...' : 'Authenticate'}
                     </button>

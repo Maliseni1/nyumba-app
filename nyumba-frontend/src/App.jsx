@@ -19,10 +19,12 @@ import PaymentHistoryPage from './pages/PaymentHistoryPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthContextProvider } from './context/AuthContext';
-
-// --- NEW IMPORTS ---
 import AdminRoute from './components/AdminRoute';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+
+// --- NEW PAGE IMPORTS ---
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 
 function App() {
@@ -40,6 +42,10 @@ function App() {
             <Route path="/user/:id" element={<PublicProfilePage />} />
             <Route path="/subscription" element={<SubscriptionPage />} />
 
+            {/* --- NEW PASSWORD ROUTES --- */}
+            <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
+            <Route path="/resetpassword/:resettoken" element={<ResetPasswordPage />} />
+
             {/* Private Routes */}
             <Route path="" element={<PrivateRoute />}>
               <Route path="/profile" element={<ProfilePage />} />
@@ -51,7 +57,7 @@ function App() {
               <Route path="/payments" element={<PaymentHistoryPage />} />
             </Route>
 
-            {/* --- NEW: Admin Routes --- */}
+            {/* Admin Routes */}
             <Route path="/admin" element={<AdminRoute />}>
               <Route path="dashboard" element={<AdminDashboardPage />} />
             </Route>

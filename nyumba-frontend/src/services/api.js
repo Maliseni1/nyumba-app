@@ -19,6 +19,10 @@ export const updateUserProfile = (formData) => API.put('/users/profile', formDat
 export const toggleSaveListing = (listingId) => API.post(`/users/save/${listingId}`);
 export const getUnreadMessageCount = () => API.get('/users/unread-count');
 
+// --- NEW PASSWORD RESET ROUTES ---
+export const forgotPassword = (email) => API.post('/users/forgotpassword', email);
+export const resetPassword = (token, password) => API.put(`/users/resetpassword/${token}`, password);
+
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });
 export const getListingById = (id) => API.get(`/listings/${id}`);
@@ -36,6 +40,6 @@ export const markConversationAsRead = (conversationId) => API.put(`/messages/con
 // Payment Routes
 export const getPaymentHistory = (params) => API.get('/payments/history', { params });
 
-// --- NEW: Admin Routes ---
+// Admin Routes
 export const getAdminStats = () => API.get('/admin/stats');
 export const getAllUsers = () => API.get('/admin/users');
