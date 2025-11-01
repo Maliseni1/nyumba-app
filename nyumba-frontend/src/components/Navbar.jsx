@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaUserCircle, FaEnvelope, FaPlusSquare, FaCog, FaCreditCard, FaGem } from 'react-icons/fa';
+import { 
+    FaUserCircle, 
+    FaEnvelope, 
+    FaPlusSquare, 
+    FaCog, 
+    FaCreditCard, 
+    FaGem,
+    FaTachometerAlt // <-- New Icon for Admin
+} from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
@@ -28,10 +36,17 @@ const Navbar = () => {
                         <Link to="/"><img src="/logo.png" alt="Nyumba Logo" className="h-12 w-auto logo-glow" /></Link>
                     </div>
                     <div className="flex items-center space-x-6">
-                        {/* Use authUser from context to determine if a user is logged in */}
                         {authUser ? (
                             <>
                                 <span className="text-slate-300 hidden sm:block">Welcome, {authUser.name}</span>
+                                
+                                {/* --- NEW ADMIN LINK (conditional) --- */}
+                                {authUser.isAdmin && (
+                                    <Link to="/admin/dashboard" title="Admin Dashboard" className="text-yellow-400 hover:text-yellow-300 transition-colors text-2xl">
+                                        <FaTachometerAlt />
+                                    </Link>
+                                )}
+
                                 <Link to="/profile" title="Profile" className="text-slate-300 hover:text-white transition-colors text-2xl"><FaUserCircle /></Link>
                                 <Link to="/messages" title="Messages" className="relative text-slate-300 hover:text-white transition-colors text-2xl">
                                     <FaEnvelope />
@@ -41,7 +56,14 @@ const Navbar = () => {
                                         </span>
                                     )}
                                 </Link>
-                                <Link to="/add-listing" title="Add Listing" className="text-sky-400 hover:text-sky-300 transition-colors text-2xl"><FaPlusSquare /></Link>
+                                
+                                {/* --- UPDATED LANDLORD LINK (conditional) --- */}
+                                {authUser.role === 'landlord' && (
+                                    <Link to="/add-listing" title="Add Listing" className="text-sky-400 hover:text-sky-300 transition-colors text-2xl">
+                                        <FaPlusSquare />
+                                    </Link>
+                                )}
+                                
                                 <Link to="/payments" title="Payment History" className="text-slate-300 hover:text-white transition-colors text-2xl"><FaCreditCard /></Link>
                                 <Link to="/settings" title="Settings" className="text-slate-300 hover:text-white transition-colors text-2xl"><FaCog /></Link>
                             </>

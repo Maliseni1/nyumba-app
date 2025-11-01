@@ -17,6 +17,7 @@ export const getUserProfile = () => API.get('/users/profile');
 export const getPublicUserProfile = (id) => API.get(`/users/${id}`);
 export const updateUserProfile = (formData) => API.put('/users/profile', formData);
 export const toggleSaveListing = (listingId) => API.post(`/users/save/${listingId}`);
+export const getUnreadMessageCount = () => API.get('/users/unread-count');
 
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });
@@ -32,6 +33,9 @@ export const sendMessage = (conversationId, message) => API.post(`/messages/send
 export const getOrCreateConversation = (receiverId) => API.post('/messages/conversations', { receiverId });
 export const markConversationAsRead = (conversationId) => API.put(`/messages/conversations/read/${conversationId}`);
 
-// --- THIS IS THE MISSING FUNCTION ---
-export const getUnreadMessageCount = () => API.get('/users/unread-count');
+// Payment Routes
 export const getPaymentHistory = (params) => API.get('/payments/history', { params });
+
+// --- NEW: Admin Routes ---
+export const getAdminStats = () => API.get('/admin/stats');
+export const getAllUsers = () => API.get('/admin/users');

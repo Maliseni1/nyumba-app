@@ -1,9 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Listing = require('../models/listingModel');
+const User = require('../models/userModel'); // --- NEW IMPORT ---
 
-// @desc    Fetch all listings
-// @route   GET /api/listings
-// @access  Public
 const getListings = asyncHandler(async (req, res) => {
     const { searchTerm } = req.query;
     let filter = {};
@@ -15,19 +13,12 @@ const getListings = asyncHandler(async (req, res) => {
             ]
         };
     }
-
-    // This query is now more robust. It will filter out any listings
-    // that have a missing or invalid owner before attempting to populate.
     const listings = await Listing.find({ ...filter, owner: { $ne: null } })
         .populate('owner', 'name profilePicture')
         .sort({ createdAt: -1 });
-
     res.json(listings);
 });
 
-// @desc    Fetch single listing
-// @route   GET /api/listings/:id
-// @access  Public
 const getListingById = asyncHandler(async (req, res) => {
     const listing = await Listing.findById(req.params.id).populate('owner', '_id name profilePicture');
     if (listing) {
@@ -38,10 +29,13 @@ const getListingById = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Create a listing
-// @route   POST /api/listings
-// @access  Private
 const createListing = asyncHandler(async (req, res) => {
+    // --- NEW SECURITY CHECK ---
+    if (req.user.role !== 'landlord') {
+        res.status(403); // Forbidden
+        throw new Error('Only landlords can create listings.');
+    }
+
     const { title, description, price, location, bedrooms, bathrooms, propertyType } = req.body;
     const images = req.files ? req.files.map(file => file.path) : [];
     const newListing = new Listing({
@@ -50,12 +44,15 @@ const createListing = asyncHandler(async (req, res) => {
         owner: req.user._id
     });
     const createdListing = await newListing.save();
+    
+    // --- NEW: Add listing to user's profile ---
+    const user = await User.findById(req.user._id);
+    user.listings.push(createdListing._id);
+    await user.save();
+
     res.status(201).json(createdListing);
 });
 
-// @desc    Update a listing
-// @route   PUT /api/listings/:id
-// @access  Private
 const updateListing = asyncHandler(async (req, res) => {
     const { title, description, price, location, bedrooms, bathrooms, propertyType, existingImages } = req.body;
     const listing = await Listing.findById(req.params.id);
@@ -78,14 +75,17 @@ const updateListing = asyncHandler(async (req, res) => {
     res.json(updatedListing);
 });
 
-// @desc    Delete a listing
-// @route   DELETE /api/listings/:id
-// @access  Private
 const deleteListing = asyncHandler(async (req, res) => {
     const listing = await Listing.findById(req.params.id);
     if (!listing || listing.owner.toString() !== req.user._id.toString()) {
         res.status(401); throw new Error('Not authorized');
     }
+
+    // --- NEW: Remove listing from user's profile ---
+    const user = await User.findById(req.user._id);
+    user.listings.pull(listing._id);
+    await user.save();
+
     await listing.deleteOne();
     res.json({ message: 'Listing removed' });
 });

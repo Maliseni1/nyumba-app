@@ -18,12 +18,16 @@ import PublicProfilePage from './pages/PublicProfilePage';
 import PaymentHistoryPage from './pages/PaymentHistoryPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import PrivateRoute from './components/PrivateRoute';
-import { AuthContextProvider } from './context/AuthContext'; // <-- THE FIX IS HERE
+import { AuthContextProvider } from './context/AuthContext';
+
+// --- NEW IMPORTS ---
+import AdminRoute from './components/AdminRoute';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+
 
 function App() {
   return (
-    // The <Router> wrapper has been removed, as it lives in main.jsx
-    <AuthContextProvider> {/* <-- THE FIX IS HERE */}
+    <AuthContextProvider>
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="container mx-auto px-4 py-4 flex-grow">
@@ -46,6 +50,12 @@ function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/payments" element={<PaymentHistoryPage />} />
             </Route>
+
+            {/* --- NEW: Admin Routes --- */}
+            <Route path="/admin" element={<AdminRoute />}>
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+            </Route>
+
           </Routes>
         </main>
         <Footer />

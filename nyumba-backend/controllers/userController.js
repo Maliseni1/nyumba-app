@@ -9,18 +9,24 @@ const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const registerUser = asyncHandler(async (req, res) => {
-    const { name, email, password } = req.body;
+    // --- UPDATED ---
+    const { name, email, password, whatsappNumber, role } = req.body;
     const userExists = await User.findOne({ email });
     if (userExists) {
         res.status(400);
         throw new Error('User already exists');
     }
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password, whatsappNumber, role });
     if (user) {
         res.status(201).json({
             _id: user._id,
             name: user.name,
             email: user.email,
+            profilePicture: user.profilePicture,
+            bio: user.bio,
+            savedListings: user.savedListings,
+            role: user.role,
+            isAdmin: user.isAdmin,
             token: generateToken(user._id),
         });
     } else {
@@ -33,11 +39,16 @@ const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (user && (await user.matchPassword(password))) {
+        // --- UPDATED (sends full user object) ---
         res.json({
             _id: user._id,
             name: user.name,
             email: user.email,
             profilePicture: user.profilePicture,
+            bio: user.bio,
+            savedListings: user.savedListings,
+            role: user.role,
+            isAdmin: user.isAdmin,
             token: generateToken(user._id),
         });
     } else {
@@ -55,41 +66,43 @@ const googleLogin = asyncHandler(async (req, res) => {
     const { name, email, picture } = ticket.getPayload();
     let user = await User.findOne({ email });
     if (!user) {
+        // --- UPDATED (sets default role) ---
         user = await User.create({
             name,
             email,
             password: Math.random().toString(36).slice(-8),
             profilePicture: picture,
+            role: 'tenant', // Google sign-ups default to tenant
         });
     }
+    // --- UPDATED (sends full user object) ---
     res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         profilePicture: user.profilePicture,
+        bio: user.bio,
+        savedListings: user.savedListings,
+        role: user.role,
+        isAdmin: user.isAdmin,
         token: generateToken(user._id),
     });
 });
 
-// @desc    Get user profile with their listings
-// @route   GET /api/users/profile
-// @access  Private
 const getUserProfile = asyncHandler(async (req, res) => {
-    // Find the user and populate their savedListings field
     const user = await User.findById(req.user._id)
         .select('-password')
         .populate({
             path: 'savedListings',
-            populate: { path: 'owner', select: 'name profilePicture' } // Also populate the owner of the saved listing
+            populate: { path: 'owner', select: 'name profilePicture' }
         });
 
     if (user) {
-        // Separately find the listings this user owns
         const ownedListings = await Listing.find({ owner: req.user._id })
-            .populate('owner', 'name profilePicture') // Populate the owner here too
+            .populate('owner', 'name profilePicture')
             .sort({ createdAt: -1 });
 
-        // Combine the data into one response object
+        // --- UPDATED (sends full user object) ---
         res.json({
             _id: user._id,
             name: user.name,
@@ -97,8 +110,10 @@ const getUserProfile = asyncHandler(async (req, res) => {
             bio: user.bio,
             profilePicture: user.profilePicture,
             createdAt: user.createdAt,
-            listings: ownedListings, // The listings they own
-            savedListings: user.savedListings, // The listings they have saved
+            listings: ownedListings,
+            savedListings: user.savedListings,
+            role: user.role,
+            isAdmin: user.isAdmin,
         });
     } else {
         res.status(404);
@@ -107,9 +122,22 @@ const getUserProfile = asyncHandler(async (req, res) => {
 });
 
 const getPublicUserProfile = asyncHandler(async (req, res) => {
+    // --- UPDATED (now sends listings too) ---
     const user = await User.findById(req.params.id).select('-password');
     if (user) {
-        res.json(user);
+        const ownedListings = await Listing.find({ owner: user._id })
+            .populate('owner', 'name profilePicture')
+            .sort({ createdAt: -1 });
+            
+        res.json({
+            _id: user._id,
+            name: user.name,
+            bio: user.bio,
+            profilePicture: user.profilePicture,
+            createdAt: user.createdAt,
+            listings: ownedListings,
+            role: user.role,
+        });
     } else {
         res.status(404);
         throw new Error('User not found');
@@ -129,15 +157,20 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             user.profilePicture = req.file.path;
         }
         const updatedUser = await user.save();
+        // --- UPDATED (sends full user object) ---
         res.json({
             _id: updatedUser._id,
             name: updatedUser.name,
             email: updatedUser.email,
             profilePicture: updatedUser.profilePicture,
+            bio: updatedUser.bio,
+            savedListings: updatedUser.savedListings,
+            role: updatedUser.role,
+            isAdmin: updatedUser.isAdmin,
             token: generateToken(updatedUser._id),
         });
     } else {
-        res.status(404);
+        res.status(4404);
         throw new Error('User not found');
     }
 });
@@ -154,9 +187,6 @@ const getUnreadMessageCount = asyncHandler(async (req, res) => {
     res.status(200).json({ unreadCount });
 });
 
-// @desc    Save or unsave a listing
-// @route   POST /api/users/save/:listingId
-// @access  Private
 const toggleSaveListing = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const { listingId } = req.params;
@@ -172,12 +202,10 @@ const toggleSaveListing = asyncHandler(async (req, res) => {
     const isSaved = user.savedListings.includes(listingId);
 
     if (isSaved) {
-        // Remove from savedListings
         user.savedListings.pull(listingId);
         await user.save();
         res.json({ message: 'Listing removed from saved', savedListings: user.savedListings });
     } else {
-        // Add to savedListings
         user.savedListings.push(listingId);
         await user.save();
         res.json({ message: 'Listing added to saved', savedListings: user.savedListings });

@@ -36,6 +36,7 @@ const userRoutes = require('./routes/userRoutes');
 const listingRoutes = require('./routes/listingRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // <-- 1. IMPORT ADMIN ROUTES
 
 connectDB();
 
@@ -76,6 +77,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/admin', adminRoutes); // <-- 2. USE ADMIN ROUTES
 
 app.use(notFound);
 app.use(errorHandler);

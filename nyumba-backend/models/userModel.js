@@ -23,11 +23,28 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
-    // --- NEW FIELD ---
+    // --- UPDATED/ADDED FIELDS ---
+    whatsappNumber: { 
+        type: String, 
+    },
     savedListings: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Listing'
-    }]
+    }],
+    listings: [{ 
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Listing'
+    }],
+    isAdmin: { 
+        type: Boolean,
+        required: true,
+        default: false,
+    },
+    role: { 
+        type: String,
+        enum: ['tenant', 'landlord'],
+        default: 'tenant',
+    },
 }, {
     timestamps: true,
 });
