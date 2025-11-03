@@ -200,3 +200,8 @@ body::before {
     /* This matches sky-400 for the left bubble */
     border-right-color: #38bdf8; 
 }
+
+/* Fix for custom Leaflet controls */
+.leaflet-top.leaflet-right {
+    top: 80px; /* Adjust as needed to be below your navbar */
+}

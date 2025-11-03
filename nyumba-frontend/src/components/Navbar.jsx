@@ -7,7 +7,8 @@ import {
     FaCog, 
     FaCreditCard, 
     FaGem,
-    FaTachometerAlt // <-- New Icon for Admin
+    FaTachometerAlt,
+    FaMap // <-- 1. IMPORT THE NEW ICON
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
@@ -40,7 +41,11 @@ const Navbar = () => {
                             <>
                                 <span className="text-slate-300 hidden sm:block">Welcome, {authUser.name}</span>
                                 
-                                {/* --- NEW ADMIN LINK (conditional) --- */}
+                                {/* --- 2. ADD THE MAP LINK (for logged-in users) --- */}
+                                <Link to="/map" title="Map View" className="text-slate-300 hover:text-white transition-colors text-2xl">
+                                    <FaMap />
+                                </Link>
+
                                 {authUser.isAdmin && (
                                     <Link to="/admin/dashboard" title="Admin Dashboard" className="text-yellow-400 hover:text-yellow-300 transition-colors text-2xl">
                                         <FaTachometerAlt />
@@ -57,7 +62,6 @@ const Navbar = () => {
                                     )}
                                 </Link>
                                 
-                                {/* --- UPDATED LANDLORD LINK (conditional) --- */}
                                 {authUser.role === 'landlord' && (
                                     <Link to="/add-listing" title="Add Listing" className="text-sky-400 hover:text-sky-300 transition-colors text-2xl">
                                         <FaPlusSquare />
@@ -69,6 +73,7 @@ const Navbar = () => {
                             </>
                         ) : (
                             <>
+                                {/* Map link is NOT here, so guests can't see it */}
                                 <Link to="/subscription" title="Subscription" className="text-amber-400 hover:text-amber-300 transition-colors text-2xl"><FaGem /></Link>
                                 <Link to="/login" className="text-slate-300 hover:text-white transition-colors">Login</Link>
                                 <Link to="/register" className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">Register</Link>

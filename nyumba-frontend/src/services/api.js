@@ -18,8 +18,6 @@ export const getPublicUserProfile = (id) => API.get(`/users/${id}`);
 export const updateUserProfile = (formData) => API.put('/users/profile', formData);
 export const toggleSaveListing = (listingId) => API.post(`/users/save/${listingId}`);
 export const getUnreadMessageCount = () => API.get('/users/unread-count');
-
-// --- NEW PASSWORD RESET ROUTES ---
 export const forgotPassword = (email) => API.post('/users/forgotpassword', email);
 export const resetPassword = (token, password) => API.put(`/users/resetpassword/${token}`, password);
 
@@ -29,6 +27,10 @@ export const getListingById = (id) => API.get(`/listings/${id}`);
 export const createListing = (listingData) => API.post('/listings', listingData);
 export const updateListing = (id, listingData) => API.put(`/listings/${id}`, listingData);
 export const deleteListing = (id) => API.delete(`/listings/${id}`);
+
+// --- NEW PROXIMITY SEARCH ROUTE ---
+export const getListingsNearby = (params) => API.get('/listings/nearby', { params });
+
 
 // Message Routes
 export const getConversations = () => API.get('/messages/conversations');

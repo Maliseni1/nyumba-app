@@ -14,10 +14,24 @@ const listingSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    
+    // --- THIS IS THE UPDATED FIELD ---
     location: {
-        type: String,
-        required: true,
+        type: {
+            type: String,
+            enum: ['Point'], // GeoJSON type
+            default: 'Point',
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            index: '2dsphere', // For fast map queries
+        },
+        address: { // The original string from the user
+            type: String,
+        },
     },
+    // --- END OF UPDATE ---
+
     bedrooms: {
         type: Number,
         required: true,
@@ -34,8 +48,6 @@ const listingSchema = new mongoose.Schema({
     images: [{
         type: String,
     }],
-    // --- THE FIX IS HERE ---
-    // The field must be named 'owner', not 'user'
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,

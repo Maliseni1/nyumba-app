@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
     getListings,
+    getListingsNearby, // <-- 1. IMPORT THE NEW FUNCTION
     getListingById,
     createListing,
     updateListing,
@@ -9,6 +10,10 @@ const {
 } = require('../controllers/listingController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
+
+// --- 2. ADD THE NEW ROUTE ---
+// NOTE: This must be *before* the '/:id' route
+router.get('/nearby', getListingsNearby);
 
 router.route('/')
     .get(getListings)

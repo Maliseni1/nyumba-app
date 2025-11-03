@@ -21,10 +21,11 @@ import PrivateRoute from './components/PrivateRoute';
 import { AuthContextProvider } from './context/AuthContext';
 import AdminRoute from './components/AdminRoute';
 import AdminDashboardPage from './pages/AdminDashboardPage';
-
-// --- NEW PAGE IMPORTS ---
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+
+// --- 1. IMPORT THE NEW MAP PAGE ---
+import MapPage from './pages/MapPage';
 
 
 function App() {
@@ -32,7 +33,8 @@ function App() {
     <AuthContextProvider>
       <div className="flex flex-col min-h-screen">
         <Navbar />
-        <main className="container mx-auto px-4 py-4 flex-grow">
+        {/* 2. UPDATE MAIN STYLING (Remove container padding for map) */}
+        <main className="container mx-auto px-4 py-4 flex-grow md:px-6 lg:px-8">
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
@@ -41,8 +43,11 @@ function App() {
             <Route path="/listing/:id" element={<ListingDetailPage />} />
             <Route path="/user/:id" element={<PublicProfilePage />} />
             <Route path="/subscription" element={<SubscriptionPage />} />
+            
+            {/* --- 3. ADD THE NEW MAP ROUTE --- */}
+            <Route path="/map" element={<MapPage />} />
 
-            {/* --- NEW PASSWORD ROUTES --- */}
+            {/* Password Routes */}
             <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
             <Route path="/resetpassword/:resettoken" element={<ResetPasswordPage />} />
 
