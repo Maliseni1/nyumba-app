@@ -30,19 +30,17 @@ export const updateListing = (id, listingData) => API.put(`/listings/${id}`, lis
 export const deleteListing = (id) => API.delete(`/listings/${id}`);
 export const getListingsNearby = (params) => API.get('/listings/nearby', { params });
 export const reverseGeocode = (params) => API.get('/listings/reverse-geocode', { params });
-
-// --- 1. NEW LANDLORD FUNCTION ---
 export const setListingStatus = (id, status) => API.put(`/listings/${id}/status`, { status });
+
+// --- 1. NEW RECOMMENDATIONS ROUTE ---
+export const getRecommendedListings = () => API.get('/listings/recommendations');
+
 
 // Message Routes
 export const getConversations = () => API.get('/messages/conversations');
 export const getMessages = (conversationId) => API.get(`/messages/${conversationId}`);
 export const sendMessage = (conversationId, message) => API.post(`/messages/send/${conversationId}`, message);
-
-// --- 2. UPDATED FUNCTION ---
-// Now accepts an object { receiverId, listingId }
 export const getOrCreateConversation = (data) => API.post('/messages/conversations', data);
-
 export const markConversationAsRead = (conversationId) => API.put(`/messages/conversations/read/${conversationId}`);
 
 // Payment Routes

@@ -83,7 +83,7 @@ const reverseGeocode = asyncHandler(async (req, res) => {
     }
 });
 
-// --- getListingById (already updated to track views) ---
+// --- getListingById (unchanged) ---
 const getListingById = asyncHandler(async (req, res) => {
     const listing = await Listing.findByIdAndUpdate(
         req.params.id,
@@ -189,18 +189,15 @@ const deleteListing = asyncHandler(async (req, res) => {
     res.json({ message: 'Listing removed' });
 });
 
-// --- 1. NEW FUNCTION TO SET VACANCY STATUS ---
+// --- setListingStatus (unchanged) ---
 const setListingStatus = asyncHandler(async (req, res) => {
     const { status } = req.body; // Expecting 'available' or 'occupied'
     const listing = await Listing.findById(req.params.id);
 
-    // Check ownership
     if (!listing || listing.owner.toString() !== req.user._id.toString()) {
         res.status(401);
         throw new Error('Not authorized');
     }
-
-    // Validate status
     if (status !== 'available' && status !== 'occupied') {
         res.status(400);
         throw new Error("Invalid status. Must be 'available' or 'occupied'.");
@@ -211,6 +208,66 @@ const setListingStatus = asyncHandler(async (req, res) => {
     res.json(updatedListing);
 });
 
+// --- 1. NEW RECOMMENDATIONS FUNCTION ---
+const getRecommendedListings = asyncHandler(async (req, res) => {
+    // Get the current user and their saved listings
+    const user = await User.findById(req.user._id).populate('savedListings');
+    
+    // Get IDs of listings the user has already saved or owns
+    const savedListingIds = user.savedListings.map(l => l._id);
+    const ownedListingIds = user.listings.map(l => l._id);
+    const excludeIds = [...savedListingIds, ...ownedListingIds];
+
+    let recommendations = [];
+
+    // Check if the user has saved any listings
+    if (user.savedListings.length > 0) {
+        // --- Smart Recommendations ---
+        
+        // 1. Calculate average price
+        const totalPrice = user.savedListings.reduce((acc, l) => acc + l.price, 0);
+        const avgPrice = totalPrice / user.savedListings.length;
+        const minPrice = avgPrice * 0.75; // 25% below avg
+        const maxPrice = avgPrice * 1.25; // 25% above avg
+
+        // 2. Find most common property type
+        const typeCounts = user.savedListings.reduce((acc, l) => {
+            acc[l.propertyType] = (acc[l.propertyType] || 0) + 1;
+            return acc;
+        }, {});
+        const mostCommonType = Object.keys(typeCounts).reduce((a, b) => typeCounts[a] > typeCounts[b] ? a : b, null);
+
+        // 3. Build the query
+        const query = {
+            status: 'available',
+            _id: { $nin: excludeIds }, // Don't recommend listings they've saved or own
+            $or: [
+                { propertyType: mostCommonType },
+                { price: { $gte: minPrice, $lte: maxPrice } }
+            ]
+        };
+
+        recommendations = await Listing.find(query)
+            .limit(6)
+            .populate('owner', 'name profilePicture');
+    }
+
+    // --- Cold Start Fallback ---
+    // If no recommendations were found (or user has no saved listings),
+    // just show the newest available listings.
+    if (recommendations.length === 0) {
+        recommendations = await Listing.find({ 
+            status: 'available',
+            _id: { $nin: excludeIds } // Still exclude saved/owned
+        })
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .populate('owner', 'name profilePicture');
+    }
+
+    res.json(recommendations);
+});
+
 module.exports = {
     getListings,
     getListingsNearby,
@@ -219,5 +276,6 @@ module.exports = {
     createListing,
     updateListing,
     deleteListing,
-    setListingStatus, // <-- 2. EXPORT THE NEW FUNCTION
+    setListingStatus,
+    getRecommendedListings, // <-- 2. EXPORT THE NEW FUNCTION
 };
