@@ -3,6 +3,7 @@ const Listing = require('../models/listingModel');
 const User = require('../models/userModel');
 const geocoder = require('../utils/geocoder'); 
 
+// --- getListings (unchanged) ---
 const getListings = asyncHandler(async (req, res) => {
     const { searchTerm } = req.query;
     let filter = {};
@@ -20,17 +21,15 @@ const getListings = asyncHandler(async (req, res) => {
     res.json(listings);
 });
 
+// --- getListingsNearby (unchanged) ---
 const getListingsNearby = asyncHandler(async (req, res) => {
     const { lat, lng } = req.query;
-
     if (!lat || !lng) {
         res.status(400);
         throw new Error('Please provide latitude and longitude');
     }
-
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
-
     const listings = await Listing.aggregate([
         {
             $geoNear: {
@@ -61,39 +60,37 @@ const getListingsNearby = asyncHandler(async (req, res) => {
             },
         },
     ]);
-
     res.json(listings);
 });
 
-// --- 1. NEW FUNCTION FOR REVERSE GEOCODING ---
+// --- reverseGeocode (unchanged) ---
 const reverseGeocode = asyncHandler(async (req, res) => {
     const { lat, lng } = req.query;
-
     if (!lat || !lng) {
         res.status(400);
         throw new Error('Please provide latitude and longitude');
     }
-
     try {
         const geoData = await geocoder.reverse({ lat: parseFloat(lat), lon: parseFloat(lng) });
-        
         if (!geoData.length) {
             res.status(404);
             throw new Error('Could not find an address for this location.');
         }
-
-        // Send back the formatted address from the first result
         res.json({ address: geoData[0].formattedAddress });
     } catch (error) {
         res.status(500);
         throw new Error(error.message || 'Reverse geocoding failed');
     }
 });
-// --- END OF NEW FUNCTION ---
 
+// --- getListingById (already updated to track views) ---
 const getListingById = asyncHandler(async (req, res) => {
-    // ... (rest of the function is unchanged)
-    const listing = await Listing.findById(req.params.id).populate('owner', '_id name profilePicture');
+    const listing = await Listing.findByIdAndUpdate(
+        req.params.id,
+        { $inc: { 'analytics.views': 1 } },
+        { new: true }
+    ).populate('owner', '_id name profilePicture');
+
     if (listing) {
         res.json(listing);
     } else {
@@ -102,8 +99,8 @@ const getListingById = asyncHandler(async (req, res) => {
     }
 });
 
+// --- createListing (unchanged) ---
 const createListing = asyncHandler(async (req, res) => {
-    // ... (rest of the function is unchanged)
     if (req.user.role !== 'landlord') {
         res.status(403);
         throw new Error('Only landlords can create listings.');
@@ -138,8 +135,8 @@ const createListing = asyncHandler(async (req, res) => {
     res.status(201).json(createdListing);
 });
 
+// --- updateListing (unchanged) ---
 const updateListing = asyncHandler(async (req, res) => {
-    // ... (rest of the function is unchanged)
     const { title, description, price, location, bedrooms, bathrooms, propertyType, existingImages } = req.body;
     const listing = await Listing.findById(req.params.id);
     if (!listing || listing.owner.toString() !== req.user._id.toString()) {
@@ -178,8 +175,8 @@ const updateListing = asyncHandler(async (req, res) => {
     res.json(updatedListing);
 });
 
+// --- deleteListing (unchanged) ---
 const deleteListing = asyncHandler(async (req, res) => {
-    // ... (rest of the function is unchanged)
     const listing = await Listing.findById(req.params.id);
     if (!listing || listing.owner.toString() !== req.user._id.toString()) {
         res.status(401); 
@@ -192,12 +189,35 @@ const deleteListing = asyncHandler(async (req, res) => {
     res.json({ message: 'Listing removed' });
 });
 
+// --- 1. NEW FUNCTION TO SET VACANCY STATUS ---
+const setListingStatus = asyncHandler(async (req, res) => {
+    const { status } = req.body; // Expecting 'available' or 'occupied'
+    const listing = await Listing.findById(req.params.id);
+
+    // Check ownership
+    if (!listing || listing.owner.toString() !== req.user._id.toString()) {
+        res.status(401);
+        throw new Error('Not authorized');
+    }
+
+    // Validate status
+    if (status !== 'available' && status !== 'occupied') {
+        res.status(400);
+        throw new Error("Invalid status. Must be 'available' or 'occupied'.");
+    }
+
+    listing.status = status;
+    const updatedListing = await listing.save();
+    res.json(updatedListing);
+});
+
 module.exports = {
     getListings,
     getListingsNearby,
-    reverseGeocode, // <-- 2. EXPORT THE NEW FUNCTION
+    reverseGeocode,
     getListingById,
     createListing,
     updateListing,
     deleteListing,
+    setListingStatus, // <-- 2. EXPORT THE NEW FUNCTION
 };

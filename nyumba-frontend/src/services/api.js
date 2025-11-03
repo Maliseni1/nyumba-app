@@ -29,16 +29,20 @@ export const createListing = (listingData) => API.post('/listings', listingData)
 export const updateListing = (id, listingData) => API.put(`/listings/${id}`, listingData);
 export const deleteListing = (id) => API.delete(`/listings/${id}`);
 export const getListingsNearby = (params) => API.get('/listings/nearby', { params });
-
-// --- NEW REVERSE GEOCODE ROUTE ---
 export const reverseGeocode = (params) => API.get('/listings/reverse-geocode', { params });
 
+// --- 1. NEW LANDLORD FUNCTION ---
+export const setListingStatus = (id, status) => API.put(`/listings/${id}/status`, { status });
 
 // Message Routes
 export const getConversations = () => API.get('/messages/conversations');
 export const getMessages = (conversationId) => API.get(`/messages/${conversationId}`);
 export const sendMessage = (conversationId, message) => API.post(`/messages/send/${conversationId}`, message);
-export const getOrCreateConversation = (receiverId) => API.post('/messages/conversations', { receiverId });
+
+// --- 2. UPDATED FUNCTION ---
+// Now accepts an object { receiverId, listingId }
+export const getOrCreateConversation = (data) => API.post('/messages/conversations', data);
+
 export const markConversationAsRead = (conversationId) => API.put(`/messages/conversations/read/${conversationId}`);
 
 // Payment Routes
@@ -47,7 +51,6 @@ export const getPaymentHistory = (params) => API.get('/payments/history', { para
 // Admin Routes
 export const getAdminStats = () => API.get('/admin/stats');
 export const getAllUsers = () => API.get('/admin/users');
-
 export const getVerificationRequests = () => API.get('/admin/verification-requests');
 export const approveVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'approve' });
 export const rejectVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'reject' });

@@ -9,8 +9,9 @@ import {
     FaGem,
     FaTachometerAlt,
     FaMap,
-    FaBars, // New Icon
-    FaTimes // New Icon
+    FaBars,
+    FaTimes,
+    FaChartBar // <-- 1. IMPORT NEW ICON
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { Menu, Transition } from '@headlessui/react';
@@ -31,7 +32,6 @@ const Navbar = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, [prevScrollPos]);
 
-    // This function closes the mobile menu whenever a link is clicked
     const handleLinkClick = () => {
         setIsMobileMenuOpen(false);
     };
@@ -64,9 +64,17 @@ const Navbar = () => {
                         )}
                     </Link>
                     
+                    {/* Link for ALL Landlords */}
                     {authUser.role === 'landlord' && (
                         <Link to="/add-listing" title="Add Listing" className="text-sky-400 hover:text-sky-300 transition-colors text-2xl">
                             <FaPlusSquare />
+                        </Link>
+                    )}
+
+                    {/* --- 2. NEW LINK FOR VERIFIED LANDLORDS --- */}
+                    {authUser.role === 'landlord' && authUser.isVerified && (
+                        <Link to="/landlord/dashboard" title="Landlord Dashboard" className="text-emerald-400 hover:text-emerald-300 transition-colors text-2xl">
+                            <FaChartBar />
                         </Link>
                     )}
                     
@@ -94,9 +102,19 @@ const Navbar = () => {
                     )}
                     <Link to="/profile" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaUserCircle /> Profile</Link>
                     <Link to="/messages" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaEnvelope /> Messages {unreadCount > 0 && `(${unreadCount})`}</Link>
+                    
+                    {/* Link for ALL Landlords */}
                     {authUser.role === 'landlord' && (
                         <Link to="/add-listing" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-sky-400 hover:bg-slate-700 rounded-md"><FaPlusSquare /> Add Listing</Link>
                     )}
+
+                    {/* --- 3. NEW LINK FOR VERIFIED LANDLORDS --- */}
+                    {authUser.role === 'landlord' && authUser.isVerified && (
+                        <Link to="/landlord/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-emerald-400 hover:bg-slate-700 rounded-md">
+                            <FaChartBar /> Landlord Dashboard
+                        </Link>
+                    )}
+
                     <Link to="/payments" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaCreditCard /> Payments</Link>
                     <Link to="/settings" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaCog /> Settings</Link>
                 </>

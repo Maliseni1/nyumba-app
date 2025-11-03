@@ -3,24 +3,26 @@ const router = express.Router();
 const {
     getListings,
     getListingsNearby,
-    reverseGeocode, // <-- 1. IMPORT
+    reverseGeocode,
     getListingById,
     createListing,
     updateListing,
     deleteListing,
+    setListingStatus, // <-- 1. IMPORT THE NEW FUNCTION
 } = require('../controllers/listingController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 router.get('/nearby', getListingsNearby);
-
-// --- 2. ADD THE NEW ROUTE ---
-// This must be protected, only logged-in users (landlords) should use it
 router.get('/reverse-geocode', protect, reverseGeocode);
 
 router.route('/')
     .get(getListings)
     .post(protect, upload.array('images', 5), createListing);
+
+// --- 2. ADD THE NEW STATUS ROUTE ---
+// This route must be protected so only the owner can change the status
+router.route('/:id/status').put(protect, setListingStatus);
 
 router.route('/:id')
     .get(getListingById)

@@ -24,9 +24,11 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import MapPage from './pages/MapPage';
-
-// --- 1. IMPORT THE NEW VERIFICATION PAGE ---
 import VerificationPage from './pages/VerificationPage';
+
+// --- 1. IMPORT THE NEW COMPONENTS ---
+import LandlordRoute from './components/LandlordRoute';
+import LandlordDashboardPage from './pages/LandlordDashboardPage';
 
 
 function App() {
@@ -49,7 +51,7 @@ function App() {
             <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
             <Route path="/resetpassword/:resettoken" element={<ResetPasswordPage />} />
 
-            {/* Private Routes */}
+            {/* Private Routes (All logged-in users) */}
             <Route path="" element={<PrivateRoute />}>
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/edit" element={<EditProfilePage />} />
@@ -58,10 +60,13 @@ function App() {
               <Route path="/messages" element={<ChatPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/payments" element={<PaymentHistoryPage />} />
-              
-              {/* --- 2. ADD THE NEW VERIFICATION ROUTE --- */}
               <Route path="/verification" element={<VerificationPage />} />
-
+            </Route>
+            
+            {/* --- 2. ADD THE NEW LANDLORD ROUTE --- */}
+            {/* Routes for verified landlords only */}
+            <Route path="/landlord" element={<LandlordRoute />}>
+              <Route path="dashboard" element={<LandlordDashboardPage />} />
             </Route>
 
             {/* Admin Routes */}

@@ -14,24 +14,20 @@ const listingSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    
-    // --- THIS IS THE UPDATED FIELD ---
     location: {
         type: {
             type: String,
-            enum: ['Point'], // GeoJSON type
+            enum: ['Point'],
             default: 'Point',
         },
         coordinates: {
-            type: [Number], // [longitude, latitude]
-            index: '2dsphere', // For fast map queries
+            type: [Number],
+            index: '2dsphere',
         },
-        address: { // The original string from the user
+        address: {
             type: String,
         },
     },
-    // --- END OF UPDATE ---
-
     bedrooms: {
         type: Number,
         required: true,
@@ -53,6 +49,25 @@ const listingSchema = new mongoose.Schema({
         required: true,
         ref: 'User',
     },
+
+    // --- 1. NEW FIELDS FOR LANDLORD DASHBOARD ---
+    status: {
+        type: String,
+        enum: ['available', 'occupied'],
+        default: 'available',
+    },
+    analytics: {
+        views: {
+            type: Number,
+            default: 0,
+        },
+        inquiries: {
+            type: Number,
+            default: 0,
+        },
+    },
+    // --- END OF NEW FIELDS ---
+
 }, {
     timestamps: true,
 });
