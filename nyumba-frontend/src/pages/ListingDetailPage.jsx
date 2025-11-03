@@ -5,7 +5,10 @@ import ImageSlider from '../components/ImageSlider';
 import PaymentModal from '../components/PaymentModal';
 import PaymentConfirmation from '../components/PaymentConfirmation';
 import { toast } from 'react-toastify';
-import { FaBed, FaBath, FaHome, FaCommentDots, FaEdit, FaTrash, FaCreditCard } from 'react-icons/fa';
+// --- 1. IMPORT NEW ICONS AND COMPONENTS ---
+import { FaBed, FaBath, FaHome, FaCommentDots, FaEdit, FaTrash, FaCreditCard, FaStar } from 'react-icons/fa';
+import StarRating from '../components/StarRating';
+import ListingReviews from '../components/ListingReviews';
 
 const ListingDetailPage = () => {
     const [listing, setListing] = useState(null);
@@ -22,6 +25,7 @@ const ListingDetailPage = () => {
         const fetchListing = async () => {
             setLoading(true);
             try {
+                // getListingById now also increments the view count
                 const { data } = await getListingById(id);
                 setListing(data);
             } catch (error) {
@@ -34,6 +38,7 @@ const ListingDetailPage = () => {
     }, [id]);
 
     const handleStartChat = async () => {
+        // ... (function is unchanged)
         if (!currentUser) {
             toast.info("Please log in to contact the landlord.");
             navigate('/login');
@@ -43,16 +48,11 @@ const ListingDetailPage = () => {
             toast.error("Cannot start chat. Landlord information is missing.");
             return;
         }
-
         try {
-            // --- THIS IS THE UPDATE ---
-            // We now pass an object to track the inquiry
             await getOrCreateConversation({ 
                 receiverId: listing.owner._id, 
                 listingId: listing._id 
             });
-            // --- END OF UPDATE ---
-            
             toast.success("Conversation started!");
             navigate('/messages');
         } catch (error) {
@@ -117,10 +117,18 @@ const ListingDetailPage = () => {
                         <span className="text-3xl font-bold text-sky-400">K{listing.price.toLocaleString()}/month</span>
                     </div>
 
-                    <div className="flex items-center space-x-6 text-slate-300 my-6 border-y border-slate-800 py-4">
+                    {/* --- 2. ADD STAR RATING DISPLAY --- */}
+                    <div className="flex items-center flex-wrap space-x-6 text-slate-300 my-6 border-y border-slate-800 py-4">
                         <div className="flex items-center gap-2"><FaBed /> {listing.bedrooms} Bedrooms</div>
                         <div className="flex items-center gap-2"><FaBath /> {listing.bathrooms} Bathrooms</div>
                         <div className="flex items-center gap-2"><FaHome /> Type: {listing.propertyType}</div>
+                        {/* Display the new rating */}
+                        <div className="flex items-center gap-2">
+                            <StarRating 
+                                rating={listing.analytics?.averageRating} 
+                                numReviews={listing.analytics?.numReviews}
+                            />
+                        </div>
                     </div>
 
                     <div>
@@ -128,14 +136,45 @@ const ListingDetailPage = () => {
                         <p className="text-slate-300 whitespace-pre-wrap">{listing.description}</p>
                     </div>
 
+                    {/* --- Landlord/Owner Controls --- */}
                     {isOwnListing ? (
                         <div className="mt-8 pt-6 border-t border-slate-800">
-                            {/* ... (rest of the JSX is unchanged) ... */}
+                             <h2 className="text-2xl font-bold text-white mb-4">Manage Your Listing</h2>
+                             <div className="flex items-center gap-4">
+                                 <Link to={`/listing/edit/${id}`} className="inline-flex items-center gap-2 bg-sky-500 text-white px-4 py-2 rounded-md hover:bg-sky-600 transition-colors">
+                                     <FaEdit /> Edit
+                                 </Link>
+                                 <button onClick={handleDelete} className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
+                                     <FaTrash /> Delete
+                                 </button>
+                             </div>
                         </div>
                     ) : (
+                        // --- Tenant/Guest Controls ---
                         listing.owner ? (
                             <div className="mt-8 pt-6 border-t border-slate-800">
-                                {/* ... (rest of the JSX is unchanged) ... */}
+                                <h2 className="text-2xl font-bold text-white mb-4">Book This Property</h2>
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+                                    <img src={listing.owner.profilePicture} alt={listing.owner.name} className="w-16 h-16 rounded-full object-cover" />
+                                    <div className="flex-1">
+                                        <p className="font-bold text-white text-lg">{listing.owner.name}</p>
+                                        <p className="text-slate-400 text-sm">Property Owner</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <button 
+                                        onClick={handleBookNow}
+                                        className="flex-1 inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                                    >
+                                        <FaCreditCard /> Book Now with Base Pay
+                                    </button>
+                                    <button 
+                                        onClick={handleStartChat} 
+                                        className="inline-flex items-center justify-center gap-2 bg-sky-500 text-white px-6 py-3 rounded-lg hover:bg-sky-600 transition-colors"
+                                    >
+                                        <FaCommentDots /> Chat with Owner
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                            <div className="mt-8 pt-6 border-t border-slate-800">
@@ -144,6 +183,10 @@ const ListingDetailPage = () => {
                            </div>
                         )
                     )}
+
+                    {/* --- 3. ADD THE NEW REVIEWS SECTION --- */}
+                    <ListingReviews listingId={listing._id} ownerId={listing.owner?._id} />
+
                 </div>
             </div>
             
@@ -152,7 +195,7 @@ const ListingDetailPage = () => {
                 isOpen={showPaymentModal}
                 onClose={() => setShowPaymentModal(false)}
                 listing={listing}
-                rentalDetails={{ totalAmount: listing?.price, duration: 'Monthly' /* ... */ }}
+                rentalDetails={{ totalAmount: listing?.price, duration: 'Monthly', /* ... */ }}
                 onPaymentSuccess={handlePaymentSuccess}
                 onPaymentError={handlePaymentError}
             />

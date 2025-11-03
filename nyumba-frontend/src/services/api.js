@@ -31,8 +31,6 @@ export const deleteListing = (id) => API.delete(`/listings/${id}`);
 export const getListingsNearby = (params) => API.get('/listings/nearby', { params });
 export const reverseGeocode = (params) => API.get('/listings/reverse-geocode', { params });
 export const setListingStatus = (id, status) => API.put(`/listings/${id}/status`, { status });
-
-// --- 1. NEW RECOMMENDATIONS ROUTE ---
 export const getRecommendedListings = () => API.get('/listings/recommendations');
 
 
@@ -52,3 +50,7 @@ export const getAllUsers = () => API.get('/admin/users');
 export const getVerificationRequests = () => API.get('/admin/verification-requests');
 export const approveVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'approve' });
 export const rejectVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'reject' });
+
+// --- 1. NEW REVIEW ROUTES ---
+export const getListingReviews = (listingId) => API.get(`/reviews/${listingId}`);
+export const createListingReview = (listingId, reviewData) => API.post(`/reviews/${listingId}`, reviewData);

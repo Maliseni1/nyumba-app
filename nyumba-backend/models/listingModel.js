@@ -49,8 +49,6 @@ const listingSchema = new mongoose.Schema({
         required: true,
         ref: 'User',
     },
-
-    // --- 1. NEW FIELDS FOR LANDLORD DASHBOARD ---
     status: {
         type: String,
         enum: ['available', 'occupied'],
@@ -65,9 +63,17 @@ const listingSchema = new mongoose.Schema({
             type: Number,
             default: 0,
         },
+        // --- 1. NEW REVIEW FIELDS FOR LISTING ---
+        numReviews: {
+            type: Number,
+            default: 0,
+        },
+        averageRating: {
+            type: Number,
+            default: 0,
+        },
+        // --- END OF NEW FIELDS ---
     },
-    // --- END OF NEW FIELDS ---
-
 }, {
     timestamps: true,
 });

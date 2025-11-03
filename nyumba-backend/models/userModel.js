@@ -17,17 +17,28 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, required: true, default: false },
     role: { type: String, enum: ['tenant', 'landlord'], default: 'tenant' },
 
-    // --- NEW FIELDS FOR VERIFIED PROFILES & SUBSCRIPTIONS ---
+    // --- 1. NEW REVIEW FIELDS FOR LANDLORD ---
+    numReviews: {
+        type: Number,
+        default: 0,
+    },
+    averageRating: {
+        type: Number,
+        default: 0,
+    },
+    // --- END OF NEW FIELDS ---
+
+    // --- VERIFIED PROFILES & SUBSCRIPTIONS ---
     verificationStatus: {
         type: String,
         enum: ['not_applied', 'pending', 'approved', 'rejected'],
         default: 'not_applied',
     },
-    subscriptionId: { // The ID from your "base pay" gateway (e.g., a Paystack subscription ID)
+    subscriptionId: {
         type: String,
         default: '',
     },
-    subscriptionStatus: { // The status from your "base pay" gateway
+    subscriptionStatus: {
         type: String,
         enum: ['active', 'inactive', 'past_due', 'cancelled'],
         default: 'inactive',
@@ -39,16 +50,11 @@ const userSchema = new mongoose.Schema({
 
 }, {
     timestamps: true,
-    // --- ADD THESE TWO LINES ---
-    // This ensures our new 'isVerified' virtual field is included in API responses
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
 });
 
-// --- NEW VIRTUAL FIELD ---
-// This 'isVerified' field will automatically be true only if:
-// 1. The user's subscription is 'active' (they are paying)
-// 2. An admin has 'approved' their application
+// --- VIRTUAL FIELD: isVerified ---
 userSchema.virtual('isVerified').get(function() {
   return this.subscriptionStatus === 'active' && this.verificationStatus === 'approved';
 });
@@ -58,9 +64,8 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Generate and hash password reset token
+// --- METHOD: getResetPasswordToken ---
 userSchema.methods.getResetPasswordToken = function () {
-    // ... (rest of the method is unchanged)
     const resetToken = crypto.randomBytes(20).toString('hex');
     this.resetPasswordToken = crypto
         .createHash('sha256')
@@ -70,8 +75,8 @@ userSchema.methods.getResetPasswordToken = function () {
     return resetToken;
 };
 
+// --- PRE-SAVE HOOK (for password) ---
 userSchema.pre('save', async function (next) {
-    // ... (rest of the method is unchanged)
     if (!this.isModified('password')) {
         next();
     }
