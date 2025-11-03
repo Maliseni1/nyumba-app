@@ -8,9 +8,13 @@ const sendEmail = require('../utils/sendEmail');
 const { OAuth2Client } = require('google-auth-library');
 const crypto = require('crypto');
 
+// --- 1. IMPORT NEW POINTS MODULES ---
+const { handlePointsTransaction, POINTS_REASONS } = require('../utils/pointsManager');
+const PointsHistory = require('../models/pointsHistoryModel');
+
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// --- registerUser ---
+// --- registerUser (unchanged) ---
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password, whatsappNumber, role } = req.body;
     const userExists = await User.findOne({ email });
@@ -40,7 +44,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 });
 
-// --- loginUser ---
+// --- loginUser (unchanged) ---
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -65,7 +69,7 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 });
 
-// --- googleLogin ---
+// --- googleLogin (unchanged) ---
 const googleLogin = asyncHandler(async (req, res) => {
     const { token } = req.body;
     const ticket = await client.verifyIdToken({
@@ -99,7 +103,7 @@ const googleLogin = asyncHandler(async (req, res) => {
     });
 });
 
-// --- forgotPassword ---
+// --- forgotPassword (unchanged) ---
 const forgotPassword = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
@@ -127,7 +131,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     }
 });
 
-// --- resetPassword ---
+// --- resetPassword (unchanged) ---
 const resetPassword = asyncHandler(async (req, res) => {
     const resetPasswordToken = crypto.createHash('sha256').update(req.params.resettoken).digest('hex');
     const user = await User.findOne({
@@ -158,7 +162,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     });
 });
 
-// --- getUserProfile ---
+// --- getUserProfile (unchanged) ---
 const getUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id)
         .select('-password')
@@ -180,7 +184,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
             profilePicture: user.profilePicture,
             createdAt: user.createdAt,
             listings: ownedListings,
-            savedListings: user.savedListings, // This is now populated
+            savedListings: user.savedListings,
             role: user.role,
             isAdmin: user.isAdmin,
             isVerified: user.isVerified,
@@ -193,7 +197,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// --- getPublicUserProfile ---
+// --- getPublicUserProfile (unchanged) ---
 const getPublicUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id).select('-password');
     if (user) {
@@ -213,27 +217,48 @@ const getPublicUserProfile = asyncHandler(async (req, res) => {
             verificationStatus: user.verificationStatus,
         });
     } else {
-        // --- ERROR 1 FIX ---
         res.status(404);
         throw new Error('User not found');
-        // --- END OF FIX ---
     }
 });
 
-// --- updateUserProfile ---
+// --- updateUserProfile (MODIFIED) ---
 const updateUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
     if (user) {
+        // --- 2. CHECK IF PROFILE IS ALREADY COMPLETE ---
+        // We check *before* updating so we can award points 
+        // for the *first time* they complete it.
+        const isProfileNowComplete = !!(req.body.bio || user.bio) && !!(req.body.whatsappNumber || user.whatsappNumber);
+        let hasAlreadyEarned = true; // Assume true
+        if (isProfileNowComplete) {
+            hasAlreadyEarned = await PointsHistory.findOne({
+                user: user._id,
+                description: POINTS_REASONS.COMPLETE_PROFILE.description
+            });
+        }
+
         user.name = req.body.name || user.name;
         user.email = req.body.email || user.email;
         user.bio = req.body.bio || user.bio;
+        // --- 3. ADD WHATSAPP NUMBER TO UPDATE ---
+        user.whatsappNumber = req.body.whatsappNumber || user.whatsappNumber;
+
         if (req.body.password) {
             user.password = req.body.password;
         }
         if (req.file) {
             user.profilePicture = req.file.path;
         }
+        
         const updatedUser = await user.save();
+        let newPointsTotal = updatedUser.points;
+
+        // --- 4. AWARD POINTS IF PROFILE WAS JUST COMPLETED ---
+        if (isProfileNowComplete && !hasAlreadyEarned) {
+            newPointsTotal = await handlePointsTransaction(updatedUser._id, 'COMPLETE_PROFILE');
+        }
+
         res.json({
             _id: updatedUser._id,
             name: updatedUser.name,
@@ -246,6 +271,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             isVerified: updatedUser.isVerified,
             verificationStatus: updatedUser.verificationStatus,
             subscriptionStatus: updatedUser.subscriptionStatus,
+            points: newPointsTotal, // Send back the new points total
             token: generateToken(updatedUser._id),
         });
     } else {
@@ -254,7 +280,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// --- getUnreadMessageCount ---
+// --- getUnreadMessageCount (unchanged) ---
 const getUnreadMessageCount = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const conversations = await Conversation.find({ participants: userId });
@@ -267,7 +293,7 @@ const getUnreadMessageCount = asyncHandler(async (req, res) => {
     res.status(200).json({ unreadCount });
 });
 
-// --- toggleSaveListing ---
+// --- toggleSaveListing (unchanged) ---
 const toggleSaveListing = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const { listingId } = req.params;
@@ -289,7 +315,7 @@ const toggleSaveListing = asyncHandler(async (req, res) => {
     }
 });
 
-// --- applyForVerification ---
+// --- applyForVerification (unchanged) ---
 const applyForVerification = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
@@ -297,13 +323,6 @@ const applyForVerification = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error('User not found');
     }
-    
-    // --- THIS IS A PLACEHOLDER ---
-    // In a real app, your "base pay" webhook would update this.
-    // For testing, let's temporarily force the user's subscription to be 'active'.
-    // user.subscriptionStatus = 'active';
-    // await user.save();
-    // --- END OF PLACEHOLDER ---
 
     if (user.subscriptionStatus !== 'active') {
         res.status(403); // Forbidden
@@ -317,15 +336,12 @@ const applyForVerification = asyncHandler(async (req, res) => {
     user.verificationStatus = 'pending';
     await user.save();
 
-    // --- ERROR 2 FIX ---
-    // Re-fetch the user WITH populated savedListings, just like in getUserProfile
     const updatedUserProfile = await User.findById(req.user._id)
         .select('-password')
         .populate({
             path: 'savedListings',
             populate: { path: 'owner', select: 'name profilePicture' }
         });
-    // --- END OF FIX ---
     
     const ownedListings = await Listing.find({ owner: req.user._id })
         .populate('owner', 'name profilePicture')
@@ -333,13 +349,13 @@ const applyForVerification = asyncHandler(async (req, res) => {
 
     res.status(200).json({
         _id: updatedUserProfile._id,
-        name: updatedUserProfile.name,
+        name: updatedUserPofile.name,
         email: updatedUserProfile.email,
         bio: updatedUserProfile.bio,
         profilePicture: updatedUserProfile.profilePicture,
         createdAt: updatedUserProfile.createdAt,
         listings: ownedListings,
-        savedListings: updatedUserProfile.savedListings, // This is now correct
+        savedListings: updatedUserProfile.savedListings,
         role: updatedUserProfile.role,
         isAdmin: updatedUserProfile.isAdmin,
         isVerified: updatedUserProfile.isVerified,

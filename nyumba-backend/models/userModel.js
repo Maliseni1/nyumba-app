@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, required: true, default: false },
     role: { type: String, enum: ['tenant', 'landlord'], default: 'tenant' },
 
-    // --- 1. NEW REVIEW FIELDS FOR LANDLORD ---
+    // --- LANDLORD REVIEW FIELDS ---
     numReviews: {
         type: Number,
         default: 0,
@@ -26,7 +26,13 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-    // --- END OF NEW FIELDS ---
+
+    // --- 1. NEW GAMIFICATION FIELD ---
+    points: {
+        type: Number,
+        default: 0,
+    },
+    // --- END OF NEW FIELD ---
 
     // --- VERIFIED PROFILES & SUBSCRIPTIONS ---
     verificationStatus: {

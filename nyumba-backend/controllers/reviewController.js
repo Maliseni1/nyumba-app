@@ -2,6 +2,8 @@ const asyncHandler = require('express-async-handler');
 const Review = require('../models/reviewModel');
 const Listing = require('../models/listingModel');
 const User = require('../models/userModel');
+// --- 1. IMPORT THE NEW POINTS MANAGER ---
+const { handlePointsTransaction } = require('../utils/pointsManager');
 
 // @desc    Create a new review for a listing
 // @route   POST /api/reviews/:listingId
@@ -59,23 +61,30 @@ const createListingReview = asyncHandler(async (req, res) => {
         landlordReviews.reduce((acc, item) => item.rating + acc, 0) / landlordReviews.length;
     await landlord.save();
 
-    // 7. Send back the points (for gamification later)
-    // const pointsEarned = 10; // Example
-    // user.points += pointsEarned;
-    // await user.save();
+    // --- 7. AWARD POINTS FOR THE REVIEW ---
+    const newPointsTotal = await handlePointsTransaction(
+        user._id, 
+        'REVIEW_LISTING', // The reason key from pointsManager.js
+        review._id        // The ID of the new review
+    );
+    // --- END OF POINTS LOGIC ---
 
-    res.status(201).json({ message: 'Review added' });
+    res.status(201).json({ 
+        message: 'Review added', 
+        newPointsTotal: newPointsTotal // Send the new point total to the frontend
+    });
 });
 
 // @desc    Get all reviews for a listing
 // @route   GET /api/reviews/:listingId
 // @access  Public
 const getListingReviews = asyncHandler(async (req, res) => {
+    // ... (This function is unchanged)
     const { listingId } = req.params;
     const reviews = await Review.find({ listing: listingId })
-        .populate('user', 'name profilePicture') // Get the reviewer's info
+        .populate('user', 'name profilePicture')
         .sort({ createdAt: -1 });
-
+    
     res.json(reviews);
 });
 
