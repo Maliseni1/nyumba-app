@@ -205,3 +205,33 @@ body::before {
 .leaflet-top.leaflet-right {
     top: 80px; /* Adjust as needed to be below your navbar */
 }
+
+
+/* --- Fix for Leaflet Geosearch Text Color --- */
+
+/* 1. Style our NEW custom class for the input text */
+.dark-text-geosearch-input {
+  color: #111827 !important; /* Dark black text */
+}
+
+/* 2. Style the placeholder for our custom class */
+.dark-text-geosearch-input::placeholder {
+  color: #6b7280 !important; /* A visible gray placeholder */
+}
+
+/* 3. Make the text in the RESULTS DROPDOWN black */
+.leaflet-control-geosearch .results > * {
+  color: #111827 !important; 
+}
+
+/* 4. Make the text in the HOVERED result black */
+.leaflet-control-geosearch .results > :hover,
+.leaflet-control-geosearch .results > .active {
+  color: #111827 !important;
+}
+
+/* 5. Make the search icon gray */
+.leaflet-control-geosearch .leaflet-geosearch-bar a {
+  color: #6b7280 !important; 
+  border-left: none !important;
+}

@@ -34,6 +34,7 @@ const ListingDetailPage = () => {
     }, [id]);
 
     const handleStartChat = async () => {
+        // ... (rest of the function is unchanged)
         if (!currentUser) {
             toast.info("Please log in to contact the landlord.");
             navigate('/login');
@@ -53,6 +54,7 @@ const ListingDetailPage = () => {
     };
 
     const handleDelete = async () => {
+        // ... (rest of the function is unchanged)
         if (window.confirm("Are you sure you want to delete this listing? This action cannot be undone.")) {
             try {
                 await deleteListing(id);
@@ -66,20 +68,22 @@ const ListingDetailPage = () => {
     };
 
     const handlePaymentSuccess = (paymentData) => {
+        // ... (rest of the function is unchanged)
         toast.success(`Payment successful! Transaction ID: ${paymentData.transactionId}`);
         setPaymentResult(paymentData);
         setShowPaymentModal(false);
         setShowPaymentConfirmation(true);
-        // Here you could save payment data to backend, update booking status, etc.
         console.log('Payment successful:', paymentData);
     };
 
     const handlePaymentError = (error) => {
+        // ... (rest of the function is unchanged)
         toast.error(`Payment failed: ${error.message}`);
         console.error('Payment error:', error);
     };
 
     const handleBookNow = () => {
+        // ... (rest of the function is unchanged)
         if (!currentUser) {
             toast.info("Please log in to book this property.");
             navigate('/login');
@@ -93,6 +97,13 @@ const ListingDetailPage = () => {
 
     const isOwnListing = currentUser && currentUser._id === listing?.owner?._id;
 
+    // --- THIS IS THE FIX ---
+    // Safely get the display address
+    // It checks if location is the new object (listing.location.address)
+    // or the old string (listing.location)
+    const displayAddress = listing.location?.address || listing.location || "Location not specified";
+    // --- END OF FIX ---
+
     return (
         <div className="pt-16 pb-12">
             <div className="max-w-4xl mx-auto py-8 px-4">
@@ -102,7 +113,8 @@ const ListingDetailPage = () => {
                     <div className="flex justify-between items-start">
                         <div>
                             <h1 className="text-4xl font-bold text-white">{listing.title}</h1>
-                            <p className="text-slate-400 mt-2 text-lg">{listing.location}</p>
+                            {/* Use the new displayAddress variable here */}
+                            <p className="text-slate-400 mt-2 text-lg">{displayAddress}</p>
                         </div>
                         <span className="text-3xl font-bold text-sky-400">K{listing.price.toLocaleString()}/month</span>
                     </div>
@@ -120,6 +132,7 @@ const ListingDetailPage = () => {
 
                     {isOwnListing ? (
                         <div className="mt-8 pt-6 border-t border-slate-800">
+                            {/* ... (rest of the JSX is unchanged) ... */}
                             <h2 className="text-2xl font-bold text-white mb-4">Manage Your Listing</h2>
                             <div className="flex items-center gap-4">
                                 <Link to={`/listing/edit/${id}`} className="inline-flex items-center gap-2 bg-sky-500 text-white px-4 py-2 rounded-md hover:bg-sky-600 transition-colors">
@@ -133,6 +146,7 @@ const ListingDetailPage = () => {
                     ) : (
                         listing.owner ? (
                             <div className="mt-8 pt-6 border-t border-slate-800">
+                                {/* ... (rest of the JSX is unchanged) ... */}
                                 <h2 className="text-2xl font-bold text-white mb-4">Book This Property</h2>
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
                                     <img src={listing.owner.profilePicture} alt={listing.owner.name} className="w-16 h-16 rounded-full object-cover" />

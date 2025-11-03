@@ -1,9 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { FaBed, FaBath, FaMapMarkerAlt } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom'; // <-- 1. Import useNavigate
+import { FaBed, FaBath, FaMapMarkerAlt, FaMapPin } from 'react-icons/fa'; // <-- 2. Import FaMapPin
 import SaveButton from './SaveButton';
+import { toast } from 'react-toastify'; // <-- 3. Import toast
 
-// --- NEW HELPER FUNCTION ---
 // Formats distance from meters to a readable string (e.g., "1.5 km")
 const formatDistance = (meters) => {
     if (meters < 1000) {
@@ -15,22 +15,20 @@ const formatDistance = (meters) => {
 
 const ListingCard = ({ listing, onDelete }) => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
+    const navigate = useNavigate(); // <-- 4. Initialize navigate
 
-    // Safety check: If listing or its owner is missing, render nothing.
     if (!listing || !listing.owner) {
         return null; 
     }
 
     const isOwner = currentUser && currentUser._id === listing.owner._id;
 
-    // --- UPDATED: Get the address string safely ---
-    // Handles both new (object) and old (string) location data
     let displayAddress = "Location not specified";
     if (listing.location) {
         if (typeof listing.location === 'string') {
-            displayAddress = listing.location; // Handle old data
+            displayAddress = listing.location;
         } else if (listing.location.address) {
-            displayAddress = listing.location.address; // Handle new data
+            displayAddress = listing.location.address;
         }
     }
 
@@ -48,6 +46,21 @@ const ListingCard = ({ listing, onDelete }) => {
         }
     };
 
+    // --- 5. NEW FUNCTION TO HANDLE MAP CLICK ---
+    const handleViewOnMap = (e) => {
+        e.preventDefault(); // Stop the card's main link from firing
+        e.stopPropagation(); // Stop the event from bubbling
+
+        if (listing.location?.coordinates) {
+            // Leaflet uses [lat, lng], but GeoJSON is [lng, lat]
+            const coords = [listing.location.coordinates[1], listing.location.coordinates[0]]; 
+            // Navigate to /map and pass the coordinates in the state
+            navigate('/map', { state: { coordinates: coords } });
+        } else {
+            toast.error("Location not available for map view.");
+        }
+    };
+
     return (
         <Link to={`/listing/${listing._id}`} className="block bg-slate-900/50 rounded-lg overflow-hidden border border-slate-800 hover:border-sky-500 transition-all duration-300 group flex flex-col">
             <div className="relative">
@@ -59,18 +72,28 @@ const ListingCard = ({ listing, onDelete }) => {
             <div className="p-4 flex flex-col flex-grow">
                 <h3 className="text-xl font-bold text-white truncate">{listing.title}</h3>
                 
-                {/* --- THIS IS THE UPDATED LOCATION/DISTANCE DISPLAY --- */}
-                <p className="text-sm text-slate-400 flex items-center gap-2 mt-1">
-                    <FaMapMarkerAlt />
-                    {/* If listing.distance exists, show it. Otherwise, show the address. */}
-                    {listing.distance ? (
-                        <span className="font-semibold text-sky-400">{formatDistance(listing.distance)}</span>
-                    ) : (
-                        <span className="truncate">{displayAddress}</span>
+                {/* --- 6. UPDATED LOCATION/MAP BUTTON DISPLAY --- */}
+                <div className="text-sm text-slate-400 flex items-center justify-between gap-2 mt-1">
+                    <span className="flex items-center gap-2 truncate">
+                        <FaMapMarkerAlt />
+                        {listing.distance ? (
+                            <span className="font-semibold text-sky-400">{formatDistance(listing.distance)}</span>
+                        ) : (
+                            <span className="truncate">{displayAddress}</span>
+                        )}
+                    </span>
+                    
+                    {/* Show map pin button only if coordinates exist */}
+                    {listing.location?.coordinates && (
+                        <button
+                            onClick={handleViewOnMap}
+                            title="View on Map"
+                            className="flex-shrink-0 text-sky-400 hover:text-sky-300 transition-colors z-10 p-1 rounded-full hover:bg-slate-700"
+                        >
+                            <FaMapPin />
+                        </button>
                     )}
-                </p>
-                {/* --- END OF UPDATE --- */}
-
+                </div>
 
                 <div className="flex-grow"></div>
 

@@ -27,9 +27,10 @@ export const getListingById = (id) => API.get(`/listings/${id}`);
 export const createListing = (listingData) => API.post('/listings', listingData);
 export const updateListing = (id, listingData) => API.put(`/listings/${id}`, listingData);
 export const deleteListing = (id) => API.delete(`/listings/${id}`);
-
-// --- NEW PROXIMITY SEARCH ROUTE ---
 export const getListingsNearby = (params) => API.get('/listings/nearby', { params });
+
+// --- NEW REVERSE GEOCODE ROUTE ---
+export const reverseGeocode = (params) => API.get('/listings/reverse-geocode', { params });
 
 
 // Message Routes

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createListing, getListingById, updateListing } from '../services/api';
+import { createListing, getListingById, updateListing, reverseGeocode } from '../services/api'; // <-- 1. Import reverseGeocode
 import { toast } from 'react-toastify';
 import ImageUpload from '../components/ImageUpload';
-import imageCompression from 'browser-image-compression'; // <-- MODIFICATION: Import the library
+import imageCompression from 'browser-image-compression';
+import { FaCrosshairs } from 'react-icons/fa'; // <-- 2. Import icon
 
 const ListingFormPage = () => {
     const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ const ListingFormPage = () => {
     });
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isLocating, setIsLocating] = useState(false); // <-- 3. Add locating state
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditMode = Boolean(id);
@@ -30,7 +32,8 @@ const ListingFormPage = () => {
                         title: data.title,
                         description: data.description,
                         price: data.price,
-                        location: data.location,
+                        // Handle both old string locations and new object locations
+                        location: data.location?.address || data.location || '',
                         bedrooms: data.bedrooms,
                         bathrooms: data.bathrooms,
                         propertyType: data.propertyType,
@@ -49,7 +52,41 @@ const ListingFormPage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // --- MODIFICATION: Optimized handleSubmit function ---
+    // --- 4. NEW FUNCTION FOR GETTING CURRENT LOCATION ---
+    const handleUseCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            toast.error('Geolocation is not supported by your browser.');
+            return;
+        }
+        
+        setIsLocating(true);
+        toast.info('Getting your current location...');
+        
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                try {
+                    // Call the new API function
+                    const { data } = await reverseGeocode({ lat: latitude, lng: longitude });
+                    
+                    // Update the form state with the address
+                    setFormData(prevData => ({ ...prevData, location: data.address }));
+                    toast.success('Location found!');
+                } catch (error) {
+                    toast.error(error.response?.data?.message || 'Could not find a valid address.');
+                } finally {
+                    setIsLocating(false);
+                }
+            },
+            (error) => {
+                toast.error('Unable to retrieve your location. Please check browser permissions.');
+                setIsLocating(false);
+            },
+            { enableHighAccuracy: true } // Request high accuracy
+        );
+    };
+
+    // --- (handleSubmit function is unchanged) ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -58,13 +95,12 @@ const ListingFormPage = () => {
         Object.keys(formData).forEach(key => listingData.append(key, formData[key]));
 
         const compressionOptions = {
-            maxSizeMB: 1,          // Max file size
-            maxWidthOrHeight: 1920, // Max dimensions
-            useWebWorker: true,    // Use multi-threading for faster compression
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
         };
 
         try {
-            // Process and compress any new images that are File objects
             const newImageFiles = images.filter(image => typeof image !== 'string');
             toast.info("Compressing images... please wait.");
             const compressedImageFiles = await Promise.all(
@@ -72,13 +108,11 @@ const ListingFormPage = () => {
             );
             compressedImageFiles.forEach(file => listingData.append('images', file, file.name));
 
-            // Handle existing image URLs in edit mode
             const existingImageUrls = images.filter(image => typeof image === 'string');
             if (isEditMode) {
                 existingImageUrls.forEach(url => listingData.append('existingImages', url));
             }
 
-            // Make the API call
             if (isEditMode) {
                 await updateListing(id, listingData);
                 toast.success('Listing updated successfully!');
@@ -108,7 +142,38 @@ const ListingFormPage = () => {
                 <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" className={`${inputStyle} h-32`} required />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <input type="number" name="price" value={formData.price} onChange={handleChange} placeholder="Price (K)" className={inputStyle} required />
-                    <input type="text" name="location" value={formData.location} onChange={handleChange} placeholder="Location (e.g., Lusaka)" className={inputStyle} required />
+                    
+                    {/* --- 5. UPDATED LOCATION INPUT WITH BUTTON --- */}
+                    <div>
+                        <input 
+                            type="text" 
+                            name="location" 
+                            value={formData.location} 
+                            onChange={handleChange} 
+                            placeholder="Location (e.g., Lusaka)" 
+                            className={inputStyle} 
+                            required 
+                        />
+                        <button 
+                            type="button" 
+                            onClick={handleUseCurrentLocation} 
+                            disabled={isLocating}
+                            className="flex items-center gap-2 text-sm text-sky-400 hover:text-sky-300 mt-2 disabled:text-slate-500"
+                        >
+                            {isLocating ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"></div>
+                                    Locating...
+                                </>
+                            ) : (
+                                <>
+                                    <FaCrosshairs />
+                                    Use My Current Location
+                                </>
+                            )}
+                        </button>
+                    </div>
+
                     <input type="number" name="bedrooms" value={formData.bedrooms} onChange={handleChange} placeholder="Bedrooms" className={inputStyle} required />
                     <input type="number" name="bathrooms" value={formData.bathrooms} onChange={handleChange} placeholder="Bathrooms" className={inputStyle} required />
                 </div>

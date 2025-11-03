@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const {
     getListings,
-    getListingsNearby, // <-- 1. IMPORT THE NEW FUNCTION
+    getListingsNearby,
+    reverseGeocode, // <-- 1. IMPORT
     getListingById,
     createListing,
     updateListing,
@@ -11,9 +12,11 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-// --- 2. ADD THE NEW ROUTE ---
-// NOTE: This must be *before* the '/:id' route
 router.get('/nearby', getListingsNearby);
+
+// --- 2. ADD THE NEW ROUTE ---
+// This must be protected, only logged-in users (landlords) should use it
+router.get('/reverse-geocode', protect, reverseGeocode);
 
 router.route('/')
     .get(getListings)

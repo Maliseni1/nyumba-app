@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-// --- 1. REMOVE ZOOMCONTROL FROM IMPORTS ---
 import { MapContainer, TileLayer, Marker, Popup, LayersControl } from 'react-leaflet';
 import { getListings } from '../services/api';
 import { toast } from 'react-toastify';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Icon } from 'leaflet';
 import LocationButton from '../components/LocationButton';
+import MapSearchControl from '../components/MapSearchControl'; // <-- 1. IMPORT THE NEW SEARCH CONTROL
 
 // Fix for default Leaflet marker icon
 const customIcon = new Icon({
@@ -17,6 +17,12 @@ const customIcon = new Icon({
 const MapPage = () => {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    const { state } = useLocation();
+    const locationToView = state?.coordinates; 
+
+    const initialCenter = locationToView || [-15.4167, 28.2833]; // Center on listing or Lusaka
+    const initialZoom = locationToView ? 16 : 13; // Zoom in close if it's a specific listing
 
     useEffect(() => {
         const fetchListings = async () => {
@@ -44,15 +50,11 @@ const MapPage = () => {
     return (
         <div className="pt-16 h-[calc(100vh-4rem)] w-full">
             <MapContainer 
-                center={[-15.4167, 28.2833]} // Default center (e.g., Lusaka)
-                zoom={13} 
+                center={initialCenter}
+                zoom={initialZoom} 
                 scrollWheelZoom={true} 
                 className="w-full h-full"
-                // --- 2. REMOVE zoomControl={false} ---
-                // This lets the default zoom control render in the topleft.
             >
-                {/* --- 3. REMOVE THE MANUAL <ZoomControl /> --- */}
-
                 <LayersControl position="topright">
                     <LayersControl.BaseLayer checked name="Street Map">
                         <TileLayer
@@ -63,16 +65,19 @@ const MapPage = () => {
                     <LayersControl.BaseLayer name="Satellite View">
                         <TileLayer
                             url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                            attribution='&copy; <a href="https.www.esri.com/">Esri</a>'
+                            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
                         />
                     </LayersControl.BaseLayer>
                 </LayersControl>
-
+                
                 <div className="leaflet-top leaflet-right">
                     <div style={{ marginTop: '50px' }}>
                         <LocationButton />
                     </div>
                 </div>
+
+                {/* --- 2. ADD THE SEARCH CONTROL --- */}
+                <MapSearchControl />
 
                 {listings.map(listing => (
                     <Marker 
