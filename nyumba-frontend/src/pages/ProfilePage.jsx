@@ -5,6 +5,8 @@ import { toast } from 'react-toastify';
 import ListingCard from '../components/ListingCard';
 import ProfilePageSkeleton from '../components/ProfilePageSkeleton';
 import ProfileHeader from '../components/ProfileHeader';
+// --- 1. IMPORT NEW ICONS ---
+import { FaCheckCircle, FaHourglassHalf } from 'react-icons/fa';
 
 const ProfilePage = () => {
     const [profile, setProfile] = useState(null);
@@ -49,6 +51,30 @@ const ProfilePage = () => {
         <div className="pt-24 min-h-screen pb-12">
             <div className="max-w-4xl mx-auto px-4">
                 <ProfileHeader profile={profile} />
+
+                {/* --- 2. NEW VERIFICATION STATUS BLOCK --- */}
+                {/* This block shows the user's current verification status */}
+                <div className="mb-8 px-4 md:px-0">
+                    {profile.isVerified ? (
+                        <div className="inline-flex items-center gap-2 bg-green-500/10 text-green-400 font-bold py-2 px-4 rounded-md border border-green-500">
+                            <FaCheckCircle />
+                            Verified Profile
+                        </div>
+                    ) : profile.verificationStatus === 'pending' ? (
+                        <div className="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-400 font-bold py-2 px-4 rounded-md border border-yellow-500">
+                            <FaHourglassHalf />
+                            Verification Pending
+                        </div>
+                    ) : (
+                        <Link 
+                            to="/verification" 
+                            className="inline-block bg-sky-500 text-white font-bold py-2 px-4 rounded-md hover:bg-sky-600 transition-colors"
+                        >
+                            Get Verified
+                        </Link>
+                    )}
+                </div>
+                {/* --- END OF NEW BLOCK --- */}
 
                 <div className="mb-12">
                     <h2 className="text-3xl font-bold text-white mb-6">My Listings</h2>

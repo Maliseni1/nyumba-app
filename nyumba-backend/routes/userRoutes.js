@@ -9,8 +9,9 @@ const {
     updateUserProfile,
     getUnreadMessageCount,
     toggleSaveListing,
-    forgotPassword, // <-- 1. IMPORT
-    resetPassword, // <-- 2. IMPORT
+    forgotPassword,
+    resetPassword,
+    applyForVerification, // <-- 1. IMPORT
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -20,7 +21,7 @@ router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/google', googleLogin);
 
-// --- 3. NEW PUBLIC PASSWORD RESET ROUTES ---
+// --- Public Password Reset Routes ---
 router.post('/forgotpassword', forgotPassword);
 router.put('/resetpassword/:resettoken', resetPassword);
 
@@ -31,6 +32,9 @@ router.route('/profile')
 
 router.get('/unread-count', protect, getUnreadMessageCount);
 router.post('/save/:listingId', protect, toggleSaveListing);
+
+// --- 2. NEW VERIFICATION ROUTE ---
+router.post('/apply-verification', protect, applyForVerification);
 
 // --- Public Profile Route (Keep this last) ---
 router.get('/:id', getPublicUserProfile);

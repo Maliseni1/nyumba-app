@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto'); // <-- Import crypto
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
@@ -17,37 +17,61 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, required: true, default: false },
     role: { type: String, enum: ['tenant', 'landlord'], default: 'tenant' },
 
-    // --- NEW FIELDS FOR PASSWORD RESET ---
+    // --- NEW FIELDS FOR VERIFIED PROFILES & SUBSCRIPTIONS ---
+    verificationStatus: {
+        type: String,
+        enum: ['not_applied', 'pending', 'approved', 'rejected'],
+        default: 'not_applied',
+    },
+    subscriptionId: { // The ID from your "base pay" gateway (e.g., a Paystack subscription ID)
+        type: String,
+        default: '',
+    },
+    subscriptionStatus: { // The status from your "base pay" gateway
+        type: String,
+        enum: ['active', 'inactive', 'past_due', 'cancelled'],
+        default: 'inactive',
+    },
+
+    // --- FIELDS FOR PASSWORD RESET ---
     resetPasswordToken: String,
     resetPasswordExpire: Date,
 
 }, {
     timestamps: true,
+    // --- ADD THESE TWO LINES ---
+    // This ensures our new 'isVerified' virtual field is included in API responses
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
 });
+
+// --- NEW VIRTUAL FIELD ---
+// This 'isVerified' field will automatically be true only if:
+// 1. The user's subscription is 'active' (they are paying)
+// 2. An admin has 'approved' their application
+userSchema.virtual('isVerified').get(function() {
+  return this.subscriptionStatus === 'active' && this.verificationStatus === 'approved';
+});
+
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// --- NEW METHOD ---
 // Generate and hash password reset token
 userSchema.methods.getResetPasswordToken = function () {
-    // Generate token
+    // ... (rest of the method is unchanged)
     const resetToken = crypto.randomBytes(20).toString('hex');
-
-    // Hash token and set to resetPasswordToken field
     this.resetPasswordToken = crypto
         .createHash('sha256')
         .update(resetToken)
         .digest('hex');
-
-    // Set expire time (10 minutes)
     this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
-
-    return resetToken; // Return the un-hashed token
+    return resetToken;
 };
 
 userSchema.pre('save', async function (next) {
+    // ... (rest of the method is unchanged)
     if (!this.isModified('password')) {
         next();
     }

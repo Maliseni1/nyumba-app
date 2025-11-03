@@ -4,12 +4,13 @@ const Listing = require('../models/listingModel');
 const Conversation = require('../models/conversationModel');
 const Message = require('../models/messageModel');
 const generateToken = require('../utils/generateToken');
-const sendEmail = require('../utils/sendEmail'); // <-- 1. IMPORT SENDMAIL
+const sendEmail = require('../utils/sendEmail');
 const { OAuth2Client } = require('google-auth-library');
-const crypto = require('crypto'); // <-- 2. IMPORT CRYPTO
+const crypto = require('crypto');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// --- registerUser ---
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password, whatsappNumber, role } = req.body;
     const userExists = await User.findOne({ email });
@@ -28,6 +29,9 @@ const registerUser = asyncHandler(async (req, res) => {
             savedListings: user.savedListings,
             role: user.role,
             isAdmin: user.isAdmin,
+            isVerified: user.isVerified,
+            verificationStatus: user.verificationStatus,
+            subscriptionStatus: user.subscriptionStatus,
             token: generateToken(user._id),
         });
     } else {
@@ -36,6 +40,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 });
 
+// --- loginUser ---
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -49,6 +54,9 @@ const loginUser = asyncHandler(async (req, res) => {
             savedListings: user.savedListings,
             role: user.role,
             isAdmin: user.isAdmin,
+            isVerified: user.isVerified,
+            verificationStatus: user.verificationStatus,
+            subscriptionStatus: user.subscriptionStatus,
             token: generateToken(user._id),
         });
     } else {
@@ -57,6 +65,7 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 });
 
+// --- googleLogin ---
 const googleLogin = asyncHandler(async (req, res) => {
     const { token } = req.body;
     const ticket = await client.verifyIdToken({
@@ -83,42 +92,31 @@ const googleLogin = asyncHandler(async (req, res) => {
         savedListings: user.savedListings,
         role: user.role,
         isAdmin: user.isAdmin,
+        isVerified: user.isVerified,
+        verificationStatus: user.verificationStatus,
+        subscriptionStatus: user.subscriptionStatus,
         token: generateToken(user._id),
     });
 });
 
-// --- 3. NEW FUNCTION ---
+// --- forgotPassword ---
 const forgotPassword = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
-
     if (!user) {
         res.status(404);
         throw new Error('There is no user with that email');
     }
-
-    // Get reset token from the user model method
     const resetToken = user.getResetPasswordToken();
-
     await user.save({ validateBeforeSave: false });
-
-    // Create reset URL
-    // This goes to the frontend page, which we will build
     const resetUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
-
     const message = `
         <h1>You have requested a password reset</h1>
         <p>Please go to this link to reset your password:</p>
         <a href="${resetUrl}" clicktracking="off">${resetUrl}</a>
         <p>This link will expire in 10 minutes.</p>
     `;
-
     try {
-        await sendEmail({
-            email: user.email,
-            subject: 'Password Reset Token',
-            html: message,
-        });
-
+        await sendEmail({ email: user.email, subject: 'Password Reset Token', html: message });
         res.status(200).json({ success: true, data: 'Email sent' });
     } catch (err) {
         console.error(err);
@@ -129,31 +127,21 @@ const forgotPassword = asyncHandler(async (req, res) => {
     }
 });
 
-// --- 4. NEW FUNCTION ---
+// --- resetPassword ---
 const resetPassword = asyncHandler(async (req, res) => {
-    // Get hashed token
-    const resetPasswordToken = crypto
-        .createHash('sha256')
-        .update(req.params.resettoken)
-        .digest('hex');
-
+    const resetPasswordToken = crypto.createHash('sha256').update(req.params.resettoken).digest('hex');
     const user = await User.findOne({
         resetPasswordToken,
-        resetPasswordExpire: { $gt: Date.now() }, // Check if token is not expired
+        resetPasswordExpire: { $gt: Date.now() },
     });
-
     if (!user) {
         res.status(400);
         throw new Error('Invalid or expired token');
     }
-
-    // Set new password
     user.password = req.body.password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
-
-    // Send back a new login token
     res.json({
         _id: user._id,
         name: user.name,
@@ -163,12 +151,14 @@ const resetPassword = asyncHandler(async (req, res) => {
         savedListings: user.savedListings,
         role: user.role,
         isAdmin: user.isAdmin,
+        isVerified: user.isVerified,
+        verificationStatus: user.verificationStatus,
+        subscriptionStatus: user.subscriptionStatus,
         token: generateToken(user._id),
     });
 });
 
-// --- (All other functions remain the same) ---
-
+// --- getUserProfile ---
 const getUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id)
         .select('-password')
@@ -190,9 +180,12 @@ const getUserProfile = asyncHandler(async (req, res) => {
             profilePicture: user.profilePicture,
             createdAt: user.createdAt,
             listings: ownedListings,
-            savedListings: user.savedListings,
+            savedListings: user.savedListings, // This is now populated
             role: user.role,
             isAdmin: user.isAdmin,
+            isVerified: user.isVerified,
+            verificationStatus: user.verificationStatus,
+            subscriptionStatus: user.subscriptionStatus,
         });
     } else {
         res.status(404);
@@ -200,6 +193,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
+// --- getPublicUserProfile ---
 const getPublicUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id).select('-password');
     if (user) {
@@ -215,13 +209,18 @@ const getPublicUserProfile = asyncHandler(async (req, res) => {
             createdAt: user.createdAt,
             listings: ownedListings,
             role: user.role,
+            isVerified: user.isVerified,
+            verificationStatus: user.verificationStatus,
         });
     } else {
+        // --- ERROR 1 FIX ---
         res.status(404);
         throw new Error('User not found');
+        // --- END OF FIX ---
     }
 });
 
+// --- updateUserProfile ---
 const updateUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
     if (user) {
@@ -244,6 +243,9 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             savedListings: updatedUser.savedListings,
             role: updatedUser.role,
             isAdmin: updatedUser.isAdmin,
+            isVerified: updatedUser.isVerified,
+            verificationStatus: updatedUser.verificationStatus,
+            subscriptionStatus: updatedUser.subscriptionStatus,
             token: generateToken(updatedUser._id),
         });
     } else {
@@ -252,6 +254,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
+// --- getUnreadMessageCount ---
 const getUnreadMessageCount = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const conversations = await Conversation.find({ participants: userId });
@@ -264,20 +267,17 @@ const getUnreadMessageCount = asyncHandler(async (req, res) => {
     res.status(200).json({ unreadCount });
 });
 
+// --- toggleSaveListing ---
 const toggleSaveListing = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const { listingId } = req.params;
-
     const user = await User.findById(userId);
     const listing = await Listing.findById(listingId);
-
     if (!user || !listing) {
         res.status(404);
         throw new Error('User or Listing not found');
     }
-
     const isSaved = user.savedListings.includes(listingId);
-
     if (isSaved) {
         user.savedListings.pull(listingId);
         await user.save();
@@ -289,15 +289,75 @@ const toggleSaveListing = asyncHandler(async (req, res) => {
     }
 });
 
+// --- applyForVerification ---
+const applyForVerification = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+    
+    // --- THIS IS A PLACEHOLDER ---
+    // In a real app, your "base pay" webhook would update this.
+    // For testing, let's temporarily force the user's subscription to be 'active'.
+    // user.subscriptionStatus = 'active';
+    // await user.save();
+    // --- END OF PLACEHOLDER ---
+
+    if (user.subscriptionStatus !== 'active') {
+        res.status(403); // Forbidden
+        throw new Error('You must have an active subscription to apply for verification. Please pay first.');
+    }
+    if (user.verificationStatus === 'pending' || user.verificationStatus === 'approved') {
+        res.status(400); // Bad Request
+        throw new Error('You have already submitted a verification application.');
+    }
+
+    user.verificationStatus = 'pending';
+    await user.save();
+
+    // --- ERROR 2 FIX ---
+    // Re-fetch the user WITH populated savedListings, just like in getUserProfile
+    const updatedUserProfile = await User.findById(req.user._id)
+        .select('-password')
+        .populate({
+            path: 'savedListings',
+            populate: { path: 'owner', select: 'name profilePicture' }
+        });
+    // --- END OF FIX ---
+    
+    const ownedListings = await Listing.find({ owner: req.user._id })
+        .populate('owner', 'name profilePicture')
+        .sort({ createdAt: -1 });
+
+    res.status(200).json({
+        _id: updatedUserProfile._id,
+        name: updatedUserProfile.name,
+        email: updatedUserProfile.email,
+        bio: updatedUserProfile.bio,
+        profilePicture: updatedUserProfile.profilePicture,
+        createdAt: updatedUserProfile.createdAt,
+        listings: ownedListings,
+        savedListings: updatedUserProfile.savedListings, // This is now correct
+        role: updatedUserProfile.role,
+        isAdmin: updatedUserProfile.isAdmin,
+        isVerified: updatedUserProfile.isVerified,
+        verificationStatus: updatedUserProfile.verificationStatus,
+        subscriptionStatus: updatedUserProfile.subscriptionStatus,
+    });
+});
+
 module.exports = {
     registerUser,
     loginUser,
     googleLogin,
-    forgotPassword, // <-- Add new function
-    resetPassword, // <-- Add new function
+    forgotPassword,
+    resetPassword,
     getUserProfile,
     getPublicUserProfile,
     updateUserProfile,
     getUnreadMessageCount,
     toggleSaveListing,
+    applyForVerification,
 };

@@ -20,6 +20,7 @@ export const toggleSaveListing = (listingId) => API.post(`/users/save/${listingI
 export const getUnreadMessageCount = () => API.get('/users/unread-count');
 export const forgotPassword = (email) => API.post('/users/forgotpassword', email);
 export const resetPassword = (token, password) => API.put(`/users/resetpassword/${token}`, password);
+export const applyForVerification = () => API.post('/users/apply-verification');
 
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });
@@ -46,3 +47,7 @@ export const getPaymentHistory = (params) => API.get('/payments/history', { para
 // Admin Routes
 export const getAdminStats = () => API.get('/admin/stats');
 export const getAllUsers = () => API.get('/admin/users');
+
+export const getVerificationRequests = () => API.get('/admin/verification-requests');
+export const approveVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'approve' });
+export const rejectVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'reject' });

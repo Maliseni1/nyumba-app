@@ -23,9 +23,10 @@ import AdminRoute from './components/AdminRoute';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-
-// --- 1. IMPORT THE NEW MAP PAGE ---
 import MapPage from './pages/MapPage';
+
+// --- 1. IMPORT THE NEW VERIFICATION PAGE ---
+import VerificationPage from './pages/VerificationPage';
 
 
 function App() {
@@ -33,7 +34,6 @@ function App() {
     <AuthContextProvider>
       <div className="flex flex-col min-h-screen">
         <Navbar />
-        {/* 2. UPDATE MAIN STYLING (Remove container padding for map) */}
         <main className="container mx-auto px-4 py-4 flex-grow md:px-6 lg:px-8">
           <Routes>
             {/* Public Routes */}
@@ -43,8 +43,6 @@ function App() {
             <Route path="/listing/:id" element={<ListingDetailPage />} />
             <Route path="/user/:id" element={<PublicProfilePage />} />
             <Route path="/subscription" element={<SubscriptionPage />} />
-            
-            {/* --- 3. ADD THE NEW MAP ROUTE --- */}
             <Route path="/map" element={<MapPage />} />
 
             {/* Password Routes */}
@@ -60,6 +58,10 @@ function App() {
               <Route path="/messages" element={<ChatPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/payments" element={<PaymentHistoryPage />} />
+              
+              {/* --- 2. ADD THE NEW VERIFICATION ROUTE --- */}
+              <Route path="/verification" element={<VerificationPage />} />
+
             </Route>
 
             {/* Admin Routes */}
