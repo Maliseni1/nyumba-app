@@ -21,6 +21,8 @@ export const getUnreadMessageCount = () => API.get('/users/unread-count');
 export const forgotPassword = (email) => API.post('/users/forgotpassword', email);
 export const resetPassword = (token, password) => API.put(`/users/resetpassword/${token}`, password);
 export const applyForVerification = () => API.post('/users/apply-verification');
+// --- 1. ADD NEW REFERRAL FUNCTION ---
+export const getMyReferralData = () => API.get('/users/referral-data');
 
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });
@@ -51,6 +53,6 @@ export const getVerificationRequests = () => API.get('/admin/verification-reques
 export const approveVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'approve' });
 export const rejectVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'reject' });
 
-// --- 1. NEW REVIEW ROUTES ---
+// Review Routes
 export const getListingReviews = (listingId) => API.get(`/reviews/${listingId}`);
 export const createListingReview = (listingId, reviewData) => API.post(`/reviews/${listingId}`, reviewData);

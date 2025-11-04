@@ -11,7 +11,8 @@ import {
     FaMap,
     FaBars,
     FaTimes,
-    FaChartBar // <-- 1. IMPORT NEW ICON
+    FaChartBar,
+    FaGift // <-- 1. IMPORT NEW ICON
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { Menu, Transition } from '@headlessui/react';
@@ -64,14 +65,12 @@ const Navbar = () => {
                         )}
                     </Link>
                     
-                    {/* Link for ALL Landlords */}
                     {authUser.role === 'landlord' && (
                         <Link to="/add-listing" title="Add Listing" className="text-sky-400 hover:text-sky-300 transition-colors text-2xl">
                             <FaPlusSquare />
                         </Link>
                     )}
 
-                    {/* --- 2. NEW LINK FOR VERIFIED LANDLORDS --- */}
                     {authUser.role === 'landlord' && authUser.isVerified && (
                         <Link to="/landlord/dashboard" title="Landlord Dashboard" className="text-emerald-400 hover:text-emerald-300 transition-colors text-2xl">
                             <FaChartBar />
@@ -79,6 +78,12 @@ const Navbar = () => {
                     )}
                     
                     <Link to="/payments" title="Payment History" className="text-slate-300 hover:text-white transition-colors text-2xl"><FaCreditCard /></Link>
+                    
+                    {/* --- 2. ADD NEW REWARDS LINK --- */}
+                    <Link to="/rewards" title="My Rewards" className="text-amber-400 hover:text-amber-300 transition-colors text-2xl">
+                        <FaGift />
+                    </Link>
+                    
                     <Link to="/settings" title="Settings" className="text-slate-300 hover:text-white transition-colors text-2xl"><FaCog /></Link>
                 </>
             ) : (
@@ -103,12 +108,10 @@ const Navbar = () => {
                     <Link to="/profile" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaUserCircle /> Profile</Link>
                     <Link to="/messages" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaEnvelope /> Messages {unreadCount > 0 && `(${unreadCount})`}</Link>
                     
-                    {/* Link for ALL Landlords */}
                     {authUser.role === 'landlord' && (
                         <Link to="/add-listing" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-sky-400 hover:bg-slate-700 rounded-md"><FaPlusSquare /> Add Listing</Link>
                     )}
 
-                    {/* --- 3. NEW LINK FOR VERIFIED LANDLORDS --- */}
                     {authUser.role === 'landlord' && authUser.isVerified && (
                         <Link to="/landlord/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-emerald-400 hover:bg-slate-700 rounded-md">
                             <FaChartBar /> Landlord Dashboard
@@ -116,6 +119,12 @@ const Navbar = () => {
                     )}
 
                     <Link to="/payments" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaCreditCard /> Payments</Link>
+                    
+                    {/* --- 3. ADD NEW REWARDS LINK (MOBILE) --- */}
+                    <Link to="/rewards" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-400 hover:bg-slate-700 rounded-md">
+                        <FaGift /> My Rewards
+                    </Link>
+                    
                     <Link to="/settings" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaCog /> Settings</Link>
                 </>
             ) : (

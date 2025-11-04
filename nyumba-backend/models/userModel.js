@@ -27,12 +27,23 @@ const userSchema = new mongoose.Schema({
         default: 0,
     },
 
-    // --- 1. NEW GAMIFICATION FIELD ---
+    // --- GAMIFICATION FIELD ---
     points: {
         type: Number,
         default: 0,
     },
-    // --- END OF NEW FIELD ---
+    
+    // --- 1. NEW REFERRAL FIELDS ---
+    referralCode: {
+        type: String,
+        unique: true,
+        sparse: true // Allows many users to have 'null' value, but new codes must be unique
+    },
+    referredBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    },
+    // --- END OF NEW FIELDS ---
 
     // --- VERIFIED PROFILES & SUBSCRIPTIONS ---
     verificationStatus: {
@@ -81,13 +92,28 @@ userSchema.methods.getResetPasswordToken = function () {
     return resetToken;
 };
 
-// --- PRE-SAVE HOOK (for password) ---
+// --- 2. UPDATED PRE-SAVE HOOK ---
+// This hook now handles both password hashing and referral code generation
 userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) {
-        next();
+    // 1. Handle password hashing if password is new or modified
+    if (this.isModified('password')) {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
     }
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+
+    // 2. Generate referral code ONLY when the user is first created
+    if (this.isNew && !this.referralCode) {
+        let code;
+        let codeExists = true;
+        // Loop to guarantee a unique code
+        while (codeExists) {
+            code = crypto.randomBytes(3).toString('hex').toUpperCase();
+            codeExists = await mongoose.model('User').findOne({ referralCode: code });
+        }
+        this.referralCode = code;
+    }
+
+    next();
 });
 
 const User = mongoose.model('User', userSchema);

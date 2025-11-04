@@ -11,7 +11,8 @@ const {
     toggleSaveListing,
     forgotPassword,
     resetPassword,
-    applyForVerification, // <-- 1. IMPORT
+    applyForVerification,
+    getMyReferralData, // <-- 1. IMPORT
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -32,9 +33,10 @@ router.route('/profile')
 
 router.get('/unread-count', protect, getUnreadMessageCount);
 router.post('/save/:listingId', protect, toggleSaveListing);
-
-// --- 2. NEW VERIFICATION ROUTE ---
 router.post('/apply-verification', protect, applyForVerification);
+
+// --- 2. NEW REFERRAL ROUTE ---
+router.get('/referral-data', protect, getMyReferralData);
 
 // --- Public Profile Route (Keep this last) ---
 router.get('/:id', getPublicUserProfile);

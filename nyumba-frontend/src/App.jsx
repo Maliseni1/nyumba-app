@@ -25,10 +25,11 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import MapPage from './pages/MapPage';
 import VerificationPage from './pages/VerificationPage';
-
-// --- 1. IMPORT THE NEW COMPONENTS ---
 import LandlordRoute from './components/LandlordRoute';
 import LandlordDashboardPage from './pages/LandlordDashboardPage';
+
+// --- 1. IMPORT THE NEW REWARDS PAGE ---
+import RewardsPage from './pages/RewardsPage';
 
 
 function App() {
@@ -61,9 +62,12 @@ function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/payments" element={<PaymentHistoryPage />} />
               <Route path="/verification" element={<VerificationPage />} />
+              
+              {/* --- 2. ADD THE NEW REWARDS ROUTE --- */}
+              <Route path="/rewards" element={<RewardsPage />} />
+
             </Route>
             
-            {/* --- 2. ADD THE NEW LANDLORD ROUTE --- */}
             {/* Routes for verified landlords only */}
             <Route path="/landlord" element={<LandlordRoute />}>
               <Route path="dashboard" element={<LandlordDashboardPage />} />

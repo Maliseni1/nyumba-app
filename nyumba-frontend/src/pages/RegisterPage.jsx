@@ -6,14 +6,15 @@ import { toast } from 'react-toastify';
 import { FaUserPlus } from 'react-icons/fa'; 
 
 const RegisterPage = () => {
-    // --- UPDATED (added role to state) ---
+    // --- 1. UPDATED FORMDATA STATE ---
     const [formData, setFormData] = useState({ 
         name: '', 
         email: '', 
         password: '', 
         confirmPassword: '', 
         whatsappNumber: '',
-        role: 'tenant' // Default role
+        role: 'tenant', // Default role
+        referralCode: '' // New field
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -30,7 +31,7 @@ const RegisterPage = () => {
         }
         setLoading(true);
         try {
-            // formData now automatically includes the 'role'
+            // formData now automatically includes the 'referralCode'
             await registerUser(formData);
             toast.success('Registration successful! Please log in.');
             navigate('/login');
@@ -42,6 +43,7 @@ const RegisterPage = () => {
     };
 
     const handleGoogleSuccess = async (credentialResponse) => {
+        // ... (function is unchanged)
         try {
             const res = await googleLogin(credentialResponse.credential);
             localStorage.setItem('user', JSON.stringify(res.data));
@@ -106,6 +108,16 @@ const RegisterPage = () => {
                         required 
                     />
 
+                    {/* --- 2. NEW REFERRAL CODE INPUT --- */}
+                    <input 
+                        type="text" 
+                        name="referralCode" 
+                        placeholder="Referral Code (Optional)" 
+                        onChange={handleChange} 
+                        value={formData.referralCode.toUpperCase()} // Auto-uppercase
+                        className="w-full p-3 bg-slate-800/50 rounded-md border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 text-white placeholder-slate-500" 
+                    />
+
                     {/* --- NEW ROLE SELECTION --- */}
                     <div className="pt-2">
                         <label className="block text-sm font-medium text-slate-300 mb-2">I am a...</label>
@@ -154,12 +166,7 @@ const RegisterPage = () => {
                     {import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'placeholder-google-client-id' && (
                         <>
                             <div className="relative my-6">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-slate-700"></div>
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="bg-slate-900/80 px-2 text-slate-500">OR</span>
-                                </div>
+                                {/* ... (separator) ... */}
                             </div>
                             
                             <div className="w-full bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition duration-150">
