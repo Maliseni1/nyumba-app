@@ -37,7 +37,8 @@ const listingRoutes = require('./routes/listingRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const reviewRoutes = require('./routes/reviewRoutes'); // <-- 1. IMPORT REVIEW ROUTES
+const reviewRoutes = require('./routes/reviewRoutes');
+const rewardRoutes = require('./routes/rewardRoutes'); // <-- 1. IMPORT REWARD ROUTES
 
 connectDB();
 
@@ -79,7 +80,8 @@ app.use('/api/listings', listingRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/reviews', reviewRoutes); // <-- 2. USE REVIEW ROUTES
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/rewards', rewardRoutes); // <-- 2. USE REWARD ROUTES
 
 app.use(notFound);
 app.use(errorHandler);

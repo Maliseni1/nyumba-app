@@ -54,6 +54,18 @@ const listingSchema = new mongoose.Schema({
         enum: ['available', 'occupied'],
         default: 'available',
     },
+
+    // --- 1. NEW REWARD FIELDS ---
+    isPriority: {
+        type: Boolean,
+        default: false,
+        index: true, // Add index for fast sorting of priority listings
+    },
+    priorityExpiresAt: {
+        type: Date,
+    },
+    // --- END OF NEW FIELDS ---
+
     analytics: {
         views: {
             type: Number,
@@ -63,7 +75,6 @@ const listingSchema = new mongoose.Schema({
             type: Number,
             default: 0,
         },
-        // --- 1. NEW REVIEW FIELDS FOR LISTING ---
         numReviews: {
             type: Number,
             default: 0,
@@ -72,7 +83,6 @@ const listingSchema = new mongoose.Schema({
             type: Number,
             default: 0,
         },
-        // --- END OF NEW FIELDS ---
     },
 }, {
     timestamps: true,

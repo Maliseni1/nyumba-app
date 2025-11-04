@@ -1,7 +1,7 @@
 const User = require('../models/userModel');
 const PointsHistory = require('../models/pointsHistoryModel');
 
-// --- 1. Define all point-earning reasons ---
+// 1. Define all point-earning/redeeming reasons
 // This makes it easy to change point values later
 const POINTS_REASONS = {
     // Earning points
@@ -20,10 +20,11 @@ const POINTS_REASONS = {
         description: 'Referred a new user',
         action: 'earn'
     },
-
+    
     // Redeeming points
-    REDEEM_PRIORITY_LISTING: {
-        points: -50,
+    // This is now just a TEMPLATE for the description and action
+    REDEEM_LISTING_PRIORITY: {
+        // points cost is now dynamic, defined in the Reward model
         description: 'Redeemed "Priority Listing" reward',
         action: 'redeem'
     }
@@ -33,9 +34,10 @@ const POINTS_REASONS = {
  * @desc    Awards or redeems points for a user and logs the transaction.
  * @param   {string} userId - The ID of the user.
  * @param   {string} reasonKey - The key from POINTS_REASONS (e.g., 'REVIEW_LISTING').
- * @param   {string} [entityId] - Optional: The ID of the related item (e.g., the review ID or listing ID).
+ * @param   {string} [entityId] - Optional: The ID of the related item.
+ * @param   {number} [overridePoints] - Optional: For redemptions, this is the *exact* (negative) point cost.
  */
-const handlePointsTransaction = async (userId, reasonKey, entityId = null) => {
+const handlePointsTransaction = async (userId, reasonKey, entityId = null, overridePoints = null) => {
     try {
         const reason = POINTS_REASONS[reasonKey];
         if (!reason) {
@@ -43,13 +45,26 @@ const handlePointsTransaction = async (userId, reasonKey, entityId = null) => {
             return;
         }
 
-        const { points, description, action } = reason;
+        const { description, action } = reason;
+        
+        // Use overridePoints if provided (for redemptions), otherwise use static points
+        // We ensure redemption points are negative
+        let pointsToTransact;
+        if (overridePoints !== null) {
+            pointsToTransact = action === 'redeem' ? -Math.abs(overridePoints) : Math.abs(overridePoints);
+        } else {
+            pointsToTransact = reason.points;
+        }
+
+        if (pointsToTransact === undefined || pointsToTransact === null) {
+             console.error(`No points value found for ${reasonKey}`);
+             return;
+        }
 
         // 1. Update the user's total points
-        // We use $inc to safely add (or subtract) the points
         const user = await User.findByIdAndUpdate(
             userId,
-            { $inc: { points: points } },
+            { $inc: { points: pointsToTransact } },
             { new: true } // Return the updated user
         );
 
@@ -61,24 +76,22 @@ const handlePointsTransaction = async (userId, reasonKey, entityId = null) => {
         // 2. Create a history log for the transaction
         await PointsHistory.create({
             user: userId,
-            points: points,
+            points: pointsToTransact,
             action: action,
             description: description,
             entityId: entityId,
         });
-
-        console.log(`Successfully handled points for ${user.email}: ${action} ${points} for ${description}`);
-
-        // We can return the new total if needed
+        
+        console.log(`Successfully handled points for ${user.email}: ${action} ${pointsToTransact} for ${description}`);
+        
         return user.points;
 
     } catch (error) {
-        // Log the error but don't crash the main operation (e.g., review creation)
         console.error('Error in handlePointsTransaction:', error);
     }
 };
 
 module.exports = {
     handlePointsTransaction,
-    POINTS_REASONS // Export reasons in case we need them elsewhere
+    POINTS_REASONS
 };
