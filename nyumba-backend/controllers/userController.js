@@ -14,9 +14,8 @@ const PointsHistory = require('../models/pointsHistoryModel');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// --- registerUser (MODIFIED) ---
+// --- registerUser (unchanged) ---
 const registerUser = asyncHandler(async (req, res) => {
-    // --- 2. ADD referralCode to destructuring ---
     const { name, email, password, whatsappNumber, role, referralCode } = req.body;
     
     const userExists = await User.findOne({ email });
@@ -25,39 +24,33 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new Error('User already exists');
     }
 
-    // --- 3. HANDLE THE REFERRAL CODE ---
     let referredByUserId = null;
     if (referralCode) {
-        // Find the user who owns this referral code
         const referrer = await User.findOne({ 
             referralCode: referralCode.toUpperCase() 
         });
-        
         if (referrer) {
             referredByUserId = referrer._id;
         } else {
-            // Optional: Log if an invalid code was used, but don't block registration
             console.warn(`Invalid referral code used during registration: ${referralCode}`);
         }
     }
 
-    // --- 4. CREATE THE USER (with referredBy field) ---
     const user = await User.create({ 
         name, 
         email, 
         password, 
         whatsappNumber, 
         role,
-        referredBy: referredByUserId // Save who referred this user
+        referredBy: referredByUserId
     });
     
     if (user) {
-        // --- 5. AWARD POINTS TO THE REFERRER (if one exists) ---
         if (referredByUserId) {
             await handlePointsTransaction(
                 referredByUserId, 
                 'REFERRAL_SIGNUP', 
-                user._id // Pass the new user's ID as the related entity
+                user._id
             );
         }
 
@@ -73,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
             isVerified: user.isVerified,
             verificationStatus: user.verificationStatus,
             subscriptionStatus: user.subscriptionStatus,
-            points: user.points, // Send back initial points
+            points: user.points,
             token: generateToken(user._id),
         });
     } else {
@@ -99,7 +92,7 @@ const loginUser = asyncHandler(async (req, res) => {
             isVerified: user.isVerified,
             verificationStatus: user.verificationStatus,
             subscriptionStatus: user.subscriptionStatus,
-            points: user.points, // Include points on login
+            points: user.points,
             token: generateToken(user._id),
         });
     } else {
@@ -109,8 +102,6 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 // --- googleLogin (unchanged) ---
-// Note: Referral codes typically don't apply to social logins
-// unless implemented via a more complex token/session system.
 const googleLogin = asyncHandler(async (req, res) => {
     const { token } = req.body;
     const ticket = await client.verifyIdToken({
@@ -140,7 +131,7 @@ const googleLogin = asyncHandler(async (req, res) => {
         isVerified: user.isVerified,
         verificationStatus: user.verificationStatus,
         subscriptionStatus: user.subscriptionStatus,
-        points: user.points, // Include points on login
+        points: user.points,
         token: generateToken(user._id),
     });
 });
@@ -228,7 +219,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
             isVerified: user.isVerified,
             verificationStatus: user.verificationStatus,
             subscriptionStatus: user.subscriptionStatus,
-            points: user.points, // Include points
+            points: user.points,
         });
     } else {
         res.status(404);
@@ -261,7 +252,7 @@ const getPublicUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// --- updateUserProfile (unchanged from last time) ---
+// --- updateUserProfile (unchanged) ---
 const updateUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
     if (user) {
@@ -314,6 +305,28 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
+// --- 2. NEW: changePassword ---
+const changePassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    
+    if (!oldPassword || !newPassword) {
+        res.status(400);
+        throw new Error('Please provide both old and new passwords');
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (user && (await user.matchPassword(oldPassword))) {
+        // user.password is set, the pre-save hook in userModel will hash it
+        user.password = newPassword; 
+        await user.save();
+        res.json({ message: 'Password updated successfully' });
+    } else {
+        res.status(401);
+        throw new Error('Invalid old password');
+    }
+});
+
 // --- getUnreadMessageCount (unchanged) ---
 const getUnreadMessageCount = asyncHandler(async (req, res) => {
     const userId = req.user._id;
@@ -349,7 +362,7 @@ const toggleSaveListing = asyncHandler(async (req, res) => {
     }
 });
 
-// --- applyForVerification (unchanged, but with typo fix) ---
+// --- applyForVerification (unchanged) ---
 const applyForVerification = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
@@ -383,7 +396,7 @@ const applyForVerification = asyncHandler(async (req, res) => {
 
     res.status(200).json({
         _id: updatedUserProfile._id,
-        name: updatedUserProfile.name, // <-- TYPO FIX
+        name: updatedUserProfile.name,
         email: updatedUserProfile.email,
         bio: updatedUserProfile.bio,
         profilePicture: updatedUserProfile.profilePicture,
@@ -399,7 +412,7 @@ const applyForVerification = asyncHandler(async (req, res) => {
     });
 });
 
-// --- 6. NEW FUNCTION TO GET REFERRAL DATA ---
+// --- getMyReferralData (unchanged) ---
 const getMyReferralData = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select('referralCode points');
 
@@ -414,6 +427,7 @@ const getMyReferralData = asyncHandler(async (req, res) => {
     });
 });
 
+// --- 3. EXPORT THE NEW FUNCTION ---
 module.exports = {
     registerUser,
     loginUser,
@@ -423,8 +437,9 @@ module.exports = {
     getUserProfile,
     getPublicUserProfile,
     updateUserProfile,
+    changePassword, // <-- ADDED
     getUnreadMessageCount,
     toggleSaveListing,
     applyForVerification,
-    getMyReferralData, // <-- 7. EXPORT NEW FUNCTION
+    getMyReferralData,
 };

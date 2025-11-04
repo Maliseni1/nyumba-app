@@ -7,6 +7,8 @@ import 'leaflet-geosearch/dist/geosearch.css';
 import { BrowserRouter } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthContextProvider } from './context/AuthContext.jsx';
+// --- 1. IMPORT THE NEW THEME PROVIDER ---
+import { ThemeProvider } from './context/ThemeContext.jsx';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -16,12 +18,18 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       {googleClientId && googleClientId !== 'placeholder-google-client-id' ? (
         <GoogleOAuthProvider clientId={googleClientId}>
           <AuthContextProvider>
-            <App />
+            {/* --- 2. WRAP APP WITH THEME PROVIDER --- */}
+            <ThemeProvider>
+              <App />
+            </ThemeProvider>
           </AuthContextProvider>
         </GoogleOAuthProvider>
       ) : (
         <AuthContextProvider>
-          <App />
+          {/* --- 2. WRAP APP WITH THEME PROVIDER --- */}
+          <ThemeProvider>
+            <App />
+          </ThemeProvider>
         </AuthContextProvider>
       )}
     </BrowserRouter>
