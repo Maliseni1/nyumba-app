@@ -6,15 +6,14 @@ import { toast } from 'react-toastify';
 import { FaUserPlus } from 'react-icons/fa'; 
 
 const RegisterPage = () => {
-    // --- 1. UPDATED FORMDATA STATE ---
     const [formData, setFormData] = useState({ 
         name: '', 
         email: '', 
         password: '', 
         confirmPassword: '', 
         whatsappNumber: '',
-        role: 'tenant', // Default role
-        referralCode: '' // New field
+        role: 'tenant',
+        referralCode: ''
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -24,6 +23,7 @@ const RegisterPage = () => {
     };
 
     const handleSubmit = async (e) => {
+        // ... (function is unchanged)
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
             toast.error('Passwords do not match');
@@ -31,7 +31,6 @@ const RegisterPage = () => {
         }
         setLoading(true);
         try {
-            // formData now automatically includes the 'referralCode'
             await registerUser(formData);
             toast.success('Registration successful! Please log in.');
             navigate('/login');
@@ -57,22 +56,25 @@ const RegisterPage = () => {
 
     return (
         <div className="pt-24 min-h-screen flex items-center justify-center py-12 px-4">
-            <div className="max-w-md w-full bg-slate-900/50 border border-slate-800 backdrop-blur-sm rounded-lg shadow-xl p-8 space-y-6">
+            {/* --- 1. UPDATED CARD --- */}
+            <div className="max-w-md w-full bg-card-color border border-border-color backdrop-blur-sm rounded-lg shadow-xl p-8 space-y-6">
                 
                 <div className="text-center">
-                    <FaUserPlus className="mx-auto h-12 w-auto text-sky-500" />
-                    <h1 className="text-3xl font-bold text-white mt-4">
+                    {/* --- 2. UPDATED ICON/TEXT --- */}
+                    <FaUserPlus className="mx-auto h-12 w-auto text-accent-color" />
+                    <h1 className="text-3xl font-bold text-text-color mt-4">
                         Create Your Account
                     </h1>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* --- 3. UPDATED INPUTS --- */}
                     <input 
                         type="text" 
                         name="name" 
                         placeholder="Name" 
                         onChange={handleChange} 
-                        className="w-full p-3 bg-slate-800/50 rounded-md border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 text-white placeholder-slate-500" 
+                        className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
                         required 
                     />
                     <input 
@@ -80,7 +82,7 @@ const RegisterPage = () => {
                         name="email" 
                         placeholder="Email" 
                         onChange={handleChange} 
-                        className="w-full p-3 bg-slate-800/50 rounded-md border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 text-white placeholder-slate-500" 
+                        className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
                         required 
                     />
                     <input 
@@ -88,7 +90,7 @@ const RegisterPage = () => {
                         name="password" 
                         placeholder="Password" 
                         onChange={handleChange} 
-                        className="w-full p-3 bg-slate-800/50 rounded-md border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 text-white placeholder-slate-500" 
+                        className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
                         required 
                     />
                     <input 
@@ -96,7 +98,7 @@ const RegisterPage = () => {
                         name="confirmPassword" 
                         placeholder="Confirm Password" 
                         onChange={handleChange} 
-                        className="w-full p-3 bg-slate-800/50 rounded-md border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 text-white placeholder-slate-500" 
+                        className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
                         required 
                     />
                     <input 
@@ -104,23 +106,21 @@ const RegisterPage = () => {
                         name="whatsappNumber" 
                         placeholder="Phone Number" 
                         onChange={handleChange} 
-                        className="w-full p-3 bg-slate-800/50 rounded-md border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 text-white placeholder-slate-500" 
+                        className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
                         required 
                     />
-
-                    {/* --- 2. NEW REFERRAL CODE INPUT --- */}
                     <input 
                         type="text" 
                         name="referralCode" 
                         placeholder="Referral Code (Optional)" 
                         onChange={handleChange} 
-                        value={formData.referralCode.toUpperCase()} // Auto-uppercase
-                        className="w-full p-3 bg-slate-800/50 rounded-md border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 text-white placeholder-slate-500" 
+                        value={formData.referralCode.toUpperCase()}
+                        className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
                     />
 
-                    {/* --- NEW ROLE SELECTION --- */}
+                    {/* --- 4. UPDATED RADIO/LABELS --- */}
                     <div className="pt-2">
-                        <label className="block text-sm font-medium text-slate-300 mb-2">I am a...</label>
+                        <label className="block text-sm font-medium text-subtle-text-color mb-2">I am a...</label>
                         <div className="flex gap-x-6">
                             <div className="flex items-center">
                                 <input
@@ -130,9 +130,9 @@ const RegisterPage = () => {
                                     value="tenant"
                                     checked={formData.role === 'tenant'}
                                     onChange={handleChange}
-                                    className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-slate-700 bg-slate-800"
+                                    className="h-4 w-4 text-accent-color focus:ring-accent-color border-border-color bg-bg-color"
                                 />
-                                <label htmlFor="role-tenant" className="ml-2 block text-sm text-slate-300">
+                                <label htmlFor="role-tenant" className="ml-2 block text-sm text-subtle-text-color">
                                     Tenant
                                 </label>
                             </div>
@@ -144,19 +144,20 @@ const RegisterPage = () => {
                                     value="landlord"
                                     checked={formData.role === 'landlord'}
                                     onChange={handleChange}
-                                    className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-slate-700 bg-slate-800"
+                                    className="h-4 w-4 text-accent-color focus:ring-accent-color border-border-color bg-bg-color"
                                 />
-                                <label htmlFor="role-landlord" className="ml-2 block text-sm text-slate-300">
+                                <label htmlFor="role-landlord" className="ml-2 block text-sm text-subtle-text-color">
                                     Landlord
                                 </label>
                             </div>
                         </div>
                     </div>
 
+                    {/* --- 5. UPDATED BUTTON --- */}
                     <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full bg-sky-500 text-white font-bold py-3 rounded-md hover:bg-sky-600 transition-colors disabled:bg-slate-600"
+                        className="w-full bg-accent-color text-white font-bold py-3 rounded-md hover:bg-accent-hover-color transition-colors disabled:bg-subtle-text-color"
                     >
                         {loading ? 'Creating Account...' : 'Register'}
                     </button>
@@ -166,15 +167,23 @@ const RegisterPage = () => {
                     {import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'placeholder-google-client-id' && (
                         <>
                             <div className="relative my-6">
-                                {/* ... (separator) ... */}
+                                <div className="absolute inset-0 flex items-center">
+                                    {/* --- 6. UPDATED DIVIDER --- */}
+                                    <div className="w-full border-t border-border-color"></div>
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    {/* --- 7. UPDATED 'OR' SPAN --- */}
+                                    <span className="bg-card-color px-2 text-subtle-text-color">OR</span>
+                                </div>
                             </div>
                             
-                            <div className="w-full bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition duration-150">
+                            {/* --- 8. UPDATED GOOGLE BUTTON WRAPPER --- */}
+                            <div className="w-full bg-card-color border border-border-color rounded-lg shadow-sm hover:bg-bg-color transition duration-150">
                                 <GoogleLogin 
                                     onSuccess={handleGoogleSuccess} 
                                     onError={() => { toast.error('Google Sign-Up Failed'); }} 
                                     width="100%"
-                                    theme="outline"
+                                    theme="outline" // 'outline' theme works well on both light and dark
                                     size="large"
                                     text="signup_with"
                                 />
@@ -182,9 +191,10 @@ const RegisterPage = () => {
                         </>
                     )}
 
-                    <p className="mt-6 text-slate-400">
+                    {/* --- 9. UPDATED TEXT/LINK --- */}
+                    <p className="mt-6 text-subtle-text-color">
                         Already have an account?{' '}
-                        <Link to="/login" className="font-medium text-sky-400 hover:underline hover:text-sky-300">
+                        <Link to="/login" className="font-medium text-accent-color hover:underline">
                             Login here
                         </Link>
                     </p>

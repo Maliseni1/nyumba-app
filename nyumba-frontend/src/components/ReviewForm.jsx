@@ -10,6 +10,7 @@ const ReviewForm = ({ listingId, onReviewSubmitted }) => {
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
+        // ... (function is unchanged)
         e.preventDefault();
         if (rating === 0 || comment.trim() === '') {
             toast.error('Please provide a rating and a comment.');
@@ -21,7 +22,7 @@ const ReviewForm = ({ listingId, onReviewSubmitted }) => {
             toast.success('Review submitted successfully!');
             setRating(0);
             setComment('');
-            onReviewSubmitted(); // This tells the parent to refresh the review list
+            onReviewSubmitted();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to submit review.');
         } finally {
@@ -31,15 +32,20 @@ const ReviewForm = ({ listingId, onReviewSubmitted }) => {
 
     return (
         <form onSubmit={handleSubmit} className="mt-8">
-            <h3 className="text-2xl font-bold text-white mb-4">Leave a Review</h3>
+            {/* --- 1. UPDATED TEXT --- */}
+            <h3 className="text-2xl font-bold text-text-color mb-4">Leave a Review</h3>
             <div className="mb-4">
-                <p className="text-slate-300 mb-2">Your Rating:</p>
+                {/* --- 2. UPDATED TEXT --- */}
+                <p className="text-subtle-text-color mb-2">Your Rating:</p>
                 <div className="flex items-center space-x-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                         <FaStar
                             key={star}
+                            // --- 3. UPDATED EMPTY STAR COLOR ---
                             className={`cursor-pointer h-6 w-6 ${
-                                (hoverRating || rating) >= star ? 'text-yellow-400' : 'text-slate-600'
+                                (hoverRating || rating) >= star 
+                                ? 'text-yellow-400' // Filled star (semantic yellow)
+                                : 'text-slate-300 dark:text-slate-600' // Empty star (theme-aware)
                             }`}
                             onClick={() => setRating(star)}
                             onMouseEnter={() => setHoverRating(star)}
@@ -49,20 +55,23 @@ const ReviewForm = ({ listingId, onReviewSubmitted }) => {
                 </div>
             </div>
             <div className="mb-4">
-                <label htmlFor="comment" className="block text-slate-300 mb-2">Your Comment:</label>
+                {/* --- 4. UPDATED TEXT --- */}
+                <label htmlFor="comment" className="block text-subtle-text-color mb-2">Your Comment:</label>
                 <textarea
                     id="comment"
                     rows="4"
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className="w-full p-3 bg-slate-800 border border-slate-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    // --- 5. UPDATED INPUT ---
+                    className="w-full p-3 bg-bg-color border border-border-color rounded-md text-text-color focus:outline-none focus:ring-2 focus:ring-accent-color"
                     placeholder="Share your experience with this property and landlord..."
                 ></textarea>
             </div>
             <button
                 type="submit"
                 disabled={loading}
-                className="bg-sky-500 text-white px-6 py-2 rounded-md hover:bg-sky-600 transition-colors disabled:bg-slate-600"
+                // --- 6. UPDATED BUTTON ---
+                className="bg-accent-color text-white px-6 py-2 rounded-md hover:bg-accent-hover-color transition-colors disabled:bg-subtle-text-color"
             >
                 {loading ? 'Submitting...' : 'Submit Review'}
             </button>

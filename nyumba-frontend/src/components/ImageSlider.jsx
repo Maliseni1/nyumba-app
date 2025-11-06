@@ -7,7 +7,8 @@ import { Navigation, Pagination, Mousewheel, Keyboard } from 'swiper/modules';
 
 const ImageSlider = ({ images }) => {
   return (
-    <div className="rounded-lg overflow-hidden h-96 border border-slate-800">
+    // --- 1. UPDATED BORDER COLOR ---
+    <div className="rounded-lg overflow-hidden h-96 border border-border-color">
       <Swiper
         cssMode={true}
         navigation={true}

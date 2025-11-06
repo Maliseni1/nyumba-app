@@ -26,11 +26,12 @@ const RecommendedListings = () => {
     if (loading) {
         return (
             <div>
-                <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
-                    <FaMagic className="text-sky-400" />
+                {/* --- 1. UPDATED CLASSES --- */}
+                <h2 className="text-3xl font-bold text-text-color mb-6 flex items-center gap-3">
+                    <FaMagic className="text-accent-color" />
                     Just For You
                 </h2>
-                <p className="text-slate-400">Finding recommendations...</p>
+                <p className="text-subtle-text-color">Finding recommendations...</p>
             </div>
         );
     }
@@ -42,8 +43,9 @@ const RecommendedListings = () => {
 
     return (
         <div>
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
-                <FaMagic className="text-sky-400" />
+             {/* --- 2. UPDATED CLASSES --- */}
+            <h2 className="text-3xl font-bold text-text-color mb-6 flex items-center gap-3">
+                <FaMagic className="text-accent-color" />
                 Just For You
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

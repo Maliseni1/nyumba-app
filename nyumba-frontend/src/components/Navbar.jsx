@@ -12,10 +12,11 @@ import {
     FaBars,
     FaTimes,
     FaChartBar,
-    FaGift // <-- 1. IMPORT NEW ICON
+    FaGift
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { Menu, Transition } from '@headlessui/react';
+// No need to import useTheme, as the classes respond to the <html> tag
 
 const Navbar = () => {
     const { authUser, unreadCount } = useAuth();
@@ -42,21 +43,24 @@ const Navbar = () => {
         <div className="hidden md:flex items-center space-x-6">
             {authUser ? (
                 <>
-                    <span className="text-slate-300 hidden sm:block">Welcome, {authUser.name}</span>
+                    {/* Use subtle-text-color for the welcome message */}
+                    <span className="text-subtle-text-color hidden sm:block">Welcome, {authUser.name}</span>
                     
-                    <Link to="/map" title="Map View" className="text-slate-300 hover:text-white transition-colors text-2xl">
+                    {/* Use subtle-text for icons, text-color for hover */}
+                    <Link to="/map" title="Map View" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl">
                         <FaMap />
                     </Link>
 
+                    {/* Admin link (custom accent) */}
                     {authUser.isAdmin && (
-                        <Link to="/admin/dashboard" title="Admin Dashboard" className="text-yellow-400 hover:text-yellow-300 transition-colors text-2xl">
+                        <Link to="/admin/dashboard" title="Admin Dashboard" className="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300 transition-colors text-2xl">
                             <FaTachometerAlt />
                         </Link>
                     )}
 
-                    <Link to="/profile" title="Profile" className="text-slate-300 hover:text-white transition-colors text-2xl"><FaUserCircle /></Link>
+                    <Link to="/profile" title="Profile" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaUserCircle /></Link>
                     
-                    <Link to="/messages" title="Messages" className="relative text-slate-300 hover:text-white transition-colors text-2xl">
+                    <Link to="/messages" title="Messages" className="relative text-subtle-text-color hover:text-text-color transition-colors text-2xl">
                         <FaEnvelope />
                         {unreadCount > 0 && (
                             <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
@@ -65,32 +69,36 @@ const Navbar = () => {
                         )}
                     </Link>
                     
+                    {/* Use the primary accent color */}
                     {authUser.role === 'landlord' && (
-                        <Link to="/add-listing" title="Add Listing" className="text-sky-400 hover:text-sky-300 transition-colors text-2xl">
+                        <Link to="/add-listing" title="Add Listing" className="text-accent-color hover:text-accent-hover-color transition-colors text-2xl">
                             <FaPlusSquare />
                         </Link>
                     )}
 
+                    {/* Landlord Dashboard (custom accent) */}
                     {authUser.role === 'landlord' && authUser.isVerified && (
-                        <Link to="/landlord/dashboard" title="Landlord Dashboard" className="text-emerald-400 hover:text-emerald-300 transition-colors text-2xl">
+                        <Link to="/landlord/dashboard" title="Landlord Dashboard" className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors text-2xl">
                             <FaChartBar />
                         </Link>
                     )}
                     
-                    <Link to="/payments" title="Payment History" className="text-slate-300 hover:text-white transition-colors text-2xl"><FaCreditCard /></Link>
+                    <Link to="/payments" title="Payment History" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaCreditCard /></Link>
                     
-                    {/* --- 2. ADD NEW REWARDS LINK --- */}
-                    <Link to="/rewards" title="My Rewards" className="text-amber-400 hover:text-amber-300 transition-colors text-2xl">
+                    {/* Rewards Link (custom accent) */}
+                    <Link to="/rewards" title="My Rewards" className="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors text-2xl">
                         <FaGift />
                     </Link>
                     
-                    <Link to="/settings" title="Settings" className="text-slate-300 hover:text-white transition-colors text-2xl"><FaCog /></Link>
+                    <Link to="/settings" title="Settings" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaCog /></Link>
                 </>
             ) : (
                 <>
-                    <Link to="/subscription" title="Subscription" className="text-amber-400 hover:text-amber-300 transition-colors text-2xl"><FaGem /></Link>
-                    <Link to="/login" className="text-slate-300 hover:text-white transition-colors">Login</Link>
-                    <Link to="/register" className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">Register</Link>
+                    {/* Unauthenticated Links */}
+                    <Link to="/subscription" title="Subscription" className="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors text-2xl"><FaGem /></Link>
+                    <Link to="/login" className="text-subtle-text-color hover:text-text-color transition-colors">Login</Link>
+                    {/* Register button uses accent color */}
+                    <Link to="/register" className="bg-accent-color hover:bg-accent-hover-color text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">Register</Link>
                 </>
             )}
         </div>
@@ -101,44 +109,44 @@ const Navbar = () => {
         <div className="px-2 pt-2 pb-3 space-y-1">
             {authUser ? (
                 <>
-                    <Link to="/map" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaMap /> Map View</Link>
+                    <Link to="/map" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaMap /> Map View</Link>
                     {authUser.isAdmin && (
-                        <Link to="/admin/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-yellow-400 hover:bg-slate-700 rounded-md"><FaTachometerAlt /> Admin Dashboard</Link>
+                        <Link to="/admin/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-yellow-500 dark:text-yellow-400 hover:bg-border-color rounded-md"><FaTachometerAlt /> Admin Dashboard</Link>
                     )}
-                    <Link to="/profile" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaUserCircle /> Profile</Link>
-                    <Link to="/messages" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaEnvelope /> Messages {unreadCount > 0 && `(${unreadCount})`}</Link>
+                    <Link to="/profile" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaUserCircle /> Profile</Link>
+                    <Link to="/messages" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaEnvelope /> Messages {unreadCount > 0 && `(${unreadCount})`}</Link>
                     
                     {authUser.role === 'landlord' && (
-                        <Link to="/add-listing" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-sky-400 hover:bg-slate-700 rounded-md"><FaPlusSquare /> Add Listing</Link>
+                        <Link to="/add-listing" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-accent-color hover:bg-border-color rounded-md"><FaPlusSquare /> Add Listing</Link>
                     )}
 
                     {authUser.role === 'landlord' && authUser.isVerified && (
-                        <Link to="/landlord/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-emerald-400 hover:bg-slate-700 rounded-md">
+                        <Link to="/landlord/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-emerald-500 dark:text-emerald-400 hover:bg-border-color rounded-md">
                             <FaChartBar /> Landlord Dashboard
                         </Link>
                     )}
 
-                    <Link to="/payments" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaCreditCard /> Payments</Link>
+                    <Link to="/payments" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaCreditCard /> Payments</Link>
                     
-                    {/* --- 3. ADD NEW REWARDS LINK (MOBILE) --- */}
-                    <Link to="/rewards" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-400 hover:bg-slate-700 rounded-md">
+                    <Link to="/rewards" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-500 dark:text-amber-400 hover:bg-border-color rounded-md">
                         <FaGift /> My Rewards
                     </Link>
                     
-                    <Link to="/settings" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md"><FaCog /> Settings</Link>
+                    <Link to="/settings" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaCog /> Settings</Link>
                 </>
             ) : (
                 <>
-                    <Link to="/subscription" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-400 hover:bg-slate-700 rounded-md"><FaGem /> Subscription</Link>
-                    <Link to="/login" onClick={handleLinkClick} className="block px-3 py-2 text-base font-medium text-slate-300 hover:bg-slate-700 hover:text-white rounded-md">Login</Link>
-                    <Link to="/register" onClick={handleLinkClick} className="block px-3 py-2 text-base font-medium text-white bg-slate-700 hover:bg-slate-600 rounded-md">Register</Link>
+                    <Link to="/subscription" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-500 dark:text-amber-400 hover:bg-border-color rounded-md"><FaGem /> Subscription</Link>
+                    <Link to="/login" onClick={handleLinkClick} className="block px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md">Login</Link>
+                    <Link to="/register" onClick={handleLinkClick} className="block px-3 py-2 text-base font-medium text-white bg-accent-color hover:bg-accent-hover-color rounded-md">Register</Link>
                 </>
             )}
         </div>
     );
 
     return (
-        <nav className={`fixed top-0 left-0 right-0 z-[1001] bg-slate-900/50 backdrop-blur-lg border-b border-slate-700/50 transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`}>
+        // Use bg-card-color and border-border-color
+        <nav className={`fixed top-0 left-0 right-0 z-[1001] bg-card-color backdrop-blur-lg border-b border-border-color transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`}>
             <div className="max-w-7xl mx-auto px-4">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
@@ -153,7 +161,8 @@ const Navbar = () => {
                     <div className="md:hidden flex items-center">
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                            // Update toggle button colors
+                            className="inline-flex items-center justify-center p-2 rounded-md text-subtle-text-color hover:text-text-color hover:bg-border-color focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent-color"
                         >
                             <span className="sr-only">Open main menu</span>
                             {isMobileMenuOpen ? <FaTimes className="h-6 w-6" /> : <FaBars className="h-6 w-6" />}
@@ -173,6 +182,7 @@ const Navbar = () => {
                 leaveFrom="transform opacity-100 scale-100"
                 leaveTo="transform opacity-0 scale-95"
             >
+                {/* This div inherits the nav's bg-card-color, which is correct */}
                 <div className="md:hidden">
                     {mobileLinks}
                 </div>

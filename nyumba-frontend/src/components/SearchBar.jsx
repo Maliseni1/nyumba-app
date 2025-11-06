@@ -10,16 +10,22 @@ const SearchBar = ({ onSearch, initialQuery = '', placeholder }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
+        <form onSubmit={handleSubmit} className="max-w-xl mx-auto w-full">
             <div className="relative">
                 <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={placeholder}
-                    className="w-full p-4 pr-12 text-lg text-white bg-slate-800/50 border-2 border-slate-700 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 backdrop-blur-sm"
+                    // --- 1. UPDATED THEME CLASSES ---
+                    className="w-full p-4 pr-12 text-lg text-text-color bg-card-color border-2 border-border-color rounded-full focus:outline-none focus:ring-2 focus:ring-accent-color focus:border-accent-color backdrop-blur-sm"
                 />
-                <button type="submit" className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400 hover:text-white" aria-label="Search">
+                <button 
+                    type="submit" 
+                    // --- 2. UPDATED BUTTON THEME CLASSES ---
+                    className="absolute top-1/2 right-4 -translate-y-1/2 text-subtle-text-color hover:text-text-color" 
+                    aria-label="Search"
+                >
                     <FaSearch size={20} />
                 </button>
             </div>

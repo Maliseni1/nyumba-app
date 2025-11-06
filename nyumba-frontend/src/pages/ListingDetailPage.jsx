@@ -5,7 +5,6 @@ import ImageSlider from '../components/ImageSlider';
 import PaymentModal from '../components/PaymentModal';
 import PaymentConfirmation from '../components/PaymentConfirmation';
 import { toast } from 'react-toastify';
-// --- 1. IMPORT NEW ICONS AND COMPONENTS ---
 import { FaBed, FaBath, FaHome, FaCommentDots, FaEdit, FaTrash, FaCreditCard, FaStar } from 'react-icons/fa';
 import StarRating from '../components/StarRating';
 import ListingReviews from '../components/ListingReviews';
@@ -22,10 +21,10 @@ const ListingDetailPage = () => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
 
     useEffect(() => {
+        // ... (function is unchanged)
         const fetchListing = async () => {
             setLoading(true);
             try {
-                // getListingById now also increments the view count
                 const { data } = await getListingById(id);
                 setListing(data);
             } catch (error) {
@@ -97,8 +96,9 @@ const ListingDetailPage = () => {
         setShowPaymentModal(true);
     };
 
-    if (loading) return <div className="pt-24 text-center text-slate-400">Loading Listing...</div>;
-    if (!listing) return <div className="pt-24 text-center text-slate-400">Listing not found.</div>;
+    // --- 1. UPDATED LOADING/ERROR TEXT ---
+    if (loading) return <div className="pt-24 text-center text-subtle-text-color">Loading Listing...</div>;
+    if (!listing) return <div className="pt-24 text-center text-subtle-text-color">Listing not found.</div>;
 
     const isOwnListing = currentUser && currentUser._id === listing?.owner?._id;
     const displayAddress = listing.location?.address || listing.location || "Location not specified";
@@ -108,21 +108,23 @@ const ListingDetailPage = () => {
             <div className="max-w-4xl mx-auto py-8 px-4">
                 {listing.images && listing.images.length > 0 && <ImageSlider images={listing.images} />}
 
-                <div className="p-8 bg-slate-900/50 mt-8 rounded-lg border border-slate-800 backdrop-blur-sm">
+                {/* --- 2. UPDATED CARD/BORDER --- */}
+                <div className="p-8 bg-card-color mt-8 rounded-lg border border-border-color backdrop-blur-sm">
                     <div className="flex justify-between items-start">
                         <div>
-                            <h1 className="text-4xl font-bold text-white">{listing.title}</h1>
-                            <p className="text-slate-400 mt-2 text-lg">{displayAddress}</p>
+                            {/* --- 3. UPDATED TEXT --- */}
+                            <h1 className="text-4xl font-bold text-text-color">{listing.title}</h1>
+                            <p className="text-subtle-text-color mt-2 text-lg">{displayAddress}</p>
                         </div>
-                        <span className="text-3xl font-bold text-sky-400">K{listing.price.toLocaleString()}/month</span>
+                        {/* --- 4. UPDATED ACCENT --- */}
+                        <span className="text-3xl font-bold text-accent-color">K{listing.price.toLocaleString()}/month</span>
                     </div>
 
-                    {/* --- 2. ADD STAR RATING DISPLAY --- */}
-                    <div className="flex items-center flex-wrap space-x-6 text-slate-300 my-6 border-y border-slate-800 py-4">
+                    {/* --- 5. UPDATED SPECS SECTION --- */}
+                    <div className="flex items-center flex-wrap space-x-6 text-subtle-text-color my-6 border-y border-border-color py-4">
                         <div className="flex items-center gap-2"><FaBed /> {listing.bedrooms} Bedrooms</div>
                         <div className="flex items-center gap-2"><FaBath /> {listing.bathrooms} Bathrooms</div>
                         <div className="flex items-center gap-2"><FaHome /> Type: {listing.propertyType}</div>
-                        {/* Display the new rating */}
                         <div className="flex items-center gap-2">
                             <StarRating 
                                 rating={listing.analytics?.averageRating} 
@@ -132,18 +134,21 @@ const ListingDetailPage = () => {
                     </div>
 
                     <div>
-                        <h2 className="text-2xl font-bold text-white mb-2">Description</h2>
-                        <p className="text-slate-300 whitespace-pre-wrap">{listing.description}</p>
+                        {/* --- 6. UPDATED TEXT --- */}
+                        <h2 className="text-2xl font-bold text-text-color mb-2">Description</h2>
+                        <p className="text-text-color whitespace-pre-wrap">{listing.description}</p>
                     </div>
 
                     {/* --- Landlord/Owner Controls --- */}
                     {isOwnListing ? (
-                        <div className="mt-8 pt-6 border-t border-slate-800">
-                             <h2 className="text-2xl font-bold text-white mb-4">Manage Your Listing</h2>
+                        <div className="mt-8 pt-6 border-t border-border-color">
+                             <h2 className="text-2xl font-bold text-text-color mb-4">Manage Your Listing</h2>
                              <div className="flex items-center gap-4">
-                                 <Link to={`/listing/edit/${id}`} className="inline-flex items-center gap-2 bg-sky-500 text-white px-4 py-2 rounded-md hover:bg-sky-600 transition-colors">
+                                 {/* --- 7. UPDATED ACCENT BUTTON --- */}
+                                 <Link to={`/listing/edit/${id}`} className="inline-flex items-center gap-2 bg-accent-color text-white px-4 py-2 rounded-md hover:bg-accent-hover-color transition-colors">
                                      <FaEdit /> Edit
                                  </Link>
+                                 {/* Danger button (red) is unchanged */}
                                  <button onClick={handleDelete} className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
                                      <FaTrash /> Delete
                                  </button>
@@ -152,55 +157,56 @@ const ListingDetailPage = () => {
                     ) : (
                         // --- Tenant/Guest Controls ---
                         listing.owner ? (
-                            <div className="mt-8 pt-6 border-t border-slate-800">
-                                <h2 className="text-2xl font-bold text-white mb-4">Book This Property</h2>
+                            <div className="mt-8 pt-6 border-t border-border-color">
+                                <h2 className="text-2xl font-bold text-text-color mb-4">Book This Property</h2>
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
                                     <img src={listing.owner.profilePicture} alt={listing.owner.name} className="w-16 h-16 rounded-full object-cover" />
                                     <div className="flex-1">
-                                        <p className="font-bold text-white text-lg">{listing.owner.name}</p>
-                                        <p className="text-slate-400 text-sm">Property Owner</p>
+                                        <p className="font-bold text-text-color text-lg">{listing.owner.name}</p>
+                                        <p className="text-subtle-text-color text-sm">Property Owner</p>
                                     </div>
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-4">
+                                    {/* Base Pay button (blue) is unchanged */}
                                     <button 
                                         onClick={handleBookNow}
                                         className="flex-1 inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                                     >
                                         <FaCreditCard /> Book Now with Base Pay
                                     </button>
+                                    {/* --- 8. UPDATED ACCENT BUTTON --- */}
                                     <button 
                                         onClick={handleStartChat} 
-                                        className="inline-flex items-center justify-center gap-2 bg-sky-500 text-white px-6 py-3 rounded-lg hover:bg-sky-600 transition-colors"
+                                        className="inline-flex items-center justify-center gap-2 bg-accent-color text-white px-6 py-3 rounded-lg hover:bg-accent-hover-color transition-colors"
                                     >
                                         <FaCommentDots /> Chat with Owner
                                     </button>
                                 </div>
                             </div>
                         ) : (
-                           <div className="mt-8 pt-6 border-t border-slate-800">
-                                <h2 className="text-2xl font-bold text-white mb-4">Contact Landlord</h2>
-                                <p className="text-slate-400">Landlord information is not available for this listing.</p>
+                           <div className="mt-8 pt-6 border-t border-border-color">
+                                <h2 className="text-2xl font-bold text-text-color mb-4">Contact Landlord</h2>
+                                <p className="text-subtle-text-color">Landlord information is not available for this listing.</p>
                            </div>
                         )
                     )}
 
-                    {/* --- 3. ADD THE NEW REVIEWS SECTION --- */}
+                    {/* This component will need to be updated next */}
                     <ListingReviews listingId={listing._id} ownerId={listing.owner?._id} />
 
                 </div>
             </div>
             
-            {/* Payment Modal (unchanged) */}
+            {/* Payment Modals will also need to be updated */}
             <PaymentModal
                 isOpen={showPaymentModal}
                 onClose={() => setShowPaymentModal(false)}
                 listing={listing}
-                rentalDetails={{ totalAmount: listing?.price, duration: 'Monthly', /* ... */ }}
+                rentalDetails={{ totalAmount: listing?.price, duration: 'Monthly' }}
                 onPaymentSuccess={handlePaymentSuccess}
                 onPaymentError={handlePaymentError}
             />
             
-            {/* Payment Confirmation (unchanged) */}
             {showPaymentConfirmation && (
                 <PaymentConfirmation
                     paymentData={paymentResult}

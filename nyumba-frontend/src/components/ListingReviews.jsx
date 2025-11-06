@@ -10,6 +10,7 @@ const ListingReviews = ({ listingId, ownerId }) => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
 
     const fetchReviews = useCallback(async () => {
+        // ... (function is unchanged)
         try {
             setLoading(true);
             const { data } = await getListingReviews(listingId);
@@ -30,13 +31,15 @@ const ListingReviews = ({ listingId, ownerId }) => {
     const canReview = currentUser && !isOwner && !hasReviewed;
 
     return (
-        <div className="mt-12 pt-8 border-t border-slate-800">
-            <h2 className="text-3xl font-bold text-white mb-6">Reviews</h2>
-            {loading && <p className="text-slate-400">Loading reviews...</p>}
+        // --- 1. UPDATED BORDER ---
+        <div className="mt-12 pt-8 border-t border-border-color">
+            {/* --- 2. UPDATED TEXT --- */}
+            <h2 className="text-3xl font-bold text-text-color mb-6">Reviews</h2>
+            {loading && <p className="text-subtle-text-color">Loading reviews...</p>}
 
             {/* --- Review List --- */}
             {!loading && reviews.length === 0 && (
-                <p className="text-slate-400">This listing has no reviews yet.</p>
+                <p className="text-subtle-text-color">This listing has no reviews yet.</p>
             )}
             {!loading && reviews.length > 0 && (
                 <div className="space-y-6">
@@ -49,13 +52,15 @@ const ListingReviews = ({ listingId, ownerId }) => {
                             />
                             <div className="flex-1">
                                 <div className="flex justify-between items-center">
-                                    <h4 className="font-bold text-white">{review.user.name}</h4>
-                                    <span className="text-xs text-slate-400">
+                                    {/* --- 3. UPDATED TEXT --- */}
+                                    <h4 className="font-bold text-text-color">{review.user.name}</h4>
+                                    <span className="text-xs text-subtle-text-color">
                                         {new Date(review.createdAt).toLocaleDateString()}
                                     </span>
                                 </div>
                                 <StarRating rating={review.rating} />
-                                <p className="text-slate-300 mt-2">{review.comment}</p>
+                                {/* --- 4. UPDATED TEXT --- */}
+                                <p className="text-text-color mt-2">{review.comment}</p>
                             </div>
                         </div>
                     ))}
@@ -66,11 +71,12 @@ const ListingReviews = ({ listingId, ownerId }) => {
             {canReview && (
                 <ReviewForm listingId={listingId} onReviewSubmitted={fetchReviews} />
             )}
+            {/* --- 5. UPDATED TEXT --- */}
             {currentUser && isOwner && (
-                <p className="text-slate-400 mt-8">You cannot review your own listing.</p>
+                <p className="text-subtle-text-color mt-8">You cannot review your own listing.</p>
             )}
             {currentUser && !isOwner && hasReviewed && (
-                <p className="text-slate-400 mt-8">You have already reviewed this listing.</p>
+                <p className="text-subtle-text-color mt-8">You have already reviewed this listing.</p>
             )}
         </div>
     );
