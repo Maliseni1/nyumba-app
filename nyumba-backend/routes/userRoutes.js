@@ -13,7 +13,8 @@ const {
     resetPassword,
     applyForVerification,
     getMyReferralData,
-    changePassword, // <-- 1. IMPORT
+    changePassword,
+    scheduleAccountDeletion // <-- 1. IMPORT
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -30,14 +31,13 @@ router.put('/resetpassword/:resettoken', resetPassword);
 // --- Protected Routes (Login Required) ---
 router.route('/profile')
     .get(protect, getUserProfile)
-    .put(protect, upload.single('profilePicture'), updateUserProfile);
+    .put(protect, upload.single('profilePicture'), updateUserProfile)
+    .delete(protect, scheduleAccountDeletion); // <-- 2. DELETE ROUTE
 
 router.get('/unread-count', protect, getUnreadMessageCount);
 router.post('/save/:listingId', protect, toggleSaveListing);
 router.post('/apply-verification', protect, applyForVerification);
 router.get('/referral-data', protect, getMyReferralData);
-
-// --- 2. NEW CHANGE PASSWORD ROUTE ---
 router.put('/changepassword', protect, changePassword);
 
 // --- Public Profile Route (Keep this last) ---

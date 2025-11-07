@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-// --- 1. IMPORT 'logout' INSTEAD OF 'setAuthUser' ---
 import { useAuth } from '../context/AuthContext'; 
-import { changePassword } from '../services/api';
+// --- 1. IMPORT deleteAccount and confirmAlert ---
+import { changePassword, deleteAccount } from '../services/api';
+import { confirmAlert } from 'react-confirm-alert';
+import 'react-confirm-alert/src/react-confirm-alert.css';
 import { 
     FaSignOutAlt, 
     FaKey, 
@@ -11,18 +13,21 @@ import {
     FaChevronDown, 
     FaChevronUp, 
     FaMoon, 
-    FaSun 
+    FaSun,
+    FaExclamationTriangle // <-- New icon
 } from 'react-icons/fa';
 import { Switch } from '@headlessui/react';
 import { useTheme } from '../context/ThemeContext';
 
 const SettingsPage = () => {
     const navigate = useNavigate();
-    // --- 2. GET 'logout' FROM useAuth ---
     const { logout } = useAuth(); 
     const { theme, toggleTheme } = useTheme();
 
     const [loading, setLoading] = useState(false);
+    // --- 2. ADD NEW LOADING STATE FOR DELETE ---
+    const [deleteLoading, setDeleteLoading] = useState(false);
+
     const [passwordData, setPasswordData] = useState({
         oldPassword: '',
         newPassword: '',
@@ -59,11 +64,51 @@ const SettingsPage = () => {
         }
     };
 
-    // --- 3. UPDATE THE LOGOUT HANDLER ---
     const handleLogout = () => {
-        logout(); // This one function now handles everything
+        // ... (This function is unchanged)
+        logout(); 
         toast.success("You have been logged out.");
         navigate('/login');
+    };
+
+    // --- 3. ADD NEW HANDLER FOR DELETION ---
+    const handleDeleteAccount = () => {
+        confirmAlert({
+            customUI: ({ onClose }) => (
+                <div className="react-confirm-alert-body">
+                    <h1 className="flex items-center gap-3 text-red-500">
+                        <FaExclamationTriangle />
+                        Delete Account?
+                    </h1>
+                    <p>Are you sure you want to delete your account? This will be scheduled for 30 days from now.</p>
+                    <p>You can cancel this by logging back in within 30 days. This action cannot be undone after that.</p>
+                    <div className="react-confirm-alert-button-group">
+                        <button
+                            onClick={async () => {
+                                setDeleteLoading(true);
+                                try {
+                                    await deleteAccount();
+                                    toast.success("Your account is scheduled for deletion.");
+                                    logout(); // Log the user out immediately
+                                    navigate('/login');
+                                } catch (error) {
+                                    toast.error(error.response?.data?.message || 'Failed to schedule deletion.');
+                                } finally {
+                                    setDeleteLoading(false);
+                                    onClose();
+                                }
+                            }}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Yes, Delete It
+                        </button>
+                        <button onClick={onClose}>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )
+        });
     };
 
     return (
@@ -115,7 +160,6 @@ const SettingsPage = () => {
                         </button>
                         {showPasswordForm && (
                             <form onSubmit={handlePasswordSubmit} className="space-y-4 pt-4 border-t border-border-color">
-                                {/* ... (form inputs are unchanged) ... */}
                                 <div>
                                     <label className="block text-sm font-medium text-subtle-text-color mb-1">Old Password</label>
                                     <input 
@@ -160,7 +204,7 @@ const SettingsPage = () => {
                         )}
                     </div>
                     
-                    {/* --- Logout Section (Handler is now fixed) --- */}
+                    {/* --- Logout Section (Unchanged) --- */}
                     <div className="pt-6 border-t border-border-color space-y-4">
                          <h2 className="text-xl font-bold text-text-color flex items-center gap-2">
                             <FaSignOutAlt /> Account Actions
@@ -172,6 +216,24 @@ const SettingsPage = () => {
                             Logout
                         </button>
                     </div>
+
+                    {/* --- 4. NEW DANGER ZONE SECTION --- */}
+                    <div className="pt-6 border-t border-red-500/30 space-y-4">
+                         <h2 className="text-xl font-bold text-red-500 flex items-center gap-2">
+                            <FaExclamationTriangle /> Danger Zone
+                        </h2>
+                        <p className="text-subtle-text-color text-sm">
+                            This action is permanent. Your account will be scheduled for deletion and all your data will be permanently removed after 30 days. You can cancel this by logging in within this period.
+                        </p>
+                        <button
+                            onClick={handleDeleteAccount}
+                            disabled={deleteLoading}
+                            className="w-full flex items-center justify-center gap-2 bg-red-600 text-white font-bold py-3 rounded-md hover:bg-red-700 transition-colors disabled:bg-red-400"
+                        >
+                            {deleteLoading ? <FaSpinner className="animate-spin" /> : 'Delete My Account'}
+                        </button>
+                    </div>
+
                 </div>
             </div>
         </div>

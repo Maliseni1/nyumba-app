@@ -6,6 +6,13 @@ const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const cron = require('node-cron'); // 1. IMPORT NODE-CRON
+
+// 2. IMPORT MODELS NEEDED FOR DELETION
+const User = require('./models/userModel');
+const Listing = require('./models/listingModel');
+const Conversation = require('./models/conversationModel');
+const Message = require('./models/messageModel');
 
 // Configure dotenv to load from the correct path
 dotenv.config({ path: path.join(__dirname, '.env') });
@@ -102,6 +109,57 @@ io.on('connection', (socket) => {
         io.emit("getOnlineUsers", Object.keys(userSocketMap));
     });
 });
+
+
+// --- 3. NEW: SCHEDULED JOB FOR ACCOUNT DELETION ---
+// This runs once every day at midnight ('0 0 * * *')
+console.log('Setting up daily job for account deletion...');
+cron.schedule('0 0 * * *', async () => {
+    console.log('RUNNING DAILY CRON JOB: Checking for accounts pending deletion...');
+    try {
+        // Find users whose grace period has expired
+        const usersToDelete = await User.find({
+            isScheduledForDeletion: true,
+            deletionScheduledAt: { $lte: new Date() } // Find users whose date is in the past
+        });
+
+        if (usersToDelete.length === 0) {
+            console.log('CRON JOB: No accounts are due for deletion.');
+            return;
+        }
+
+        console.log(`CRON JOB: Found ${usersToDelete.length} user(s) for permanent deletion.`);
+
+        for (const user of usersToDelete) {
+            console.log(`CRON JOB: Deleting user ${user.email} (ID: ${user._id})`);
+
+            // 1. Delete all their listings
+            await Listing.deleteMany({ owner: user._id });
+            
+            // 2. Delete all their conversations
+            await Conversation.deleteMany({ participants: user._id });
+            
+            // 3. Delete all their messages
+            await Message.deleteMany({ sender: user._id });
+            
+            // 4. (Optional) Remove them from other users' saved listings
+            // This is complex, but we'll do a basic version:
+            await User.updateMany(
+                { savedListings: user._id },
+                { $pull: { savedListings: user._id } }
+            );
+
+            // 5. Delete the user themselves
+            await User.deleteOne({ _id: user._id });
+            
+            console.log(`CRON JOB: Successfully deleted user ${user.email}.`);
+        }
+    } catch (error) {
+        console.error('CRON JOB ERROR: Failed during account deletion process:', error);
+    }
+});
+// --- END OF SCHEDULED JOB ---
+
 
 server.listen(PORT, () => {
     console.log(`Nyumba backend server is running successfully on port ${PORT}`);

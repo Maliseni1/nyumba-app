@@ -45,7 +45,6 @@ API.interceptors.response.use(
 
 // User Routes
 export const loginUser = (formData) => API.post('/users/login', formData);
-// ... (all other export functions are unchanged)
 export const registerUser = (formData) => API.post('/users/register', formData);
 export const googleLogin = (token) => API.post('/users/google', { token });
 export const getUserProfile = () => API.get('/users/profile');
@@ -58,6 +57,7 @@ export const resetPassword = (token, password) => API.put(`/users/resetpassword/
 export const applyForVerification = () => API.post('/users/apply-verification');
 export const getMyReferralData = () => API.get('/users/referral-data');
 export const changePassword = (formData) => API.put('/users/changepassword', formData);
+export const deleteAccount = () => API.delete('/users/profile'); // <-- THIS WAS THE NEW LINE
 
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });

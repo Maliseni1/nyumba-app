@@ -7,14 +7,12 @@ const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
 const { OAuth2Client } = require('google-auth-library');
 const crypto = require('crypto');
-
-// --- 1. IMPORT NEW POINTS MODULES ---
 const { handlePointsTransaction, POINTS_REASONS } = require('../utils/pointsManager');
 const PointsHistory = require('../models/pointsHistoryModel');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// --- registerUser (unchanged) ---
+// --- registerUser ---
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password, whatsappNumber, role, referralCode } = req.body;
     
@@ -66,6 +64,7 @@ const registerUser = asyncHandler(async (req, res) => {
             isVerified: user.isVerified,
             verificationStatus: user.verificationStatus,
             subscriptionStatus: user.subscriptionStatus,
+            subscriptionType: user.subscriptionType,
             points: user.points,
             token: generateToken(user._id),
         });
@@ -75,11 +74,23 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 });
 
-// --- loginUser (unchanged) ---
+// --- loginUser (UPDATED) ---
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
+
     if (user && (await user.matchPassword(password))) {
+        
+        let welcomeBack = false;
+        // --- NEW: Check for pending deletion ---
+        if (user.isScheduledForDeletion) {
+            user.isScheduledForDeletion = false;
+            user.deletionScheduledAt = null;
+            await user.save();
+            welcomeBack = true; // Flag to tell frontend to show a message
+        }
+        // --- END OF NEW LOGIC ---
+
         res.json({
             _id: user._id,
             name: user.name,
@@ -92,8 +103,10 @@ const loginUser = asyncHandler(async (req, res) => {
             isVerified: user.isVerified,
             verificationStatus: user.verificationStatus,
             subscriptionStatus: user.subscriptionStatus,
+            subscriptionType: user.subscriptionType,
             points: user.points,
             token: generateToken(user._id),
+            welcomeBack: welcomeBack // Send the welcome back flag
         });
     } else {
         res.status(401);
@@ -101,7 +114,7 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 });
 
-// --- googleLogin (unchanged) ---
+// --- googleLogin (UPDATED) ---
 const googleLogin = asyncHandler(async (req, res) => {
     const { token } = req.body;
     const ticket = await client.verifyIdToken({
@@ -110,6 +123,17 @@ const googleLogin = asyncHandler(async (req, res) => {
     });
     const { name, email, picture } = ticket.getPayload();
     let user = await User.findOne({ email });
+    
+    // --- NEW: Check for pending deletion on Google login ---
+    let welcomeBack = false;
+    if (user && user.isScheduledForDeletion) {
+        user.isScheduledForDeletion = false;
+        user.deletionScheduledAt = null;
+        await user.save();
+        welcomeBack = true;
+    }
+    // --- END OF NEW LOGIC ---
+
     if (!user) {
         user = await User.create({
             name,
@@ -131,12 +155,14 @@ const googleLogin = asyncHandler(async (req, res) => {
         isVerified: user.isVerified,
         verificationStatus: user.verificationStatus,
         subscriptionStatus: user.subscriptionStatus,
+        subscriptionType: user.subscriptionType,
         points: user.points,
         token: generateToken(user._id),
+        welcomeBack: welcomeBack
     });
 });
 
-// --- forgotPassword (unchanged) ---
+// --- forgotPassword ---
 const forgotPassword = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
@@ -146,7 +172,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     const resetToken = user.getResetPasswordToken();
     await user.save({ validateBeforeSave: false });
     const resetUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
-    const message = `...`; // message content
+    const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please go to this URL to reset your password: \n\n ${resetUrl} \n\n If you did not request this, please ignore this email.`;
     try {
         await sendEmail({ email: user.email, subject: 'Password Reset Token', html: message });
         res.status(200).json({ success: true, data: 'Email sent' });
@@ -159,7 +185,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     }
 });
 
-// --- resetPassword (unchanged) ---
+// --- resetPassword (Corrected) ---
 const resetPassword = asyncHandler(async (req, res) => {
     const resetPasswordToken = crypto.createHash('sha256').update(req.params.resettoken).digest('hex');
     const user = await User.findOne({
@@ -186,12 +212,13 @@ const resetPassword = asyncHandler(async (req, res) => {
         isVerified: user.isVerified,
         verificationStatus: user.verificationStatus,
         subscriptionStatus: user.subscriptionStatus,
+        subscriptionType: user.subscriptionType,
         points: user.points,
         token: generateToken(user._id),
     });
 });
 
-// --- getUserProfile (unchanged) ---
+// --- getUserProfile (Corrected) ---
 const getUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id)
         .select('-password')
@@ -219,7 +246,10 @@ const getUserProfile = asyncHandler(async (req, res) => {
             isVerified: user.isVerified,
             verificationStatus: user.verificationStatus,
             subscriptionStatus: user.subscriptionStatus,
+            subscriptionType: user.subscriptionType,
             points: user.points,
+            isScheduledForDeletion: user.isScheduledForDeletion,
+            deletionScheduledAt: user.deletionScheduledAt,
         });
     } else {
         res.status(404);
@@ -227,7 +257,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// --- getPublicUserProfile (unchanged) ---
+// --- getPublicUserProfile (Corrected) ---
 const getPublicUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id).select('-password');
     if (user) {
@@ -245,6 +275,8 @@ const getPublicUserProfile = asyncHandler(async (req, res) => {
             role: user.role,
             isVerified: user.isVerified,
             verificationStatus: user.verificationStatus,
+            averageRating: user.averageRating,
+            numReviews: user.numReviews,
         });
     } else {
         res.status(404);
@@ -252,7 +284,7 @@ const getPublicUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// --- updateUserProfile (unchanged) ---
+// --- updateUserProfile (Corrected) ---
 const updateUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
     if (user) {
@@ -296,6 +328,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             isVerified: updatedUser.isVerified,
             verificationStatus: updatedUser.verificationStatus,
             subscriptionStatus: updatedUser.subscriptionStatus,
+            subscriptionType: updatedUser.subscriptionType,
             points: newPointsTotal, 
             token: generateToken(updatedUser._id),
         });
@@ -305,7 +338,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// --- 2. NEW: changePassword ---
+// --- changePassword ---
 const changePassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     
@@ -317,7 +350,6 @@ const changePassword = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user && (await user.matchPassword(oldPassword))) {
-        // user.password is set, the pre-save hook in userModel will hash it
         user.password = newPassword; 
         await user.save();
         res.json({ message: 'Password updated successfully' });
@@ -327,7 +359,7 @@ const changePassword = asyncHandler(async (req, res) => {
     }
 });
 
-// --- getUnreadMessageCount (unchanged) ---
+// --- getUnreadMessageCount ---
 const getUnreadMessageCount = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const conversations = await Conversation.find({ participants: userId });
@@ -340,7 +372,7 @@ const getUnreadMessageCount = asyncHandler(async (req, res) => {
     res.status(200).json({ unreadCount });
 });
 
-// --- toggleSaveListing (unchanged) ---
+// --- toggleSaveListing ---
 const toggleSaveListing = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const { listingId } = req.params;
@@ -362,7 +394,7 @@ const toggleSaveListing = asyncHandler(async (req, res) => {
     }
 });
 
-// --- applyForVerification (unchanged) ---
+// --- applyForVerification (Corrected) ---
 const applyForVerification = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
@@ -408,11 +440,12 @@ const applyForVerification = asyncHandler(async (req, res) => {
         isVerified: updatedUserProfile.isVerified,
         verificationStatus: updatedUserProfile.verificationStatus,
         subscriptionStatus: updatedUserProfile.subscriptionStatus,
+        subscriptionType: updatedUserProfile.subscriptionType,
         points: updatedUserProfile.points,
     });
 });
 
-// --- getMyReferralData (unchanged) ---
+// --- getMyReferralData ---
 const getMyReferralData = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select('referralCode points');
 
@@ -427,7 +460,30 @@ const getMyReferralData = asyncHandler(async (req, res) => {
     });
 });
 
-// --- 3. EXPORT THE NEW FUNCTION ---
+// --- NEW: scheduleAccountDeletion ---
+const scheduleAccountDeletion = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    // Set deletion for 30 days from now
+    const deletionDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    
+    user.isScheduledForDeletion = true;
+    user.deletionScheduledAt = deletionDate;
+    
+    await user.save();
+
+    res.json({ 
+        message: 'Account scheduled for deletion successfully.',
+        deletionDate: deletionDate
+    });
+});
+
+// --- EXPORT THE NEW FUNCTION ---
 module.exports = {
     registerUser,
     loginUser,
@@ -437,9 +493,10 @@ module.exports = {
     getUserProfile,
     getPublicUserProfile,
     updateUserProfile,
-    changePassword, // <-- ADDED
+    changePassword,
     getUnreadMessageCount,
     toggleSaveListing,
     applyForVerification,
     getMyReferralData,
+    scheduleAccountDeletion
 };
