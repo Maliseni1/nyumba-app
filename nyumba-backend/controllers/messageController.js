@@ -1,24 +1,56 @@
 const asyncHandler = require('express-async-handler');
 const Conversation = require('../models/conversationModel');
 const Message = require('../models/messageModel');
-const Listing = require('../models/listingModel'); // <-- 1. IMPORT LISTING MODEL
+const Listing = require('../models/listingModel');
 const mongoose = require('mongoose');
 
+// --- 1. THIS FUNCTION IS UPDATED ---
 const getConversations = asyncHandler(async (req, res) => {
-    // ... (This function is unchanged)
     const userId = new mongoose.Types.ObjectId(req.user._id);
+
     const conversations = await Conversation.aggregate([
         { $match: { participants: userId } },
         { $unwind: "$participants" },
         { $match: { participants: { $ne: userId } } },
-        { $lookup: { from: "users", localField: "participants", foreignField: "_id", as: "otherUserDetails" } },
+        { 
+            $lookup: { 
+                from: "users", 
+                localField: "participants", 
+                foreignField: "_id", 
+                as: "otherUserDetails" 
+            } 
+        },
         { $unwind: "$otherUserDetails" },
+
+        // --- NEW STAGES TO SORT BY PREMIUM STATUS ---
+        {
+            $addFields: {
+                // Manually re-create the 'isPremiumTenant' virtual logic
+                "otherUserDetails.isPremiumTenant": {
+                    $and: [
+                        { $eq: ["$otherUserDetails.subscriptionStatus", "active"] },
+                        { $eq: ["$otherUserDetails.subscriptionType", "tenant_premium"] }
+                    ]
+                }
+            }
+        },
+        // Sort by premium status (true comes first), then by name
+        {
+            $sort: { 
+                "otherUserDetails.isPremiumTenant": -1, // -1 means descending
+                "otherUserDetails.name": 1 // 1 means ascending
+            }
+        },
+        // --- END OF NEW STAGES ---
+
         {
             $project: {
                 _id: "$otherUserDetails._id",
                 name: "$otherUserDetails.name",
                 profilePicture: "$otherUserDetails.profilePicture",
-                conversationId: "$_id"
+                conversationId: "$_id",
+                // --- 2. PASS THE NEW STATUS TO THE FRONTEND ---
+                isPremiumTenant: "$otherUserDetails.isPremiumTenant"
             }
         }
     ]);
@@ -33,7 +65,7 @@ const getMessages = asyncHandler(async (req, res) => {
 });
 
 const createConversation = asyncHandler(async (req, res) => {
-    // --- 2. GET listingId FROM THE REQUEST BODY ---
+    // ... (This function is unchanged)
     const { receiverId, listingId } = req.body;
     const senderId = req.user._id;
 
@@ -42,24 +74,17 @@ const createConversation = asyncHandler(async (req, res) => {
     let conversation = await Conversation.findOne({ participants: { $all: [senderId, receiverId] } });
 
     if (!conversation) {
-        // This is a NEW conversation
         conversation = await Conversation.create({ participants: [senderId, receiverId] });
-
-        // --- 3. ADD ANALYTICS LOGIC ---
-        // If this new chat was started from a listing page, track it as an inquiry
         if (listingId) {
             try {
                 await Listing.findByIdAndUpdate(listingId, {
                     $inc: { 'analytics.inquiries': 1 }
                 });
             } catch (analyticsError) {
-                // Log the error, but don't fail the chat creation
                 console.error("Failed to update inquiry analytics:", analyticsError);
             }
         }
-        // --- END ANALYTICS LOGIC ---
     }
-
     res.status(201).json(conversation);
 });
 

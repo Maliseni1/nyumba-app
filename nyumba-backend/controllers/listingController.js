@@ -1,133 +1,126 @@
 const asyncHandler = require('express-async-handler');
 const Listing = require('../models/listingModel');
 const User = require('../models/userModel');
-const geocoder = require('../utils/geocoder'); 
+const geocoder = require('../utils/geocoder');
 
-// --- getListings (unchanged) ---
 const getListings = asyncHandler(async (req, res) => {
     const { searchTerm } = req.query;
-    let filter = {};
+    const isPremiumTenant = req.user?.isPremiumTenant || false;
+
+    let filter = {
+        owner: { $ne: null },
+    };
+
     if (searchTerm) {
-        filter = {
-            $or: [
-                { title: { $regex: searchTerm, $options: 'i' } },
-                { 'location.address': { $regex: searchTerm, $options: 'i' } }
-            ]
-        };
+        filter.$or = [
+            { title: { $regex: searchTerm, $options: 'i' } },
+            { 'location.address': { $regex: searchTerm, $options: 'i' } }
+        ];
     }
-    const listings = await Listing.find({ ...filter, owner: { $ne: null } })
+
+    // --- THIS IS THE FIX ---
+    // Show listings that are public OR were created before this feature
+    if (!isPremiumTenant) {
+        filter.$or = [
+            ...(filter.$or || []), // Keep existing $or search terms if they exist
+            { publicReleaseAt: { $lte: new Date() } },
+            { publicReleaseAt: { $exists: false } } // This line fixes your old listings
+        ];
+    }
+    // --- END OF FIX ---
+    
+    const listings = await Listing.find(filter)
         .populate('owner', 'name profilePicture')
-        .sort({ createdAt: -1 });
+        .sort({ isPriority: -1, createdAt: -1 }); 
+        
     res.json(listings);
 });
 
-// --- getListingsNearby (unchanged) ---
 const getListingsNearby = asyncHandler(async (req, res) => {
+    // ... (unchanged)
     const { lat, lng } = req.query;
-    if (!lat || !lng) {
-        res.status(400);
-        throw new Error('Please provide latitude and longitude');
-    }
+    if (!lat || !lng) { /* ... */ }
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
+
+    const isPremiumTenant = req.user?.isPremiumTenant || false;
+    let dateFilter = {};
+    if (!isPremiumTenant) {
+        // --- ADDED THE SAME FIX HERE ---
+        dateFilter['$match'] = {
+            $or: [
+                { publicReleaseAt: { $lte: new Date() } },
+                { publicReleaseAt: { $exists: false } }
+            ]
+        };
+    } else {
+        dateFilter['$match'] = {}; 
+    }
+
     const listings = await Listing.aggregate([
-        {
-            $geoNear: {
-                near: { type: 'Point', coordinates: [longitude, latitude] },
-                distanceField: 'distance',
-                maxDistance: 100000,
-                spherical: true,
-            },
-        },
-        { $sort: { distance: 1 } },
-        {
-            $lookup: {
-                from: 'users',
-                localField: 'owner',
-                foreignField: '_id',
-                as: 'ownerDetails',
-            },
-        },
-        { $unwind: { path: '$ownerDetails', preserveNullAndEmptyArrays: true } },
-        {
-            $project: {
-                title: 1, price: 1, location: 1, bedrooms: 1, bathrooms: 1, propertyType: 1, images: 1, createdAt: 1, distance: 1,
-                owner: {
-                    _id: '$ownerDetails._id',
-                    name: '$ownerDetails.name',
-                    profilePicture: '$ownerDetails.profilePicture',
-                },
-            },
-        },
+        { $geoNear: { /* ... */ } },
+        dateFilter, 
+        { $sort: { isPriority: -1, distance: 1 } },
+        { $lookup: { /* ... */ } },
+        { $unwind: { /* ... */ } },
+        { $project: { /* ... */ } },
     ]);
     res.json(listings);
 });
 
-// --- reverseGeocode (unchanged) ---
 const reverseGeocode = asyncHandler(async (req, res) => {
+    // ... (function is unchanged)
     const { lat, lng } = req.query;
-    if (!lat || !lng) {
-        res.status(400);
-        throw new Error('Please provide latitude and longitude');
-    }
+    if (!lat || !lng) { /* ... */ }
     try {
         const geoData = await geocoder.reverse({ lat: parseFloat(lat), lon: parseFloat(lng) });
-        if (!geoData.length) {
-            res.status(404);
-            throw new Error('Could not find an address for this location.');
-        }
+        if (!geoData.length) { /* ... */ }
         res.json({ address: geoData[0].formattedAddress });
-    } catch (error) {
-        res.status(500);
-        throw new Error(error.message || 'Reverse geocoding failed');
-    }
+    } catch (error) { /* ... */ }
 });
 
-// --- getListingById (unchanged) ---
 const getListingById = asyncHandler(async (req, res) => {
-    const listing = await Listing.findByIdAndUpdate(
-        req.params.id,
-        { $inc: { 'analytics.views': 1 } },
-        { new: true }
-    ).populate('owner', '_id name profilePicture');
+    // ... (function is unchanged)
+    const listing = await Listing.findById(req.params.id)
+        .populate('owner', '_id name profilePicture');
+    if (!listing) { /* ... */ }
 
-    if (listing) {
-        res.json(listing);
-    } else {
-        res.status(404);
-        throw new Error('Listing not found');
+    const isPremiumTenant = req.user?.isPremiumTenant || false;
+    // --- ADDED THE SAME FIX HERE ---
+    // If the field doesn't exist, it's not an early access listing.
+    const isEarlyAccess = listing.publicReleaseAt && new Date(listing.publicReleaseAt) > new Date();
+
+    if (isEarlyAccess && !isPremiumTenant) {
+        res.status(403);
+        throw new Error('This is an early-access listing. Subscribe to Nyumba Premium to view it now.');
     }
+
+    listing.analytics.views = (listing.analytics.views || 0) + 1;
+    await listing.save();
+    
+    res.json(listing);
 });
 
-// --- createListing (unchanged) ---
 const createListing = asyncHandler(async (req, res) => {
-    if (req.user.role !== 'landlord') {
-        res.status(403);
-        throw new Error('Only landlords can create listings.');
-    }
+    // ... (function is unchanged)
+    if (req.user.role !== 'landlord') { /* ... */ }
     const { title, description, price, location, bedrooms, bathrooms, propertyType } = req.body;
     let geoData;
     try {
         geoData = await geocoder.geocode(location);
-        if (!geoData.length) {
-            res.status(400);
-            throw new Error('Address not found. Please provide a valid location.');
-        }
-    } catch (error) {
-        res.status(400);
-        throw new Error(error.message || 'Geocoding failed');
-    }
+        if (!geoData.length) { /* ... */ }
+    } catch (error) { /* ... */ }
     const { longitude, latitude, formattedAddress } = geoData[0];
-    const locationData = {
-        type: 'Point',
-        coordinates: [longitude, latitude],
-        address: formattedAddress || location,
-    };
+    const locationData = { /* ... */ };
     const images = req.files ? req.files.map(file => file.path) : [];
+    const publicReleaseDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     const newListing = new Listing({
         title, description, price, location: locationData, bedrooms, bathrooms, propertyType, images,
-        owner: req.user._id
+        owner: req.user._id,
+        publicReleaseAt: publicReleaseDate 
     });
+
     const createdListing = await newListing.save();
     const user = await User.findById(req.user._id);
     user.listings.push(createdListing._id);
@@ -135,33 +128,12 @@ const createListing = asyncHandler(async (req, res) => {
     res.status(201).json(createdListing);
 });
 
-// --- updateListing (unchanged) ---
 const updateListing = asyncHandler(async (req, res) => {
+    // ... (function is unchanged)
     const { title, description, price, location, bedrooms, bathrooms, propertyType, existingImages } = req.body;
     const listing = await Listing.findById(req.params.id);
-    if (!listing || listing.owner.toString() !== req.user._id.toString()) {
-        res.status(401);
-        throw new Error('Not authorized');
-    }
-    if (location && location !== listing.location.address) {
-        let geoData;
-        try {
-            geoData = await geocoder.geocode(location);
-            if (!geoData.length) {
-                res.status(400);
-                throw new Error('Address not found. Please provide a valid location.');
-            }
-        } catch (error) {
-            res.status(400);
-            throw new Error(error.message || 'Geocoding failed');
-        }
-        const { longitude, latitude, formattedAddress } = geoData[0];
-        listing.location = {
-            type: 'Point',
-            coordinates: [longitude, latitude],
-            address: formattedAddress || location,
-        };
-    }
+    if (!listing || listing.owner.toString() !== req.user._id.toString()) { /* ... */ }
+    if (location && location !== listing.location.address) { /* ... */ }
     let newImages = req.files ? req.files.map(file => file.path) : [];
     const updatedImages = existingImages ? (Array.isArray(existingImages) ? [...existingImages, ...newImages] : [existingImages, ...newImages]) : newImages;
     listing.title = title;
@@ -175,13 +147,10 @@ const updateListing = asyncHandler(async (req, res) => {
     res.json(updatedListing);
 });
 
-// --- deleteListing (unchanged) ---
 const deleteListing = asyncHandler(async (req, res) => {
+    // ... (function is unchanged)
     const listing = await Listing.findById(req.params.id);
-    if (!listing || listing.owner.toString() !== req.user._id.toString()) {
-        res.status(401); 
-        throw new Error('Not authorized');
-    }
+    if (!listing || listing.owner.toString() !== req.user._id.toString()) { /* ... */ }
     const user = await User.findById(req.user._id);
     user.listings.pull(listing._id);
     await user.save();
@@ -189,82 +158,52 @@ const deleteListing = asyncHandler(async (req, res) => {
     res.json({ message: 'Listing removed' });
 });
 
-// --- setListingStatus (unchanged) ---
 const setListingStatus = asyncHandler(async (req, res) => {
-    const { status } = req.body; // Expecting 'available' or 'occupied'
+    // ... (function is unchanged)
+    const { status } = req.body;
     const listing = await Listing.findById(req.params.id);
-
-    if (!listing || listing.owner.toString() !== req.user._id.toString()) {
-        res.status(401);
-        throw new Error('Not authorized');
-    }
-    if (status !== 'available' && status !== 'occupied') {
-        res.status(400);
-        throw new Error("Invalid status. Must be 'available' or 'occupied'.");
-    }
-
+    if (!listing || listing.owner.toString() !== req.user._id.toString()) { /* ... */ }
+    if (status !== 'available' && status !== 'occupied') { /* ... */ }
     listing.status = status;
     const updatedListing = await listing.save();
     res.json(updatedListing);
 });
 
-// --- 1. NEW RECOMMENDATIONS FUNCTION ---
 const getRecommendedListings = asyncHandler(async (req, res) => {
-    // Get the current user and their saved listings
+    // ... (function is unchanged)
     const user = await User.findById(req.user._id).populate('savedListings');
-    
-    // Get IDs of listings the user has already saved or owns
     const savedListingIds = user.savedListings.map(l => l._id);
     const ownedListingIds = user.listings.map(l => l._id);
     const excludeIds = [...savedListingIds, ...ownedListingIds];
-
     let recommendations = [];
-
-    // Check if the user has saved any listings
     if (user.savedListings.length > 0) {
-        // --- Smart Recommendations ---
-        
-        // 1. Calculate average price
-        const totalPrice = user.savedListings.reduce((acc, l) => acc + l.price, 0);
-        const avgPrice = totalPrice / user.savedListings.length;
-        const minPrice = avgPrice * 0.75; // 25% below avg
-        const maxPrice = avgPrice * 1.25; // 25% above avg
-
-        // 2. Find most common property type
-        const typeCounts = user.savedListings.reduce((acc, l) => {
-            acc[l.propertyType] = (acc[l.propertyType] || 0) + 1;
-            return acc;
-        }, {});
-        const mostCommonType = Object.keys(typeCounts).reduce((a, b) => typeCounts[a] > typeCounts[b] ? a : b, null);
-
-        // 3. Build the query
+        // ... (recommendation logic)
         const query = {
             status: 'available',
-            _id: { $nin: excludeIds }, // Don't recommend listings they've saved or own
+            _id: { $nin: excludeIds },
+            // --- ADDED THE SAME FIX HERE ---
             $or: [
-                { propertyType: mostCommonType },
-                { price: { $gte: minPrice, $lte: maxPrice } }
-            ]
+                { publicReleaseAt: { $lte: new Date() } },
+                { publicReleaseAt: { $exists: false } }
+            ],
+            $or: [ /* ... */ ]
         };
-
-        recommendations = await Listing.find(query)
-            .limit(6)
-            .populate('owner', 'name profilePicture');
+        recommendations = await Listing.find(query).limit(6).populate('owner', 'name profilePicture');
     }
-
-    // --- Cold Start Fallback ---
-    // If no recommendations were found (or user has no saved listings),
-    // just show the newest available listings.
     if (recommendations.length === 0) {
         recommendations = await Listing.find({ 
             status: 'available',
-            _id: { $nin: excludeIds } // Still exclude saved/owned
+            _id: { $nin: excludeIds },
+            // --- ADDED THE SAME FIX HERE ---
+            $or: [
+                { publicReleaseAt: { $lte: new Date() } },
+                { publicReleaseAt: { $exists: false } }
+            ]
         })
         .sort({ createdAt: -1 })
         .limit(6)
         .populate('owner', 'name profilePicture');
     }
-
     res.json(recommendations);
 });
 
@@ -277,5 +216,5 @@ module.exports = {
     updateListing,
     deleteListing,
     setListingStatus,
-    getRecommendedListings, // <-- 2. EXPORT THE NEW FUNCTION
+    getRecommendedListings,
 };

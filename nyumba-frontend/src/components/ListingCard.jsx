@@ -1,11 +1,13 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaBed, FaBath, FaMapMarkerAlt, FaMapPin } from 'react-icons/fa';
+// --- 1. IMPORT NEW ICONS ---
+import { FaBed, FaBath, FaMapMarkerAlt, FaMapPin, FaRocket, FaStar } from 'react-icons/fa';
 import SaveButton from './SaveButton';
 import { toast } from 'react-toastify';
 
-// Formats distance from meters to a readable string (e.g., "1.5 km")
+// Formats distance from meters to a readable string
 const formatDistance = (meters) => {
+    // ... (function is unchanged)
     if (meters < 1000) {
         return `${Math.round(meters)} m away`;
     }
@@ -20,6 +22,10 @@ const ListingCard = ({ listing, onDelete }) => {
     if (!listing || !listing.owner) {
         return null; 
     }
+    
+    // --- 2. CHECK FOR NEW LISTING STATUSES ---
+    const isEarlyAccess = new Date(listing.publicReleaseAt) > new Date();
+    const isPriority = listing.isPriority;
 
     const isOwner = currentUser && currentUser._id === listing.owner._id;
 
@@ -60,7 +66,6 @@ const ListingCard = ({ listing, onDelete }) => {
     };
 
     return (
-        // --- 1. UPDATED THEME CLASSES ---
         <Link 
             to={`/listing/${listing._id}`} 
             className="block bg-card-color rounded-lg overflow-hidden border border-border-color hover:border-accent-color transition-all duration-300 group flex flex-col shadow-sm dark:shadow-none"
@@ -68,20 +73,34 @@ const ListingCard = ({ listing, onDelete }) => {
             <div className="relative">
                 <img src={listing.images[0] || 'https://via.placeholder.com/400x300'} alt={listing.title} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
                 
-                {/* --- 2. UPDATED PRICE TAG --- */}
                 <div className="absolute top-2 left-2 bg-white/80 dark:bg-slate-900/80 text-slate-900 dark:text-white text-lg font-bold px-3 py-1 rounded-md backdrop-blur-sm">
                     K{listing.price.toLocaleString()}
                 </div>
+
+                {/* --- 3. ADD NEW BADGES --- */}
+                <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
+                    {isEarlyAccess && (
+                        <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                            <FaRocket />
+                            Early Access
+                        </span>
+                    )}
+                    {isPriority && (
+                        <span className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                            <FaStar />
+                            Priority
+                        </span>
+                    )}
+                </div>
             </div>
+            
             <div className="p-4 flex flex-col flex-grow">
-                {/* --- 3. UPDATED TEXT COLORS --- */}
                 <h3 className="text-xl font-bold text-text-color truncate">{listing.title}</h3>
                 
                 <div className="text-sm text-subtle-text-color flex items-center justify-between gap-2 mt-1">
                     <span className="flex items-center gap-2 truncate">
                         <FaMapMarkerAlt />
                         {listing.distance ? (
-                            // --- 4. UPDATED ACCENT COLOR ---
                             <span className="font-semibold text-accent-color">{formatDistance(listing.distance)}</span>
                         ) : (
                             <span className="truncate">{displayAddress}</span>
@@ -92,7 +111,6 @@ const ListingCard = ({ listing, onDelete }) => {
                         <button
                             onClick={handleViewOnMap}
                             title="View on Map"
-                            // --- 5. UPDATED MAP PIN BUTTON ---
                             className="flex-shrink-0 text-accent-color hover:text-accent-hover-color transition-colors z-10 p-1 rounded-full hover:bg-border-color"
                         >
                             <FaMapPin />
@@ -102,7 +120,6 @@ const ListingCard = ({ listing, onDelete }) => {
 
                 <div className="flex-grow"></div>
 
-                {/* --- 6. UPDATED BED/BATH INFO --- */}
                 <div className="flex items-center justify-between text-subtle-text-color mt-4 border-t border-border-color pt-3">
                     <div className="flex items-center space-x-4">
                         <span className="flex items-center gap-2"><FaBed /> {listing.bedrooms}</span>
@@ -114,9 +131,7 @@ const ListingCard = ({ listing, onDelete }) => {
                 </div>
 
                 {isOwner && onDelete && (
-                    // --- 7. UPDATED DELETE BORDER ---
                     <div className="mt-4 pt-3 border-t border-border-color">
-                         {/* Delete button color (red) is theme-agnostic, so it's fine */}
                         <button onClick={handleDelete} className="text-sm text-red-500 hover:text-red-400">Delete Listing</button>
                     </div>
                 )}

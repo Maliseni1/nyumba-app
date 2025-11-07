@@ -33,17 +33,16 @@ const userSchema = new mongoose.Schema({
         default: 0,
     },
     
-    // --- 1. NEW REFERRAL FIELDS ---
+    // --- REFERRAL FIELDS ---
     referralCode: {
         type: String,
         unique: true,
-        sparse: true // Allows many users to have 'null' value, but new codes must be unique
+        sparse: true
     },
     referredBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     },
-    // --- END OF NEW FIELDS ---
 
     // --- VERIFIED PROFILES & SUBSCRIPTIONS ---
     verificationStatus: {
@@ -61,6 +60,15 @@ const userSchema = new mongoose.Schema({
         default: 'inactive',
     },
 
+    // --- 1. NEW FIELD FOR PREMIUM TENANTS ---
+    // This lets us track what *kind* of subscription is active
+    subscriptionType: {
+        type: String,
+        enum: ['landlord_pro', 'tenant_premium', 'none'],
+        default: 'none',
+    },
+    // --- END OF NEW FIELD ---
+
     // --- FIELDS FOR PASSWORD RESET ---
     resetPasswordToken: String,
     resetPasswordExpire: Date,
@@ -72,17 +80,27 @@ const userSchema = new mongoose.Schema({
 });
 
 // --- VIRTUAL FIELD: isVerified ---
+// This virtual now correctly represents a *Verified Landlord*
 userSchema.virtual('isVerified').get(function() {
-  return this.subscriptionStatus === 'active' && this.verificationStatus === 'approved';
+  return this.subscriptionStatus === 'active' && 
+         this.verificationStatus === 'approved' &&
+         this.subscriptionType === 'landlord_pro';
 });
+
+// --- 2. NEW VIRTUAL FIELD FOR PREMIUM TENANTS ---
+userSchema.virtual('isPremiumTenant').get(function() {
+    return this.subscriptionStatus === 'active' &&
+           this.subscriptionType === 'tenant_premium';
+});
+// --- END OF NEW VIRTUAL ---
 
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// --- METHOD: getResetPasswordToken ---
 userSchema.methods.getResetPasswordToken = function () {
+    // ... (function is unchanged)
     const resetToken = crypto.randomBytes(20).toString('hex');
     this.resetPasswordToken = crypto
         .createHash('sha256')
@@ -92,27 +110,21 @@ userSchema.methods.getResetPasswordToken = function () {
     return resetToken;
 };
 
-// --- 2. UPDATED PRE-SAVE HOOK ---
-// This hook now handles both password hashing and referral code generation
 userSchema.pre('save', async function (next) {
-    // 1. Handle password hashing if password is new or modified
+    // ... (function is unchanged)
     if (this.isModified('password')) {
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
     }
-
-    // 2. Generate referral code ONLY when the user is first created
     if (this.isNew && !this.referralCode) {
         let code;
         let codeExists = true;
-        // Loop to guarantee a unique code
         while (codeExists) {
             code = crypto.randomBytes(3).toString('hex').toUpperCase();
             codeExists = await mongoose.model('User').findOne({ referralCode: code });
         }
         this.referralCode = code;
     }
-
     next();
 });
 

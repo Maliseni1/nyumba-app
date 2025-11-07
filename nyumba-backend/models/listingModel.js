@@ -55,16 +55,25 @@ const listingSchema = new mongoose.Schema({
         default: 'available',
     },
 
-    // --- 1. NEW REWARD FIELDS ---
+    // --- 1. NEW FIELD FOR PRIORITY ACCESS ---
+    // This is the time when the listing becomes visible to FREE users.
+    // Premium tenants will be able to see it immediately.
+    publicReleaseAt: {
+        type: Date,
+        default: Date.now, // Defaults to now, but we will override this
+        index: true, // Add index for fast querying
+    },
+    // --- END OF NEW FIELD ---
+
+    // --- REWARD FIELDS ---
     isPriority: {
         type: Boolean,
         default: false,
-        index: true, // Add index for fast sorting of priority listings
+        index: true,
     },
     priorityExpiresAt: {
         type: Date,
     },
-    // --- END OF NEW FIELDS ---
 
     analytics: {
         views: {
