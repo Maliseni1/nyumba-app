@@ -72,9 +72,36 @@ const TenantSubscriptionPage = () => {
         setShowPaymentModal(true);
     };
 
-    const handlePaymentSuccess = (payment) => { /* ... */ };
-    const handlePaymentClose = () => { /* ... */ };
-    const handleConfirmationClose = () => { /* ... */ };
+    // --- ALL THESE HANDLERS WERE MISSING ---
+    const handlePaymentSuccess = (payment) => {
+        setShowPaymentModal(false);
+        setShowConfirmation(true);
+        setPaymentData(prevData => ({
+            ...prevData,
+            ...payment,
+            transactionId: payment.transactionId,
+            payerInfo: payment.payerInfo
+        }));
+        toast.success('Subscription activated successfully!');
+    };
+
+    const handlePaymentError = (error) => {
+        toast.error(error.message || "An error occurred during payment.");
+    };
+
+    const handlePaymentClose = () => {
+        setShowPaymentModal(false);
+        setPaymentData(null);
+    };
+
+    const handleConfirmationClose = () => {
+        setShowConfirmation(false);
+        setPaymentData(null);
+        // Navigate to listings after confirmation
+        navigate('/'); 
+    };
+    // --- END OF MISSING HANDLERS ---
+
 
     // --- Pricing Card Sub-Component (now themed) ---
     const PricingCard = ({ plan, isSelected, onSelect }) => (
@@ -98,7 +125,14 @@ const TenantSubscriptionPage = () => {
                             <span className="text-4xl font-bold text-text-color">${plan.price}</span>
                             <span className="text-subtle-text-color">/{plan.period}</span>
                         </div>
-                        {plan.discount > 0 && ('')}
+                        {plan.discount > 0 && (
+                            <div className="flex items-center justify-center gap-2">
+                                <span className="text-subtle-text-color line-through text-lg">${plan.originalPrice}</span>
+                                <span className="bg-green-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
+                                    Save {plan.discount}%
+                                </span>
+                            </div>
+                        )}
                     </div>
                     <button
                         onClick={() => onSelect(plan)}
@@ -194,7 +228,32 @@ const TenantSubscriptionPage = () => {
                 </div>
             </div>
 
-            {/* ... (Payment Modals are unchanged) ... */}
+            {/* --- THESE MODALS WERE MISSING --- */}
+            {showPaymentModal && paymentData && (
+                <PaymentModal
+                    isOpen={showPaymentModal}
+                    onClose={handlePaymentClose}
+                    onPaymentSuccess={handlePaymentSuccess}
+                    onPaymentError={handlePaymentError}
+                    // Pass ONLY subscription data
+                    subscriptionData={paymentData}
+                    customAmount={paymentData.amount}
+                />
+            )}
+
+            {showConfirmation && paymentData && (
+                <PaymentConfirmation
+                    paymentData={paymentData}
+                    // Pass a dummy listing object for the confirmation's display
+                    listing={{
+                        title: paymentData.planName,
+                        location: 'Nyumba Premium Subscription'
+                    }}
+                    onClose={handleConfirmationClose}
+                    showStatusTracker={true}
+                />
+            )}
+            {/* --- END OF MISSING MODALS --- */}
         </div>
     );
 };
