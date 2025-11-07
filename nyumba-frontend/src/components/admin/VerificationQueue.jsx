@@ -7,11 +7,12 @@ const VerificationQueue = ({ requests, setRequests }) => {
     const [loadingId, setLoadingId] = useState(null);
 
     const handleAction = async (id, action) => {
+        // ... (function is unchanged)
         setLoadingId(id);
         try {
             const apiCall = action === 'approve' ? approveVerification : rejectVerification;
             const { data } = await apiCall(id);
-            setRequests(data); // The backend returns the new list of pending requests
+            setRequests(data);
             toast.success(`User ${action}d successfully!`);
         } catch (error) {
             toast.error('Failed to update verification status.');
@@ -22,39 +23,44 @@ const VerificationQueue = ({ requests, setRequests }) => {
 
     if (requests.length === 0) {
         return (
-            <div className="bg-slate-900/50 p-6 rounded-lg border border-slate-800 text-center">
-                <p className="text-slate-400">No pending verification requests.</p>
+            // --- 1. UPDATED CARD ---
+            <div className="bg-card-color p-6 rounded-lg border border-border-color text-center">
+                <p className="text-subtle-text-color">No pending verification requests.</p>
             </div>
         );
     }
 
     return (
-        <div className="bg-slate-900/50 rounded-lg border border-slate-800 overflow-hidden">
-            <table className="min-w-full divide-y divide-slate-800">
-                <thead className="bg-slate-800/50">
+        // --- 2. UPDATED CARD ---
+        <div className="bg-card-color rounded-lg border border-border-color overflow-hidden">
+            <table className="min-w-full divide-y divide-border-color">
+                {/* --- 3. UPDATED TABLE HEAD --- */}
+                <thead className="bg-bg-color">
                     <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">User</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Role</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Subscription</th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-subtle-text-color uppercase tracking-wider">User</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-subtle-text-color uppercase tracking-wider">Role</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-subtle-text-color uppercase tracking-wider">Subscription</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-subtle-text-color uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                {/* --- 4. UPDATED TABLE BODY --- */}
+                <tbody className="divide-y divide-border-color">
                     {requests.map((user) => (
-                        <tr key={user._id} className="hover:bg-slate-800/40">
+                        <tr key={user._id} className="hover:bg-bg-color">
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex items-center">
                                     <div className="flex-shrink-0 h-10 w-10">
                                         <img className="h-10 w-10 rounded-full object-cover" src={user.profilePicture} alt={user.name} />
                                     </div>
                                     <div className="ml-4">
-                                        <div className="text-sm font-medium text-white">{user.name}</div>
-                                        <div className="text-sm text-slate-400">{user.email}</div>
+                                        <div className="text-sm font-medium text-text-color">{user.name}</div>
+                                        <div className="text-sm text-subtle-text-color">{user.email}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300 capitalize">{user.role}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-subtle-text-color capitalize">{user.role}</td>
                             <td className="px-6 py-4 whitespace-nowrap">
+                                {/* Semantic colors are fine */}
                                 {user.subscriptionStatus === 'active' ? (
                                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-500/20 text-green-400">
                                         Active
@@ -66,6 +72,7 @@ const VerificationQueue = ({ requests, setRequests }) => {
                                 )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                {/* Semantic colors are fine */}
                                 <button
                                     onClick={() => handleAction(user._id, 'approve')}
                                     disabled={loadingId === user._id}

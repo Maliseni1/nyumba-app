@@ -7,20 +7,24 @@ const AdviceItem = ({ icon, title, children }) => (
             {icon}
         </div>
         <div>
-            <h4 className="font-bold text-white">{title}</h4>
-            <p className="text-slate-400">{children}</p>
+            {/* --- 1. UPDATED TEXT --- */}
+            <h4 className="font-bold text-text-color">{title}</h4>
+            <p className="text-subtle-text-color">{children}</p>
         </div>
     </li>
 );
 
 const LandlordAdvice = () => {
     return (
-        <div className="bg-slate-900/50 p-8 rounded-lg border border-slate-800">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                <FaLightbulb className="text-yellow-400" />
+        // --- 2. UPDATED CARD ---
+        <div className="bg-card-color p-8 rounded-lg border border-border-color">
+            {/* --- 3. UPDATED HEADER --- */}
+            <h2 className="text-2xl font-bold text-text-color mb-6 flex items-center gap-2">
+                <FaLightbulb className="text-yellow-400" /> {/* Semantic color is fine */}
                 How to Improve Your Reach
             </h2>
             <ul className="space-y-6">
+                {/* Semantic icon colors are fine */}
                 <AdviceItem icon={<FaCamera className="text-sky-400" />} title="Upload High-Quality Photos">
                     Listings with 5 or more bright, clear photos get 3x more views. Make sure to include the kitchen, bathrooms, and bedrooms.
                 </AdviceItem>

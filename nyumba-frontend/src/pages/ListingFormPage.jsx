@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createListing, getListingById, updateListing, reverseGeocode } from '../services/api'; // <-- 1. Import reverseGeocode
+import { createListing, getListingById, updateListing, reverseGeocode } from '../services/api';
 import { toast } from 'react-toastify';
 import ImageUpload from '../components/ImageUpload';
 import imageCompression from 'browser-image-compression';
-import { FaCrosshairs } from 'react-icons/fa'; // <-- 2. Import icon
+import { FaCrosshairs } from 'react-icons/fa';
 
 const ListingFormPage = () => {
     const [formData, setFormData] = useState({
@@ -18,12 +18,13 @@ const ListingFormPage = () => {
     });
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [isLocating, setIsLocating] = useState(false); // <-- 3. Add locating state
+    const [isLocating, setIsLocating] = useState(false);
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditMode = Boolean(id);
 
     useEffect(() => {
+        // ... (fetch logic is unchanged)
         if (isEditMode) {
             const fetchListing = async () => {
                 try {
@@ -32,7 +33,6 @@ const ListingFormPage = () => {
                         title: data.title,
                         description: data.description,
                         price: data.price,
-                        // Handle both old string locations and new object locations
                         location: data.location?.address || data.location || '',
                         bedrooms: data.bedrooms,
                         bathrooms: data.bathrooms,
@@ -52,13 +52,12 @@ const ListingFormPage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // --- 4. NEW FUNCTION FOR GETTING CURRENT LOCATION ---
     const handleUseCurrentLocation = () => {
+        // ... (function is unchanged)
         if (!navigator.geolocation) {
             toast.error('Geolocation is not supported by your browser.');
             return;
         }
-        
         setIsLocating(true);
         toast.info('Getting your current location...');
         
@@ -66,10 +65,7 @@ const ListingFormPage = () => {
             async (position) => {
                 const { latitude, longitude } = position.coords;
                 try {
-                    // Call the new API function
                     const { data } = await reverseGeocode({ lat: latitude, lng: longitude });
-                    
-                    // Update the form state with the address
                     setFormData(prevData => ({ ...prevData, location: data.address }));
                     toast.success('Location found!');
                 } catch (error) {
@@ -82,15 +78,14 @@ const ListingFormPage = () => {
                 toast.error('Unable to retrieve your location. Please check browser permissions.');
                 setIsLocating(false);
             },
-            { enableHighAccuracy: true } // Request high accuracy
+            { enableHighAccuracy: true }
         );
     };
 
-    // --- (handleSubmit function is unchanged) ---
     const handleSubmit = async (e) => {
+        // ... (function is unchanged)
         e.preventDefault();
         setLoading(true);
-
         const listingData = new FormData();
         Object.keys(formData).forEach(key => listingData.append(key, formData[key]));
 
@@ -132,18 +127,20 @@ const ListingFormPage = () => {
         }
     };
 
-    const inputStyle = "w-full p-3 bg-slate-800/50 rounded-md border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500 text-white";
+    // --- 1. UPDATED INPUT STYLE ---
+    const inputStyle = "w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color";
 
     return (
         <div className="pt-24 max-w-2xl mx-auto pb-12">
-            <form onSubmit={handleSubmit} className="bg-slate-900/50 p-8 rounded-lg border border-slate-800 backdrop-blur-sm space-y-6">
-                <h1 className="text-3xl font-bold text-white text-center mb-6">{isEditMode ? 'Edit Listing' : 'Create a New Listing'}</h1>
+            {/* --- 2. UPDATED FORM CARD --- */}
+            <form onSubmit={handleSubmit} className="bg-card-color p-8 rounded-lg border border-border-color backdrop-blur-sm space-y-6">
+                {/* --- 3. UPDATED TEXT --- */}
+                <h1 className="text-3xl font-bold text-text-color text-center mb-6">{isEditMode ? 'Edit Listing' : 'Create a New Listing'}</h1>
                 <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="Property Title" className={inputStyle} required />
                 <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" className={`${inputStyle} h-32`} required />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <input type="number" name="price" value={formData.price} onChange={handleChange} placeholder="Price (K)" className={inputStyle} required />
                     
-                    {/* --- 5. UPDATED LOCATION INPUT WITH BUTTON --- */}
                     <div>
                         <input 
                             type="text" 
@@ -154,11 +151,12 @@ const ListingFormPage = () => {
                             className={inputStyle} 
                             required 
                         />
+                        {/* --- 4. UPDATED LOCATION BUTTON --- */}
                         <button 
                             type="button" 
                             onClick={handleUseCurrentLocation} 
                             disabled={isLocating}
-                            className="flex items-center gap-2 text-sm text-sky-400 hover:text-sky-300 mt-2 disabled:text-slate-500"
+                            className="flex items-center gap-2 text-sm text-accent-color hover:text-accent-hover-color mt-2 disabled:text-subtle-text-color"
                         >
                             {isLocating ? (
                                 <>
@@ -183,8 +181,16 @@ const ListingFormPage = () => {
                     <option>Land</option>
                     <option>Commercial</option>
                 </select>
+                
+                {/* This component will need to be updated next */}
                 <ImageUpload images={images} setImages={setImages} />
-                <button type="submit" disabled={loading} className="w-full bg-sky-500 text-white font-bold py-3 rounded-md hover:bg-sky-600 transition-colors disabled:bg-slate-600">
+                
+                {/* --- 5. UPDATED SUBMIT BUTTON --- */}
+                <button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="w-full bg-accent-color text-white font-bold py-3 rounded-md hover:bg-accent-hover-color transition-colors disabled:bg-subtle-text-color"
+                >
                     {loading ? 'Submitting...' : (isEditMode ? 'Update Listing' : 'Create Listing')}
                 </button>
             </form>

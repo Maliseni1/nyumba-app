@@ -4,13 +4,16 @@ import { FaEye, FaQuestionCircle, FaHome } from 'react-icons/fa';
 // A single Stat Card component
 const StatCard = ({ icon, title, value, color }) => {
     return (
-        <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-lg flex items-center space-x-4">
+        // --- 1. UPDATED CARD ---
+        <div className="bg-card-color border border-border-color p-6 rounded-lg flex items-center space-x-4">
+            {/* Semantic icon colors are fine */}
             <div className={`p-3 rounded-full ${color}`}>
                 {icon}
             </div>
             <div>
-                <p className="text-sm text-slate-400">{title}</p>
-                <p className="text-3xl font-bold text-white">{value}</p>
+                {/* --- 2. UPDATED TEXT --- */}
+                <p className="text-sm text-subtle-text-color">{title}</p>
+                <p className="text-3xl font-bold text-text-color">{value}</p>
             </div>
         </div>
     );

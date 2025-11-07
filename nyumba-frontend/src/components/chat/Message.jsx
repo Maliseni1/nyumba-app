@@ -6,17 +6,12 @@ const Message = ({ message }) => {
     const fromMe = message.sender._id === authUser._id;
     const chatClassName = fromMe ? 'chat-end' : 'chat-start';
     
-    // --- MODIFICATION START ---
-    // New gradient and shape classes for the bubble
+    // Gradient classes are semantic and look good on both themes. We'll keep them.
     const bubbleGradientClasses = fromMe
-        ? 'bg-gradient-to-r from-purple-500 to-pink-500' // Example gradient for "from me"
-        : 'bg-gradient-to-r from-sky-400 to-blue-500';  // Example gradient for "to me"
+        ? 'bg-gradient-to-r from-purple-500 to-pink-500'
+        : 'bg-gradient-to-r from-sky-400 to-blue-500'; 
     
-    // We'll add custom CSS for the tail, so no specific tail class needed here.
-    // The "relative" class is important for positioning the pseudo-element tail.
     const bubbleShapeClasses = 'relative rounded-xl py-2 px-4';
-    // --- MODIFICATION END ---
-
     const sentTime = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
@@ -26,11 +21,12 @@ const Message = ({ message }) => {
                     <img alt="User avatar" src={message.sender.profilePicture} />
                 </div>
             </div>
-            {/* Apply new gradient and shape classes */}
+            {/* Text inside bubble is white, which is good for contrast */}
             <div className={`chat-bubble text-white ${bubbleGradientClasses} ${bubbleShapeClasses}`}>
                 {message.message}
             </div>
-            <div className="chat-footer opacity-50 text-xs flex gap-1 items-center">{sentTime}</div>
+            {/* --- 1. UPDATED FOOTER TEXT --- */}
+            <div className="chat-footer text-subtle-text-color opacity-70 text-xs flex gap-1 items-center">{sentTime}</div>
         </div>
     );
 };
