@@ -59,6 +59,26 @@ body::before {
   opacity: 1;
 }
 
+/* ---
+NEW STACKING ORDER
+Navbar: z-index: 100
+GlobalLoader: z-index: 900
+Modals: z-index: 1000
+Splash Screen: z-index: 9999 (Highest)
+--- */
+
+/* --- 3. GLOBAL LOADER STYLES (NEW) --- */
+.global-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 900; /* HIGHER THAN NAVBAR */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+}
+
 .logo-glow {
   filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.7)) drop-shadow(0 0 3px rgba(56, 189, 248, 0.5));
   transition: filter 0.3s ease-in-out;
@@ -123,7 +143,7 @@ body::before {
 .react-confirm-alert-overlay {
   background: rgba(0, 0, 0, 0.7) !important;
   backdrop-filter: blur(5px);
-  z-index: 9999;
+  z-index: 1000; /* <-- HIGHER THAN LOADER */
 }
 
 .react-confirm-alert-body {

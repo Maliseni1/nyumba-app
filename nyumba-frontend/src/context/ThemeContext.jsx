@@ -5,11 +5,13 @@ const ThemeContext = createContext();
 
 // 2. Create the Provider
 export const ThemeProvider = ({ children }) => {
-    // Default to 'dark' so the site looks normal on first load
+    // --- THIS IS THE FIX ---
+    // Default to 'light' instead of 'dark'
     const [theme, setTheme] = useState(() => {
         const savedTheme = localStorage.getItem('theme');
-        return savedTheme ? savedTheme : 'dark';
+        return savedTheme ? savedTheme : 'light'; // <-- Changed to 'light'
     });
+    // --- END OF FIX ---
 
     useEffect(() => {
         const root = window.document.documentElement;

@@ -37,7 +37,7 @@ const Navbar = () => {
         setIsMobileMenuOpen(false);
     };
 
-    // --- (Desktop links are unchanged from the theme update) ---
+    // --- DESKTOP LINKS ---
     const desktopLinks = (
         <div className="hidden md:flex items-center space-x-6">
             {authUser ? (
@@ -76,25 +76,34 @@ const Navbar = () => {
         </div>
     );
 
-    // --- (Mobile links are unchanged) ---
+    // --- MOBILE LINKS (the vertical dropdown) ---
     const mobileLinks = (
         <div className="px-2 pt-2 pb-3 space-y-1">
             {authUser ? (
-                 <>
+                <>
                     <Link to="/map" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaMap /> Map View</Link>
                     {authUser.isAdmin && (
                         <Link to="/admin/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-yellow-500 dark:text-yellow-400 hover:bg-border-color rounded-md"><FaTachometerAlt /> Admin Dashboard</Link>
                     )}
                     <Link to="/profile" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaUserCircle /> Profile</Link>
                     <Link to="/messages" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaEnvelope /> Messages {unreadCount > 0 && `(${unreadCount})`}</Link>
+                    
                     {authUser.role === 'landlord' && (
                         <Link to="/add-listing" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-accent-color hover:bg-border-color rounded-md"><FaPlusSquare /> Add Listing</Link>
                     )}
+
                     {authUser.role === 'landlord' && authUser.isVerified && (
-                        <Link to="/landlord/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-emerald-500 dark:text-emerald-400 hover:bg-border-color rounded-md"><FaChartBar /> Landlord Dashboard</Link>
+                        <Link to="/landlord/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-emerald-500 dark:text-emerald-400 hover:bg-border-color rounded-md">
+                            <FaChartBar /> Landlord Dashboard
+                        </Link>
                     )}
+
                     <Link to="/payments" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaCreditCard /> Payments</Link>
-                    <Link to="/rewards" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-500 dark:text-amber-400 hover:bg-border-color rounded-md"><FaGift /> My Rewards</Link>
+                    
+                    <Link to="/rewards" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-500 dark:text-amber-400 hover:bg-border-color rounded-md">
+                        <FaGift /> My Rewards
+                    </Link>
+                    
                     <Link to="/settings" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaCog /> Settings</Link>
                 </>
             ) : (
@@ -108,23 +117,21 @@ const Navbar = () => {
     );
 
     return (
-        <nav className={`fixed top-0 left-0 right-0 z-[1001] bg-card-color backdrop-blur-lg border-b border-border-color transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`}>
+        <nav 
+            className={`fixed top-0 left-0 right-0 bg-card-color backdrop-blur-lg border-b border-border-color transition-transform duration-300 ${visible ? 'translate-y-0' : '-translate-y-full'}`}
+            style={{ zIndex: 100 }}
+        >
             <div className="max-w-7xl mx-auto px-4">
                 <div className="flex justify-between items-center h-16">
-                    
-                    {/* --- THIS IS THE CHANGE --- */}
                     <div className="flex-shrink-0">
                         <Link to="/" className="flex items-center gap-2">
                             <img src="/logo.png" alt="Nyumba Logo" className="h-12 w-auto logo-glow" />
                             <span className="font-bold text-2xl text-text-color hidden sm:block">Nyumba</span>
                         </Link>
                     </div>
-                    {/* --- END OF CHANGE --- */}
 
-                    {/* Desktop Links */}
                     {desktopLinks}
 
-                    {/* Mobile Menu Button */}
                     <div className="md:hidden flex items-center">
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -137,7 +144,6 @@ const Navbar = () => {
                 </div>
             </div>
 
-            {/* Mobile Menu (dropdown) */}
             <Transition
                 show={isMobileMenuOpen}
                 as={Fragment}
