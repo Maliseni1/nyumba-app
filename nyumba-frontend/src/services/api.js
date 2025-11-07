@@ -2,15 +2,50 @@ import axios from 'axios';
 
 const API = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL });
 
+// --- THIS IS THE NEW LOADER LOGIC ---
+
+// 1. Create lists of "silent" routes that shouldn't trigger the global loader
+const silentGetRoutes = [
+    '/users/profile',
+    '/users/unread-count',
+];
+
+// 2. Add interceptor to SHOW loader
 API.interceptors.request.use((req) => {
+    // Only show loader if it's NOT a silent route
+    if (!silentGetRoutes.includes(req.url)) {
+        window.dispatchEvent(new CustomEvent('api-request-start'));
+    }
+    
+    // Add auth token (your existing logic)
     if (localStorage.getItem('user')) {
         req.headers.Authorization = `Bearer ${JSON.parse(localStorage.getItem('user')).token}`;
     }
     return req;
 });
 
+// 3. Add interceptor to HIDE loader
+API.interceptors.response.use(
+    (res) => {
+        // Hide loader on success (if it wasn't a silent route)
+        if (!silentGetRoutes.includes(res.config.url)) {
+            window.dispatchEvent(new CustomEvent('api-request-end'));
+        }
+        return res;
+    },
+    (err) => {
+        // Always hide loader on error to prevent it from getting stuck
+        window.dispatchEvent(new CustomEvent('api-request-end'));
+        return Promise.reject(err);
+    }
+);
+
+// --- END OF NEW LOADER LOGIC ---
+
+
 // User Routes
 export const loginUser = (formData) => API.post('/users/login', formData);
+// ... (all other export functions are unchanged)
 export const registerUser = (formData) => API.post('/users/register', formData);
 export const googleLogin = (token) => API.post('/users/google', { token });
 export const getUserProfile = () => API.get('/users/profile');
@@ -22,9 +57,7 @@ export const forgotPassword = (email) => API.post('/users/forgotpassword', email
 export const resetPassword = (token, password) => API.put(`/users/resetpassword/${token}`, password);
 export const applyForVerification = () => API.post('/users/apply-verification');
 export const getMyReferralData = () => API.get('/users/referral-data');
-// --- 1. NEW CHANGE PASSWORD FUNCTION ---
 export const changePassword = (formData) => API.put('/users/changepassword', formData);
-
 
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });
@@ -36,7 +69,6 @@ export const getListingsNearby = (params) => API.get('/listings/nearby', { param
 export const reverseGeocode = (params) => API.get('/listings/reverse-geocode', { params });
 export const setListingStatus = (id, status) => API.put(`/listings/${id}/status`, { status });
 export const getRecommendedListings = () => API.get('/listings/recommendations');
-
 
 // Message Routes
 export const getConversations = () => API.get('/messages/conversations');

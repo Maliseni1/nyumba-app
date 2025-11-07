@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext';
+// --- 1. IMPORT 'logout' INSTEAD OF 'setAuthUser' ---
+import { useAuth } from '../context/AuthContext'; 
 import { changePassword } from '../services/api';
-
-// --- 1. IMPORT THEME HOOK & ICONS ---
-import { useTheme } from '../context/ThemeContext';
-import { Switch } from '@headlessui/react';
 import { 
     FaSignOutAlt, 
     FaKey, 
@@ -16,11 +13,13 @@ import {
     FaMoon, 
     FaSun 
 } from 'react-icons/fa';
+import { Switch } from '@headlessui/react';
+import { useTheme } from '../context/ThemeContext';
 
 const SettingsPage = () => {
     const navigate = useNavigate();
-    const { setAuthUser } = useAuth();
-    // --- 2. GET THEME CONTROLS ---
+    // --- 2. GET 'logout' FROM useAuth ---
+    const { logout } = useAuth(); 
     const { theme, toggleTheme } = useTheme();
 
     const [loading, setLoading] = useState(false);
@@ -39,7 +38,6 @@ const SettingsPage = () => {
         // ... (This function is unchanged)
         e.preventDefault();
         const { oldPassword, newPassword, confirmPassword } = passwordData;
-
         if (newPassword !== confirmPassword) {
             toast.error('New passwords do not match.');
             return;
@@ -48,7 +46,6 @@ const SettingsPage = () => {
             toast.error('New password must be at least 6 characters.');
             return;
         }
-
         setLoading(true);
         try {
             const { data } = await changePassword({ oldPassword, newPassword });
@@ -62,22 +59,21 @@ const SettingsPage = () => {
         }
     };
 
+    // --- 3. UPDATE THE LOGOUT HANDLER ---
     const handleLogout = () => {
-        localStorage.removeItem('user');
-        setAuthUser(null);
+        logout(); // This one function now handles everything
         toast.success("You have been logged out.");
         navigate('/login');
     };
 
     return (
         <div className="pt-24 max-w-2xl mx-auto pb-12">
-            {/* --- 3. APPLY THEME CLASSES --- */}
             <div className="bg-card-color p-8 rounded-lg border border-border-color backdrop-blur-sm">
                 <h1 className="text-3xl font-bold text-text-color text-center mb-6">Settings</h1>
 
                 <div className="space-y-6">
 
-                    {/* --- 4. NEW THEME TOGGLE SECTION --- */}
+                    {/* --- Theme Toggle Section (Unchanged) --- */}
                     <div className="space-y-4">
                         <h2 className="text-xl font-bold text-text-color flex items-center gap-2">
                             {theme === 'dark' ? <FaMoon /> : <FaSun />} Appearance
@@ -102,12 +98,11 @@ const SettingsPage = () => {
                         </div>
                     </div>
 
-                    {/* --- 5. PASSWORD SECTION (CLASSES UPDATED) --- */}
+                    {/* --- Password Section (Unchanged) --- */}
                     <div className="pt-6 border-t border-border-color space-y-4">
                         <h2 className="text-xl font-bold text-text-color flex items-center gap-2">
                             <FaKey /> Security
                         </h2>
-                        
                         <button
                             onClick={() => setShowPasswordForm(!showPasswordForm)}
                             className="w-full flex justify-between items-center text-left p-4 bg-bg-color rounded-md border border-border-color hover:bg-border-color transition-colors"
@@ -118,9 +113,9 @@ const SettingsPage = () => {
                                 : <FaChevronDown className="text-subtle-text-color" />
                             }
                         </button>
-
                         {showPasswordForm && (
                             <form onSubmit={handlePasswordSubmit} className="space-y-4 pt-4 border-t border-border-color">
+                                {/* ... (form inputs are unchanged) ... */}
                                 <div>
                                     <label className="block text-sm font-medium text-subtle-text-color mb-1">Old Password</label>
                                     <input 
@@ -165,7 +160,7 @@ const SettingsPage = () => {
                         )}
                     </div>
                     
-                    {/* --- 6. LOGOUT SECTION (CLASSES UPDATED) --- */}
+                    {/* --- Logout Section (Handler is now fixed) --- */}
                     <div className="pt-6 border-t border-border-color space-y-4">
                          <h2 className="text-xl font-bold text-text-color flex items-center gap-2">
                             <FaSignOutAlt /> Account Actions
