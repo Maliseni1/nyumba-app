@@ -9,26 +9,26 @@ const {
     updateListing,
     deleteListing,
     setListingStatus,
-    getRecommendedListings, // <-- 1. IMPORT
+    getRecommendedListings,
 } = require('../controllers/listingController');
-const { protect } = require('../middleware/authMiddleware');
+// --- 1. IMPORT identifyUser ---
+const { protect, identifyUser } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-router.get('/nearby', getListingsNearby);
+// --- 2. ADD identifyUser to public routes ---
+router.get('/nearby', identifyUser, getListingsNearby);
 router.get('/reverse-geocode', protect, reverseGeocode);
 
-// --- 2. ADD THE NEW RECOMMENDATIONS ROUTE ---
-// Must be protected, as it's personalized for the logged-in user
 router.get('/recommendations', protect, getRecommendedListings);
 
 router.route('/')
-    .get(getListings)
+    .get(identifyUser, getListings) // <-- 3. ADDED identifyUser
     .post(protect, upload.array('images', 5), createListing);
 
 router.route('/:id/status').put(protect, setListingStatus);
 
 router.route('/:id')
-    .get(getListingById)
+    .get(identifyUser, getListingById) // <-- 4. ADDED identifyUser
     .put(protect, upload.array('images', 5), updateListing)
     .delete(protect, deleteListing);
 

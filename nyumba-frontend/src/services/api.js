@@ -2,50 +2,36 @@ import axios from 'axios';
 
 const API = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL });
 
-// --- THIS IS THE NEW LOADER LOGIC ---
-
-// 1. Create lists of "silent" routes that shouldn't trigger the global loader
+// --- LOADER LOGIC (unchanged) ---
 const silentGetRoutes = [
     '/users/profile',
     '/users/unread-count',
-    '/forum/categories', // Don't show loader for just fetching categories
+    '/forum/categories',
 ];
-
-// 2. Add interceptor to SHOW loader
 API.interceptors.request.use((req) => {
-    // Check if the URL *ends with* a silent route, for routes with params
     const isSilent = silentGetRoutes.some(route => req.url.endsWith(route));
-    
     if (!isSilent) {
         window.dispatchEvent(new CustomEvent('api-request-start'));
     }
-    
-    // Add auth token (your existing logic)
     if (localStorage.getItem('user')) {
         req.headers.Authorization = `Bearer ${JSON.parse(localStorage.getItem('user')).token}`;
     }
     return req;
 });
-
-// 3. Add interceptor to HIDE loader
 API.interceptors.response.use(
     (res) => {
-        // Check if the URL *ends with* a silent route, for routes with params
         const isSilent = silentGetRoutes.some(route => res.config.url.endsWith(route));
-        
         if (!isSilent) {
             window.dispatchEvent(new CustomEvent('api-request-end'));
         }
         return res;
     },
     (err) => {
-        // Always hide loader on error to prevent it from getting stuck
         window.dispatchEvent(new CustomEvent('api-request-end'));
         return Promise.reject(err);
     }
 );
-
-// --- END OF NEW LOADER LOGIC ---
+// --- END OF LOADER LOGIC ---
 
 
 // User Routes
@@ -91,6 +77,9 @@ export const getAllUsers = () => API.get('/admin/users');
 export const getVerificationRequests = () => API.get('/admin/verification-requests');
 export const approveVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'approve' });
 export const rejectVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'reject' });
+// --- 1. ADD NEW ADMIN FUNCTIONS ---
+export const adminBanUser = (id) => API.put(`/admin/ban/${id}`);
+export const adminDeleteUser = (id) => API.delete(`/admin/user/${id}`);
 
 // Review Routes
 export const getListingReviews = (listingId) => API.get(`/reviews/${listingId}`);
@@ -100,7 +89,7 @@ export const createListingReview = (listingId, reviewData) => API.post(`/reviews
 export const getRewards = () => API.get('/rewards');
 export const redeemReward = (data) => API.post('/rewards/redeem', data);
 
-// --- NEW FORUM ROUTES ---
+// Forum Routes
 export const getForumCategories = () => API.get('/forum/categories');
 export const createForumCategory = (data) => API.post('/forum/categories', data);
 export const getForumPosts = (categoryId) => API.get(`/forum/posts/category/${categoryId}`);

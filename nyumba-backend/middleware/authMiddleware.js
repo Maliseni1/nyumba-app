@@ -10,16 +10,10 @@ const protect = asyncHandler(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     try {
-      // Get token from header (e.g., "Bearer eyJhbGci...")
       token = req.headers.authorization.split(' ')[1];
-
-      // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Get user from the token's ID and attach it to the request object
       req.user = await User.findById(decoded.id).select('-password');
-
-      next(); // Move on to the next piece of middleware or the route handler
+      next();
     } catch (error) {
       console.error(error);
       res.status(401);
@@ -33,18 +27,39 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-// --- 1. NEW ADMIN MIDDLEWARE FUNCTION ---
-// This checks if the user (already added by 'protect') is an admin
 const admin = (req, res, next) => {
   if (req.user && req.user.isAdmin) {
-    next(); // User is an admin, proceed
+    next();
   } else {
     res.status(401);
     throw new Error('Not authorized as an admin');
   }
 };
-// --- END OF NEW FUNCTION ---
 
+// --- 1. NEW "SOFT" MIDDLEWARE ---
+// This middleware will try to get a user, but will not fail if there's no token.
+// This is for public routes (like getListings) that need to know *if* a user is logged in.
+const identifyUser = asyncHandler(async (req, res, next) => {
+  let token;
 
-// --- 2. EXPORT BOTH FUNCTIONS ---
-module.exports = { protect, admin };
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.id).select('-password');
+    } catch (error) {
+      // If token is expired or invalid, just move on. req.user will be undefined.
+      console.log('identifyUser: Invalid token, user not identified.');
+    }
+  }
+  
+  // Always proceed, whether a user was found or not.
+  next();
+});
+// --- END OF NEW MIDDLEWARE ---
+
+// --- 3. EXPORT THE NEW FUNCTION ---
+module.exports = { protect, admin, identifyUser };

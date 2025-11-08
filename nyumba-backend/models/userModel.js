@@ -40,17 +40,23 @@ const userSchema = new mongoose.Schema({
     resetPasswordToken: String,
     resetPasswordExpire: Date,
 
-    // --- 1. NEW FIELDS FOR ACCOUNT DELETION ---
     isScheduledForDeletion: {
         type: Boolean,
         default: false,
-        index: true // Add index to quickly find users for the cron job
+        index: true
     },
     deletionScheduledAt: {
         type: Date,
         default: null
     },
-    // --- END OF NEW FIELDS ---
+
+    // --- 1. NEW FIELD FOR BANNING USERS ---
+    isBanned: {
+        type: Boolean,
+        default: false,
+        index: true
+    },
+    // --- END OF NEW FIELD ---
 
 }, {
     timestamps: true,

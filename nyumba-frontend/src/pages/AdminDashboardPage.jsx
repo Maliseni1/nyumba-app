@@ -63,7 +63,7 @@ const AdminDashboardPage = () => {
                             {/* --- 4. UPDATED TEXT --- */}
                             <h2 className="text-2xl font-bold text-text-color mb-4">All Users</h2>
                             {/* This component will need to be updated */}
-                            <UserList users={users} />
+                            <UserList users={users} setUsers={setUsers} />
                         </div>
                     </>
                 )

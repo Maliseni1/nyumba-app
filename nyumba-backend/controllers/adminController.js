@@ -1,6 +1,8 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 const Listing = require('../models/listingModel');
+const Conversation = require('../models/conversationModel');
+const Message = require('../models/messageModel');
 
 // @desc    Get application statistics
 // @route   GET /api/admin/stats
@@ -9,7 +11,6 @@ const getAppStats = asyncHandler(async (req, res) => {
     const userCount = await User.countDocuments({});
     const listingCount = await Listing.countDocuments({});
     
-    // --- NEW: Count pending verifications ---
     const pendingVerificationCount = await User.countDocuments({
         verificationStatus: 'pending'
     });
@@ -17,7 +18,7 @@ const getAppStats = asyncHandler(async (req, res) => {
     res.json({
         users: userCount,
         listings: listingCount,
-        pendingVerifications: pendingVerificationCount, // Send new stat
+        pendingVerifications: pendingVerificationCount,
     });
 });
 
@@ -25,32 +26,28 @@ const getAppStats = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/users
 // @access  Private/Admin
 const getAllUsers = asyncHandler(async (req, res) => {
-    // Find all users, but do not include their password
-    // --- UPDATED: Also select the new status fields ---
     const users = await User.find({}).select('-password')
         .sort({ createdAt: -1 }); 
         
     res.json(users);
 });
 
-// --- 1. NEW FUNCTION ---
 // @desc    Get all users with pending verification
 // @route   GET /api/admin/verification-requests
 // @access  Private/Admin
 const getVerificationRequests = asyncHandler(async (req, res) => {
     const users = await User.find({ verificationStatus: 'pending' })
         .select('-password')
-        .sort({ updatedAt: 1 }); // Show oldest requests first
+        .sort({ updatedAt: 1 }); 
 
     res.json(users);
 });
 
-// --- 2. NEW FUNCTION ---
 // @desc    Approve or reject a verification request
 // @route   PUT /api/admin/verify/:id
 // @access  Private/Admin
 const handleVerificationRequest = asyncHandler(async (req, res) => {
-    const { action } = req.body; // action will be 'approve' or 'reject'
+    const { action } = req.body; 
     const user = await User.findById(req.params.id);
 
     if (!user) {
@@ -60,7 +57,6 @@ const handleVerificationRequest = asyncHandler(async (req, res) => {
 
     if (action === 'approve') {
         user.verificationStatus = 'approved';
-        // Note: isVerified virtual will now be true if subscription is active
     } else if (action === 'reject') {
         user.verificationStatus = 'rejected';
     } else {
@@ -70,7 +66,6 @@ const handleVerificationRequest = asyncHandler(async (req, res) => {
 
     await user.save();
     
-    // Send back all pending requests so the list can refresh
     const users = await User.find({ verificationStatus: 'pending' })
         .select('-password')
         .sort({ updatedAt: 1 });
@@ -78,10 +73,70 @@ const handleVerificationRequest = asyncHandler(async (req, res) => {
     res.json(users);
 });
 
+// --- 1. NEW FUNCTION: Ban/Unban a user ---
+// @desc    Ban or unban a user
+// @route   PUT /api/admin/ban/:id
+// @access  Private/Admin
+const banUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id);
 
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    // Toggle the ban status
+    user.isBanned = !user.isBanned;
+    await user.save();
+
+    // Return all users so the list can refresh
+    const allUsers = await User.find({}).select('-password').sort({ createdAt: -1 });
+    res.json(allUsers);
+});
+
+// --- 2. NEW FUNCTION: Admin Delete User ---
+// @desc    Permanently delete a user (Admin)
+// @route   DELETE /api/admin/user/:id
+// @access  Private/Admin
+const deleteUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    if (user.isAdmin) {
+        res.status(400);
+        throw new Error('Cannot delete an admin account.');
+    }
+
+    // Perform the same full deletion as the cron job
+    console.log(`ADMIN: Deleting user ${user.email} (ID: ${user._id})`);
+    
+    await Listing.deleteMany({ owner: user._id });
+    await Conversation.deleteMany({ participants: user._id });
+    await Message.deleteMany({ sender: user._id });
+    await User.updateMany(
+        { savedListings: user._id },
+        { $pull: { savedListings: user._id } }
+    );
+    await User.deleteOne({ _id: user._id });
+    
+    console.log(`ADMIN: Successfully deleted user ${user.email}.`);
+
+    // Return all users so the list can refresh
+    const allUsers = await User.find({}).select('-password').sort({ createdAt: -1 });
+    res.json(allUsers);
+});
+
+
+// --- 3. EXPORT NEW FUNCTIONS ---
 module.exports = {
     getAppStats,
     getAllUsers,
-    getVerificationRequests, // <-- Export new function
-    handleVerificationRequest, // <-- Export new function
+    getVerificationRequests,
+    handleVerificationRequest,
+    banUser,
+    deleteUser
 };
