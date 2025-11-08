@@ -12,7 +12,8 @@ import {
     FaBars,
     FaTimes,
     FaChartBar,
-    FaGift
+    FaGift,
+    FaComments // --- 1. IMPORT ICON ---
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { Menu, Transition } from '@headlessui/react';
@@ -44,6 +45,10 @@ const Navbar = () => {
                 <>
                     <span className="text-subtle-text-color hidden sm:block">Welcome, {authUser.name}</span>
                     <Link to="/map" title="Map View" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaMap /></Link>
+                    
+                    {/* --- 2. ADD TO DESKTOP LINKS --- */}
+                    <Link to="/forum" title="Community Hub" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaComments /></Link>
+                    
                     {authUser.isAdmin && (
                         <Link to="/admin/dashboard" title="Admin Dashboard" className="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300 transition-colors text-2xl"><FaTachometerAlt /></Link>
                     )}
@@ -68,6 +73,7 @@ const Navbar = () => {
                 </>
             ) : (
                 <>
+                    {/* Logged out users don't see the forum link, only the subscription pitch */}
                     <Link to="/subscription" title="Subscription" className="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors text-2xl"><FaGem /></Link>
                     <Link to="/login" className="text-subtle-text-color hover:text-text-color transition-colors">Login</Link>
                     <Link to="/register" className="bg-accent-color hover:bg-accent-hover-color text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">Register</Link>
@@ -82,6 +88,10 @@ const Navbar = () => {
             {authUser ? (
                 <>
                     <Link to="/map" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaMap /> Map View</Link>
+                    
+                    {/* --- 3. ADD TO MOBILE LINKS --- */}
+                    <Link to="/forum" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaComments /> Community</Link>
+                    
                     {authUser.isAdmin && (
                         <Link to="/admin/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-yellow-500 dark:text-yellow-400 hover:bg-border-color rounded-md"><FaTachometerAlt /> Admin Dashboard</Link>
                     )}
@@ -111,6 +121,7 @@ const Navbar = () => {
                     <Link to="/subscription" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-500 dark:text-amber-400 hover:bg-border-color rounded-md"><FaGem /> Subscription</Link>
                     <Link to="/login" onClick={handleLinkClick} className="block px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md">Login</Link>
                     <Link to="/register" onClick={handleLinkClick} className="block px-3 py-2 text-base font-medium text-white bg-accent-color hover:bg-accent-hover-color rounded-md">Register</Link>
+Verify
                 </>
             )}
         </div>

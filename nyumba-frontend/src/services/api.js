@@ -8,12 +8,15 @@ const API = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL });
 const silentGetRoutes = [
     '/users/profile',
     '/users/unread-count',
+    '/forum/categories', // Don't show loader for just fetching categories
 ];
 
 // 2. Add interceptor to SHOW loader
 API.interceptors.request.use((req) => {
-    // Only show loader if it's NOT a silent route
-    if (!silentGetRoutes.includes(req.url)) {
+    // Check if the URL *ends with* a silent route, for routes with params
+    const isSilent = silentGetRoutes.some(route => req.url.endsWith(route));
+    
+    if (!isSilent) {
         window.dispatchEvent(new CustomEvent('api-request-start'));
     }
     
@@ -27,8 +30,10 @@ API.interceptors.request.use((req) => {
 // 3. Add interceptor to HIDE loader
 API.interceptors.response.use(
     (res) => {
-        // Hide loader on success (if it wasn't a silent route)
-        if (!silentGetRoutes.includes(res.config.url)) {
+        // Check if the URL *ends with* a silent route, for routes with params
+        const isSilent = silentGetRoutes.some(route => res.config.url.endsWith(route));
+        
+        if (!isSilent) {
             window.dispatchEvent(new CustomEvent('api-request-end'));
         }
         return res;
@@ -57,7 +62,7 @@ export const resetPassword = (token, password) => API.put(`/users/resetpassword/
 export const applyForVerification = () => API.post('/users/apply-verification');
 export const getMyReferralData = () => API.get('/users/referral-data');
 export const changePassword = (formData) => API.put('/users/changepassword', formData);
-export const deleteAccount = () => API.delete('/users/profile'); // <-- THIS WAS THE NEW LINE
+export const deleteAccount = () => API.delete('/users/profile');
 
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });
@@ -94,3 +99,14 @@ export const createListingReview = (listingId, reviewData) => API.post(`/reviews
 // Reward Routes
 export const getRewards = () => API.get('/rewards');
 export const redeemReward = (data) => API.post('/rewards/redeem', data);
+
+// --- NEW FORUM ROUTES ---
+export const getForumCategories = () => API.get('/forum/categories');
+export const createForumCategory = (data) => API.post('/forum/categories', data);
+export const getForumPosts = (categoryId) => API.get(`/forum/posts/category/${categoryId}`);
+export const getForumPostById = (postId) => API.get(`/forum/posts/${postId}`);
+export const createForumPost = (data) => API.post('/forum/posts', data);
+export const deleteForumPost = (postId) => API.delete(`/forum/posts/${postId}`);
+export const getForumReplies = (postId) => API.get(`/forum/replies/${postId}`);
+export const createForumReply = (data) => API.post('/forum/replies', data);
+export const deleteForumReply = (replyId) => API.delete(`/forum/replies/${replyId}`);

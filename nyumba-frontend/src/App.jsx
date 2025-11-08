@@ -32,11 +32,14 @@ import VerificationPage from './pages/VerificationPage';
 import LandlordRoute from './components/LandlordRoute';
 import LandlordDashboardPage from './pages/LandlordDashboardPage';
 import RewardsPage from './pages/RewardsPage';
-
-// --- 1. IMPORT THE NEW SUBSCRIPTION PAGES ---
-import SubscriptionPage from './pages/SubscriptionPage'; // This is now the hub
+import SubscriptionPage from './pages/SubscriptionPage';
 import LandlordSubscriptionPage from './pages/LandlordSubscriptionPage';
 import TenantSubscriptionPage from './pages/TenantSubscriptionPage';
+
+// --- 1. IMPORT THE NEW FORUM PAGES ---
+import ForumHomePage from './pages/ForumHomePage';
+import PostListPage from './pages/PostListPage';
+import PostDetailPage from './pages/PostDetailPage';
 
 
 function App() {
@@ -45,7 +48,6 @@ function App() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
 
   useEffect(() => {
-    // ... (Splash screen logic is unchanged)
     const timer = setTimeout(() => {
       setIsSplashVisible(false);
     }, 2500); // 2.5 seconds
@@ -73,7 +75,7 @@ function App() {
               <Route path="/user/:id" element={<PublicProfilePage />} />
               <Route path="/map" element={<MapPage />} />
 
-              {/* --- 2. UPDATE SUBSCRIPTION ROUTES --- */}
+              {/* Subscription Routes */}
               <Route path="/subscription" element={<SubscriptionPage />} />
               <Route path="/subscription/landlord" element={<LandlordSubscriptionPage />} />
               <Route path="/subscription/tenant" element={<TenantSubscriptionPage />} />
@@ -81,6 +83,14 @@ function App() {
               {/* Password Routes */}
               <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
               <Route path="/resetpassword/:resettoken" element={<ResetPasswordPage />} />
+
+              {/* --- 2. ADD NEW FORUM ROUTES (must be inside PrivateRoute) --- */}
+              <Route path="/forum" element={<PrivateRoute />}>
+                <Route index element={<ForumHomePage />} />
+                <Route path="category/:categoryId" element={<PostListPage />} />
+                <Route path="post/:postId" element={<PostDetailPage />} />
+              </Route>
+              {/* --- END OF NEW ROUTES --- */}
 
               {/* Private Routes (All logged-in users) */}
               <Route path="" element={<PrivateRoute />}>

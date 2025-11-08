@@ -33,4 +33,18 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-module.exports = { protect };
+// --- 1. NEW ADMIN MIDDLEWARE FUNCTION ---
+// This checks if the user (already added by 'protect') is an admin
+const admin = (req, res, next) => {
+  if (req.user && req.user.isAdmin) {
+    next(); // User is an admin, proceed
+  } else {
+    res.status(401);
+    throw new Error('Not authorized as an admin');
+  }
+};
+// --- END OF NEW FUNCTION ---
+
+
+// --- 2. EXPORT BOTH FUNCTIONS ---
+module.exports = { protect, admin };

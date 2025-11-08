@@ -6,9 +6,9 @@ const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const cron = require('node-cron'); // 1. IMPORT NODE-CRON
+const cron = require('node-cron'); 
 
-// 2. IMPORT MODELS NEEDED FOR DELETION
+// IMPORT MODELS NEEDED FOR DELETION
 const User = require('./models/userModel');
 const Listing = require('./models/listingModel');
 const Conversation = require('./models/conversationModel');
@@ -45,7 +45,8 @@ const messageRoutes = require('./routes/messageRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
-const rewardRoutes = require('./routes/rewardRoutes'); // <-- 1. IMPORT REWARD ROUTES
+const rewardRoutes = require('./routes/rewardRoutes');
+const forumRoutes = require('./routes/forumRoutes'); // <-- 1. IMPORT FORUM ROUTES
 
 connectDB();
 
@@ -66,9 +67,8 @@ const corsOptions = {
         'http://localhost:5174',
         'https://nyumba-app.vercel.app',
         'https://nyumba-app-git-master-maliseni1.vercel.app',
-        // Add your production frontend URL here
         process.env.FRONTEND_URL
-    ].filter(Boolean), // Remove undefined values
+    ].filter(Boolean),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -88,7 +88,8 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/rewards', rewardRoutes); // <-- 2. USE REWARD ROUTES
+app.use('/api/rewards', rewardRoutes);
+app.use('/api/forum', forumRoutes); // <-- 2. USE FORUM ROUTES
 
 app.use(notFound);
 app.use(errorHandler);
@@ -111,16 +112,14 @@ io.on('connection', (socket) => {
 });
 
 
-// --- 3. NEW: SCHEDULED JOB FOR ACCOUNT DELETION ---
-// This runs once every day at midnight ('0 0 * * *')
+// --- SCHEDULED JOB FOR ACCOUNT DELETION ---
 console.log('Setting up daily job for account deletion...');
 cron.schedule('0 0 * * *', async () => {
     console.log('RUNNING DAILY CRON JOB: Checking for accounts pending deletion...');
     try {
-        // Find users whose grace period has expired
         const usersToDelete = await User.find({
             isScheduledForDeletion: true,
-            deletionScheduledAt: { $lte: new Date() } // Find users whose date is in the past
+            deletionScheduledAt: { $lte: new Date() } 
         });
 
         if (usersToDelete.length === 0) {
@@ -132,26 +131,14 @@ cron.schedule('0 0 * * *', async () => {
 
         for (const user of usersToDelete) {
             console.log(`CRON JOB: Deleting user ${user.email} (ID: ${user._id})`);
-
-            // 1. Delete all their listings
             await Listing.deleteMany({ owner: user._id });
-            
-            // 2. Delete all their conversations
             await Conversation.deleteMany({ participants: user._id });
-            
-            // 3. Delete all their messages
             await Message.deleteMany({ sender: user._id });
-            
-            // 4. (Optional) Remove them from other users' saved listings
-            // This is complex, but we'll do a basic version:
             await User.updateMany(
                 { savedListings: user._id },
                 { $pull: { savedListings: user._id } }
             );
-
-            // 5. Delete the user themselves
             await User.deleteOne({ _id: user._id });
-            
             console.log(`CRON JOB: Successfully deleted user ${user.email}.`);
         }
     } catch (error) {
