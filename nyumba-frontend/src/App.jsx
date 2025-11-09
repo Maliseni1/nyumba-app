@@ -41,8 +41,9 @@ import PostDetailPage from './pages/PostDetailPage';
 import CompleteProfilePage from './pages/CompleteProfilePage'; 
 import EmailVerificationPage from './pages/EmailVerificationPage';
 import BulkUploadPage from './pages/BulkUploadPage';
-// --- 1. IMPORT THE NEW VERIFIED ROUTE ---
 import VerifiedLandlordRoute from './components/VerifiedLandlordRoute';
+// --- 1. IMPORT NEW PREMIUM SUPPORT PAGE ---
+import PremiumSupportPage from './pages/PremiumSupportPage';
 
 function App() {
   const { isAuthLoading } = useAuth();
@@ -106,19 +107,17 @@ function App() {
                 <Route path="/payments" element={<PaymentHistoryPage />} />
                 <Route path="/verification" element={<VerificationPage />} />
                 <Route path="/rewards" element={<RewardsPage />} />
+                {/* --- 2. ADD NEW PREMIUM SUPPORT ROUTE --- */}
+                <Route path="/support" element={<PremiumSupportPage />} />
               </Route>
               
-              {/* --- 2. UPDATE LANDLORD ROUTES --- */}
-              {/* Routes for ALL landlords (verified or not) */}
+              {/* Landlord Routes */}
               <Route path="/landlord" element={<LandlordRoute />}>
                 <Route path="bulk-upload" element={<BulkUploadPage />} />
-                
-                {/* Routes for ONLY VERIFIED landlords */}
                 <Route path="" element={<VerifiedLandlordRoute />}>
                     <Route path="dashboard" element={<LandlordDashboardPage />} />
                 </Route>
               </Route>
-              {/* --- END OF UPDATE --- */}
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminRoute />}>

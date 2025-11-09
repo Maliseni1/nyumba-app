@@ -16,10 +16,12 @@ const {
     changePassword,
     scheduleAccountDeletion,
     completeProfile,
-    verifyEmail, // <-- 1. IMPORT
-    resendVerificationEmail // <-- 1. IMPORT
+    verifyEmail,
+    resendVerificationEmail,
+    sendPremiumSupportTicket // <-- 1. IMPORT
 } = require('../controllers/userController');
-const { protect } = require('../middleware/authMiddleware');
+// --- 2. IMPORT 'premiumUser' MIDDLEWARE ---
+const { protect, premiumUser } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
 // --- Public Auth Routes ---
@@ -27,9 +29,9 @@ router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/google', googleLogin);
 
-// --- 2. NEW EMAIL VERIFICATION ROUTES ---
-router.get('/verify-email/:token', verifyEmail); // For clicking the link
-router.post('/resend-verification', resendVerificationEmail); // For the resend button
+// --- Email Verification Routes ---
+router.get('/verify-email/:token', verifyEmail);
+router.post('/resend-verification', resendVerificationEmail);
 
 // --- Public Password Reset Routes ---
 router.post('/forgotpassword', forgotPassword);
@@ -47,6 +49,10 @@ router.post('/save/:listingId', protect, toggleSaveListing);
 router.post('/apply-verification', protect, applyForVerification);
 router.get('/referral-data', protect, getMyReferralData);
 router.put('/changepassword', protect, changePassword);
+
+// --- 3. NEW PREMIUM SUPPORT ROUTE ---
+// This route is protected by both 'protect' and 'premiumUser'
+router.post('/premium-support', protect, premiumUser, sendPremiumSupportTicket);
 
 // --- Public Profile Route (Keep this last) ---
 router.get('/:id', getPublicUserProfile);

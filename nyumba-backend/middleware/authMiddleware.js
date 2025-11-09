@@ -36,9 +36,6 @@ const admin = (req, res, next) => {
   }
 };
 
-// --- 1. NEW "SOFT" MIDDLEWARE ---
-// This middleware will try to get a user, but will not fail if there's no token.
-// This is for public routes (like getListings) that need to know *if* a user is logged in.
 const identifyUser = asyncHandler(async (req, res, next) => {
   let token;
 
@@ -51,15 +48,24 @@ const identifyUser = asyncHandler(async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = await User.findById(decoded.id).select('-password');
     } catch (error) {
-      // If token is expired or invalid, just move on. req.user will be undefined.
       console.log('identifyUser: Invalid token, user not identified.');
     }
   }
   
-  // Always proceed, whether a user was found or not.
   next();
 });
+
+// --- 1. NEW PREMIUM USER MIDDLEWARE ---
+const premiumUser = (req, res, next) => {
+    // This middleware must run *after* 'protect'
+    if (req.user && req.user.subscriptionStatus === 'active') {
+        next();
+    } else {
+        res.status(403); // Forbidden
+        throw new Error('This feature is only available to premium subscribers.');
+    }
+};
 // --- END OF NEW MIDDLEWARE ---
 
-// --- 3. EXPORT THE NEW FUNCTION ---
-module.exports = { protect, admin, identifyUser };
+// --- 2. EXPORT THE NEW FUNCTION ---
+module.exports = { protect, admin, identifyUser, premiumUser };

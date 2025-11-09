@@ -52,6 +52,8 @@ export const deleteAccount = () => API.delete('/users/profile');
 export const completeProfile = (data) => API.put('/users/complete-profile', data);
 export const verifyEmail = (token) => API.get(`/users/verify-email/${token}`);
 export const resendVerificationEmail = (email) => API.post('/users/resend-verification', { email });
+// --- 1. ADD NEW PREMIUM SUPPORT FUNCTION ---
+export const sendPremiumSupportTicket = (data) => API.post('/users/premium-support', data);
 
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });
@@ -63,7 +65,6 @@ export const getListingsNearby = (params) => API.get('/listings/nearby', { param
 export const reverseGeocode = (params) => API.get('/listings/reverse-geocode', { params });
 export const setListingStatus = (id, status) => API.put(`/listings/${id}/status`, { status });
 export const getRecommendedListings = () => API.get('/listings/recommendations');
-// --- 1. ADD NEW BULK UPLOAD FUNCTION ---
 export const bulkUploadListings = (formData) => API.post('/listings/bulk-upload', formData, {
     headers: {
         'Content-Type': 'multipart/form-data',

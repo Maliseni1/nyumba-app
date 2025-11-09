@@ -14,7 +14,8 @@ import {
     FaChartBar,
     FaGift,
     FaComments,
-    FaFileUpload // --- 1. IMPORT NEW ICON ---
+    FaFileUpload,
+    FaHeadset // --- 1. IMPORT NEW ICON ---
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { Menu, Transition } from '@headlessui/react';
@@ -38,6 +39,9 @@ const Navbar = () => {
     const handleLinkClick = () => {
         setIsMobileMenuOpen(false);
     };
+    
+    // --- 2. CHECK FOR PREMIUM STATUS ---
+    const isPremium = authUser && authUser.subscriptionStatus === 'active';
 
     // --- DESKTOP LINKS ---
     const desktopLinks = (
@@ -48,6 +52,11 @@ const Navbar = () => {
                     <Link to="/map" title="Map View" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaMap /></Link>
                     <Link to="/forum" title="Community Hub" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaComments /></Link>
                     
+                    {/* --- 3. ADD PREMIUM SUPPORT LINK (Desktop) --- */}
+                    {isPremium && (
+                        <Link to="/support" title="Premium Support" className="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors text-2xl"><FaHeadset /></Link>
+                    )}
+
                     {authUser.isAdmin && (
                         <Link to="/admin/dashboard" title="Admin Dashboard" className="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300 transition-colors text-2xl"><FaTachometerAlt /></Link>
                     )}
@@ -61,7 +70,6 @@ const Navbar = () => {
                         )}
                     </Link>
                     
-                    {/* --- 2. ADD LANDLORD LINKS (including new Bulk Upload) --- */}
                     {authUser.role === 'landlord' && (
                         <>
                             <Link to="/add-listing" title="Add Listing" className="text-accent-color hover:text-accent-hover-color transition-colors text-2xl"><FaPlusSquare /></Link>
@@ -71,7 +79,6 @@ const Navbar = () => {
                     {authUser.role === 'landlord' && authUser.isVerified && (
                         <Link to="/landlord/dashboard" title="Landlord Dashboard" className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors text-2xl"><FaChartBar /></Link>
                     )}
-                    {/* --- END LANDLORD LINKS --- */}
 
                     <Link to="/payments" title="Payment History" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaCreditCard /></Link>
                     <Link to="/rewards" title="My Rewards" className="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors text-2xl"><FaGift /></Link>
@@ -95,13 +102,19 @@ const Navbar = () => {
                     <Link to="/map" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaMap /> Map View</Link>
                     <Link to="/forum" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaComments /> Community</Link>
                     
+                    {/* --- 4. ADD PREMIUM SUPPORT LINK (Mobile) --- */}
+                    {isPremium && (
+                        <Link to="/support" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-500 dark:text-amber-400 hover:bg-border-color rounded-md">
+                            <FaHeadset /> Premium Support
+                        </Link>
+                    )}
+
                     {authUser.isAdmin && (
                         <Link to="/admin/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-yellow-500 dark:text-yellow-400 hover:bg-border-color rounded-md"><FaTachometerAlt /> Admin Dashboard</Link>
                     )}
                     <Link to="/profile" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaUserCircle /> Profile</Link>
                     <Link to="/messages" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaEnvelope /> Messages {unreadCount > 0 && `(${unreadCount})`}</Link>
                     
-                    {/* --- 3. ADD LANDLORD LINKS (including new Bulk Upload) --- */}
                     {authUser.role === 'landlord' && (
                         <>
                             <Link to="/add-listing" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-accent-color hover:bg-border-color rounded-md"><FaPlusSquare /> Add Listing</Link>
@@ -113,7 +126,6 @@ const Navbar = () => {
                             <FaChartBar /> Landlord Dashboard
                         </Link>
                     )}
-                    {/* --- END LANDLORD LINKS --- */}
 
                     <Link to="/payments" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaCreditCard /> Payments</Link>
                     
@@ -128,7 +140,6 @@ const Navbar = () => {
                     <Link to="/subscription" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-500 dark:text-amber-400 hover:bg-border-color rounded-md"><FaGem /> Subscription</Link>
                     <Link to="/login" onClick={handleLinkClick} className="block px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md">Login</Link>
                     <Link to="/register" onClick={handleLinkClick} className="block px-3 py-2 text-base font-medium text-white bg-accent-color hover:bg-accent-hover-color rounded-md">Register</Link>
-                    {/* The typo 'Verify' was here, I removed it. */}
                 </>
             )}
         </div>

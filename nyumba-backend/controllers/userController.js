@@ -12,14 +12,11 @@ const PointsHistory = require('../models/pointsHistoryModel');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// --- 1. NEW HELPER FUNCTION: Send Verification Email ---
 const sendVerificationEmail = async (user, res) => {
     const verificationToken = user.getEmailVerificationToken();
-    await user.save({ validateBeforeSave: false }); // Save the token to the user
+    await user.save({ validateBeforeSave: false }); 
 
-    // Create the verification URL
     const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
-
     const message = `
         <h1>Welcome to Nyumba!</h1>
         <p>Thank you for registering. Please click the link below to verify your email address:</p>
@@ -37,30 +34,22 @@ const sendVerificationEmail = async (user, res) => {
         });
     } catch (err) {
         console.error(err);
-        // If email fails, we should not block the user from being created
-        // But we need to handle this. For now, we'll just log it.
-        // In production, we'd add the user to a "retry" queue.
         console.error(`Failed to send verification email to ${user.email}`);
-        // We must reset the token so they can try again
         user.emailVerificationToken = undefined;
         await user.save({ validateBeforeSave: false });
     }
 };
 
-// --- registerUser (UPDATED) ---
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password, whatsappNumber, role, referralCode } = req.body;
     
     let userExists = await User.findOne({ email });
 
-    // Handle case where user exists but is not verified
     if (userExists && !userExists.isEmailVerified) {
-        // Resend verification email instead of creating a new user
         await sendVerificationEmail(userExists, res);
-        res.status(400); // 400 Bad Request
+        res.status(400); 
         throw new Error('User already exists but is not verified. A new verification email has been sent.');
     }
-
     if (userExists) {
         res.status(400);
         throw new Error('User already exists');
@@ -86,7 +75,7 @@ const registerUser = asyncHandler(async (req, res) => {
         role,
         referredBy: referredByUserId,
         isProfileComplete: true,
-        isEmailVerified: false // <-- 2. Set as false by default
+        isEmailVerified: false 
     });
     
     if (user) {
@@ -98,16 +87,12 @@ const registerUser = asyncHandler(async (req, res) => {
             );
         }
 
-        // --- 3. SEND VERIFICATION EMAIL ---
         try {
             await sendVerificationEmail(user, res);
         } catch (emailError) {
-            // Log the error, but the user is already created.
             console.error(`Failed to send initial verification email: ${emailError.message}`);
         }
         
-        // We DO NOT send a token or log them in.
-        // We just tell them to check their email.
         res.status(201).json({
             message: 'Registration successful! Please check your email to verify your account.'
         });
@@ -118,7 +103,6 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 });
 
-// --- loginUser (UPDATED) ---
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -128,25 +112,20 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new Error('Your account has been suspended by an administrator.');
     }
 
-    // --- 4. ADD EMAIL VERIFICATION CHECK ---
     if (user && !(await user.matchPassword(password))) {
         res.status(401);
         throw new Error('Invalid email or password');
     }
-
     if (!user) {
         res.status(401);
         throw new Error('Invalid email or password');
     }
     
-    // User is valid, now check if verified
     if (!user.isEmailVerified) {
-        res.status(401); // 401 Unauthorized
+        res.status(401); 
         throw new Error('Please verify your email to log in. You can request a new verification link.');
     }
-    // --- END OF CHECK ---
 
-    // All checks passed, proceed with login
     let welcomeBack = false;
     if (user.isScheduledForDeletion) {
         user.isScheduledForDeletion = false;
@@ -176,7 +155,6 @@ const loginUser = asyncHandler(async (req, res) => {
     });
 });
 
-// --- googleLogin (UPDATED) ---
 const googleLogin = asyncHandler(async (req, res) => {
     const { token } = req.body;
     const ticket = await client.verifyIdToken({
@@ -206,11 +184,10 @@ const googleLogin = asyncHandler(async (req, res) => {
             password: Math.random().toString(36).slice(-8),
             profilePicture: picture,
             isProfileComplete: false, 
-            isEmailVerified: true // <-- 5. Google users are verified by default
+            isEmailVerified: true 
         });
     }
 
-    // --- 6. If an existing user logs in with Google, verify their email ---
     if (user && !user.isEmailVerified) {
         user.isEmailVerified = true;
         await user.save();
@@ -237,7 +214,6 @@ const googleLogin = asyncHandler(async (req, res) => {
     });
 });
 
-// --- forgotPassword ---
 const forgotPassword = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
@@ -260,7 +236,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
     }
 });
 
-// --- resetPassword ---
 const resetPassword = asyncHandler(async (req, res) => {
     const resetPasswordToken = crypto.createHash('sha256').update(req.params.resettoken).digest('hex');
     const user = await User.findOne({
@@ -295,7 +270,6 @@ const resetPassword = asyncHandler(async (req, res) => {
     });
 });
 
-// --- getUserProfile ---
 const getUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id)
         .select('-password')
@@ -337,7 +311,6 @@ const getUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// --- getPublicUserProfile ---
 const getPublicUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id).select('-password');
     if (user) {
@@ -364,7 +337,6 @@ const getPublicUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// --- updateUserProfile ---
 const updateUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
     if (user) {
@@ -415,7 +387,6 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// --- changePassword ---
 const changePassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     
@@ -436,7 +407,6 @@ const changePassword = asyncHandler(async (req, res) => {
     }
 });
 
-// --- getUnreadMessageCount ---
 const getUnreadMessageCount = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const conversations = await Conversation.find({ participants: userId });
@@ -449,7 +419,6 @@ const getUnreadMessageCount = asyncHandler(async (req, res) => {
     res.status(200).json({ unreadCount });
 });
 
-// --- toggleSaveListing ---
 const toggleSaveListing = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const { listingId } = req.params;
@@ -471,7 +440,6 @@ const toggleSaveListing = asyncHandler(async (req, res) => {
     }
 });
 
-// --- applyForVerification ---
 const applyForVerification = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
@@ -525,7 +493,6 @@ const applyForVerification = asyncHandler(async (req, res) => {
     });
 });
 
-// --- getMyReferralData ---
 const getMyReferralData = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select('referralCode points');
 
@@ -540,7 +507,6 @@ const getMyReferralData = asyncHandler(async (req, res) => {
     });
 });
 
-// --- scheduleAccountDeletion ---
 const scheduleAccountDeletion = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
     
@@ -562,7 +528,6 @@ const scheduleAccountDeletion = asyncHandler(async (req, res) => {
     });
 });
 
-// --- completeProfile ---
 const completeProfile = asyncHandler(async (req, res) => {
     const { role, whatsappNumber } = req.body;
     const user = await User.findById(req.user._id);
@@ -585,10 +550,8 @@ const completeProfile = asyncHandler(async (req, res) => {
     user.isProfileComplete = true;
     await user.save();
 
-    // Give points for completing profile
     await handlePointsTransaction(user._id, 'COMPLETE_PROFILE');
 
-    // Return the full, updated user object
     res.json({
         _id: user._id,
         name: user.name,
@@ -610,9 +573,7 @@ const completeProfile = asyncHandler(async (req, res) => {
     });
 });
 
-// --- 7. NEW: verifyEmail ---
 const verifyEmail = asyncHandler(async (req, res) => {
-    // Get token from params and hash it
     const verificationToken = crypto
         .createHash('sha256')
         .update(req.params.token)
@@ -631,7 +592,6 @@ const verifyEmail = asyncHandler(async (req, res) => {
     user.emailVerificationToken = undefined;
     await user.save();
     
-    // Log the user in and send them their token
     res.status(200).json({
         _id: user._id,
         name: user.name,
@@ -652,7 +612,6 @@ const verifyEmail = asyncHandler(async (req, res) => {
     });
 });
 
-// --- 8. NEW: resendVerificationEmail ---
 const resendVerificationEmail = asyncHandler(async (req, res) => {
     const { email } = req.body;
     if (!email) {
@@ -670,7 +629,6 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
         throw new Error('This email is already verified.');
     }
 
-    // Send the email
     try {
         await sendVerificationEmail(user, res);
         res.status(200).json({ message: 'A new verification email has been sent.' });
@@ -680,8 +638,54 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
     }
 });
 
+// --- 1. NEW PREMIUM SUPPORT FUNCTION ---
+const sendPremiumSupportTicket = asyncHandler(async (req, res) => {
+    const { subject, message } = req.body;
+    const user = req.user; // We get this from the 'protect' middleware
 
-// --- 9. EXPORT NEW FUNCTIONS ---
+    if (!subject || !message) {
+        res.status(400);
+        throw new Error('Please provide a subject and a message.');
+    }
+
+    // This is your support email from your .env file
+    const supportEmail = process.env.SUPPORT_EMAIL;
+    if (!supportEmail) {
+        console.error('SUPPORT_EMAIL is not set in .env file.');
+        res.status(500);
+        throw new Error('Support service is currently unavailable. Please try again later.');
+    }
+
+    const userEmail = user.email;
+    const userName = user.name;
+    const userType = user.subscriptionType; // e.g., 'landlord_pro'
+
+    const emailSubject = `[Premium Support Ticket - ${userType}] ${subject}`;
+    const emailHtml = `
+        <p><strong>From:</strong> ${userName} (${userEmail})</p>
+        <p><strong>User ID:</strong> ${user._id}</p>
+        <p><strong>Subscription Type:</strong> ${userType}</p>
+        <hr>
+        <h3>Message:</h3>
+        <p>${message.replace(/\n/g, '<br>')}</p>
+    `;
+
+    try {
+        await sendEmail({
+            email: supportEmail, // Send *to* your support address
+            subject: emailSubject,
+            html: emailHtml,
+            replyTo: userEmail // Set the 'reply-to' to the user's email
+        });
+        res.status(200).json({ message: 'Support ticket sent successfully. We will get back to you shortly.' });
+    } catch (error) {
+        console.error('Failed to send support email:', error);
+        res.status(500);
+        throw new Error('Could not send support ticket. Please try again later.');
+    }
+});
+// --- END OF NEW FUNCTION ---
+
 module.exports = {
     registerUser,
     loginUser,
@@ -699,5 +703,6 @@ module.exports = {
     scheduleAccountDeletion,
     completeProfile,
     verifyEmail,
-    resendVerificationEmail
+    resendVerificationEmail,
+    sendPremiumSupportTicket // <-- 2. EXPORT NEW FUNCTION
 };
