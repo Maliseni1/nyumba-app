@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { loginUser } from '../services/api';
+// --- 1. IMPORT resendVerificationEmail ---
+import { loginUser, resendVerificationEmail } from '../services/api';
 import { toast } from 'react-toastify';
 import GoogleLoginButton from '../components/GoogleLoginButton';
-import { useAuth } from '../context/AuthContext'; // Import useAuth
+import { useAuth } from '../context/AuthContext';
+import { FaSpinner } from 'react-icons/fa'; // Import spinner
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    // --- 2. NEW STATE for resend link ---
+    const [showResend, setShowResend] = useState(false);
+    
     const navigate = useNavigate();
     const location = useLocation();
-    // 1. Get the new login function and loading state
     const { login, authUser, isAuthLoading } = useAuth(); 
 
     const redirectTo = location.state?.redirectTo || '/';
 
     useEffect(() => {
-        // 2. Wait for auth to finish loading before redirecting
         if (!isAuthLoading && authUser) {
             navigate('/');
         }
@@ -26,25 +29,47 @@ const LoginPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setShowResend(false); // Hide link on new attempt
         try {
             const { data } = await loginUser({ email, password });
-            // 3. Use the login function from context
-            login(data); 
-            navigate(redirectTo);
+            login(data); // This now handles the redirect logic
+            // No need to navigate here, login() does it.
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Login failed');
+            const message = error.response?.data?.message || 'Login failed';
+            toast.error(message);
+            // --- 3. CHECK FOR VERIFICATION ERROR ---
+            if (message.includes('Please verify your email')) {
+                setShowResend(true);
+            }
         } finally {
             setLoading(false);
         }
     };
     
-    // 4. Don't render the form if we are still checking auth
+    // --- 4. NEW HANDLER for resend ---
+    const handleResend = async () => {
+        if (!email) {
+            toast.error('Please enter your email address above to resend.');
+            return;
+        }
+        setLoading(true);
+        try {
+            const { data } = await resendVerificationEmail(email);
+            toast.success(data.message);
+            setShowResend(false); // Hide link after success
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to resend email.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (isAuthLoading) {
-         return (
+       return (
             <div className="pt-48 flex justify-center items-center">
                 <FaSpinner className="animate-spin text-accent-color h-12 w-12" />
             </div>
-        );
+       );
     }
 
     return (
@@ -80,9 +105,26 @@ const LoginPage = () => {
                         disabled={loading} 
                         className="w-full bg-accent-color text-white font-bold py-3 rounded-md hover:bg-accent-hover-color transition-colors disabled:bg-subtle-text-color"
                     >
-                        {loading ? 'Authenticating...' : 'Authenticate'}
+                        {loading ? <FaSpinner className="animate-spin mx-auto" /> : 'Login'}
                     </button>
                 </form>
+
+                {/* --- 5. NEW RESEND LINK SECTION --- */}
+                {showResend && (
+                    <div className="text-center mt-4">
+                        <p className="text-subtle-text-color">
+                            Didn't get an email? 
+                            <button 
+                                onClick={handleResend} 
+                                className="text-accent-color hover:underline ml-1"
+                                disabled={loading}
+                            >
+                                Resend verification link
+                            </button>
+                        </p>
+                    </div>
+                )}
+
                 <div className="text-center mt-4 text-subtle-text-color">
                     No account? <Link to="/register" className="text-accent-color hover:underline">Create one</Link>
                 </div>

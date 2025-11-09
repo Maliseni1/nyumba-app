@@ -49,8 +49,10 @@ export const applyForVerification = () => API.post('/users/apply-verification');
 export const getMyReferralData = () => API.get('/users/referral-data');
 export const changePassword = (formData) => API.put('/users/changepassword', formData);
 export const deleteAccount = () => API.delete('/users/profile');
-// --- 1. ADD NEW COMPLETE PROFILE FUNCTION ---
 export const completeProfile = (data) => API.put('/users/complete-profile', data);
+// --- 1. ADD NEW EMAIL VERIFICATION FUNCTIONS ---
+export const verifyEmail = (token) => API.get(`/users/verify-email/${token}`);
+export const resendVerificationEmail = (email) => API.post('/users/resend-verification', { email });
 
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });

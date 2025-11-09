@@ -1,14 +1,18 @@
 const NodeGeocoder = require('node-geocoder');
 
 const options = {
-  // --- THIS IS THE FIX ---
-  // The provider key is 'openstreetmap', not 'nominatim'.
-  provider: 'openstreetmap',
-  // --- END OF FIX ---
+  // This must be 'openstreetmap', not 'nominatim'
+  provider: 'openstreetmap', 
   
-  // These headers are still required to prevent future blocking
-  userAgent: 'NyumbaApp/1.0 (mailto:admin@nyumba.app)', 
-  referer: process.env.FRONTEND_URL || 'http://localhost:5173',
+  // --- THIS IS THE FIX ---
+  // Nominatim's policy requires a custom User-Agent to identify your app.
+  // We will use your app's name.
+  userAgent: 'NyumbaApp/1.0 (mailto:maliseni1205@gmail.com)', 
+  
+  // It's also good practice to set a Referer header
+  // This should be your *production* frontend URL
+  referer: process.env.FRONTEND_URL || 'https://nyumba-app.vercel.app',
+  // --- END OF FIX ---
 
   formatter: null 
 };

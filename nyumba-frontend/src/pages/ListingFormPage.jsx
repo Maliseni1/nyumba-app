@@ -24,7 +24,6 @@ const ListingFormPage = () => {
     const isEditMode = Boolean(id);
 
     useEffect(() => {
-        // ... (fetch logic is unchanged)
         if (isEditMode) {
             const fetchListing = async () => {
                 try {
@@ -53,7 +52,6 @@ const ListingFormPage = () => {
     };
 
     const handleUseCurrentLocation = () => {
-        // ... (function is unchanged)
         if (!navigator.geolocation) {
             toast.error('Geolocation is not supported by your browser.');
             return;
@@ -83,7 +81,6 @@ const ListingFormPage = () => {
     };
 
     const handleSubmit = async (e) => {
-        // ... (function is unchanged)
         e.preventDefault();
         setLoading(true);
         const listingData = new FormData();
@@ -127,14 +124,11 @@ const ListingFormPage = () => {
         }
     };
 
-    // --- 1. UPDATED INPUT STYLE ---
     const inputStyle = "w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color";
 
     return (
         <div className="pt-24 max-w-2xl mx-auto pb-12">
-            {/* --- 2. UPDATED FORM CARD --- */}
             <form onSubmit={handleSubmit} className="bg-card-color p-8 rounded-lg border border-border-color backdrop-blur-sm space-y-6">
-                {/* --- 3. UPDATED TEXT --- */}
                 <h1 className="text-3xl font-bold text-text-color text-center mb-6">{isEditMode ? 'Edit Listing' : 'Create a New Listing'}</h1>
                 <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="Property Title" className={inputStyle} required />
                 <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" className={`${inputStyle} h-32`} required />
@@ -151,7 +145,6 @@ const ListingFormPage = () => {
                             className={inputStyle} 
                             required 
                         />
-                        {/* --- 4. UPDATED LOCATION BUTTON --- */}
                         <button 
                             type="button" 
                             onClick={handleUseCurrentLocation} 
@@ -182,10 +175,8 @@ const ListingFormPage = () => {
                     <option>Commercial</option>
                 </select>
                 
-                {/* This component will need to be updated next */}
                 <ImageUpload images={images} setImages={setImages} />
                 
-                {/* --- 5. UPDATED SUBMIT BUTTON --- */}
                 <button 
                     type="submit" 
                     disabled={loading} 

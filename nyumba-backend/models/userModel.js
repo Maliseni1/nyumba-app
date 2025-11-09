@@ -57,13 +57,18 @@ const userSchema = new mongoose.Schema({
         default: false,
         index: true
     },
-
-    // --- THIS IS THE FIX ---
     isProfileComplete: {
         type: Boolean,
-        default: true, // Default to TRUE. New Google users will be set to false.
+        default: true,
     },
-    // --- END OF FIX ---
+
+    // --- 1. NEW FIELDS FOR EMAIL VERIFICATION ---
+    isEmailVerified: {
+        type: Boolean,
+        default: false,
+    },
+    emailVerificationToken: String,
+    // --- END OF NEW FIELDS ---
 
 }, {
     timestamps: true,
@@ -71,7 +76,7 @@ const userSchema = new mongoose.Schema({
     toObject: { virtuals: true },
 });
 
-// --- VIRTUALS (unchanged) ---
+// --- VIRTUALS ---
 userSchema.virtual('isVerified').get(function() {
   return this.subscriptionStatus === 'active' && 
          this.verificationStatus === 'approved' &&
@@ -82,10 +87,11 @@ userSchema.virtual('isPremiumTenant').get(function() {
            this.subscriptionType === 'tenant_premium';
 });
 
-// --- METHODS (unchanged) ---
+// --- METHODS ---
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
+
 userSchema.methods.getResetPasswordToken = function () {
     const resetToken = crypto.randomBytes(20).toString('hex');
     this.resetPasswordToken = crypto
@@ -96,7 +102,24 @@ userSchema.methods.getResetPasswordToken = function () {
     return resetToken;
 };
 
-// --- PRE-SAVE HOOK (unchanged) ---
+// --- 2. NEW METHOD for Email Verification Token ---
+userSchema.methods.getEmailVerificationToken = function () {
+    const verificationToken = crypto.randomBytes(20).toString('hex');
+    
+    this.emailVerificationToken = crypto
+        .createHash('sha256')
+        .update(verificationToken)
+        .digest('hex');
+        
+    // Note: We don't set an expiry, but we could add one
+    // this.emailVerificationExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    
+    return verificationToken;
+};
+// --- END OF NEW METHOD ---
+
+
+// --- PRE-SAVE HOOK ---
 userSchema.pre('save', async function (next) {
     if (this.isModified('password')) {
         const salt = await bcrypt.genSalt(10);

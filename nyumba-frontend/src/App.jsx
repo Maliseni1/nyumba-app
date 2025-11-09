@@ -36,11 +36,11 @@ import SubscriptionPage from './pages/SubscriptionPage';
 import LandlordSubscriptionPage from './pages/LandlordSubscriptionPage';
 import TenantSubscriptionPage from './pages/TenantSubscriptionPage';
 import ForumHomePage from './pages/ForumHomePage';
-// --- THIS IS THE FIX ---
-import PostListPage from './pages/PostListPage'; // Was "./pages.PostListPage"
-// --- END OF FIX ---
+import PostListPage from './pages/PostListPage';
 import PostDetailPage from './pages/PostDetailPage';
 import CompleteProfilePage from './pages/CompleteProfilePage'; 
+// --- 1. IMPORT NEW EMAIL VERIFICATION PAGE ---
+import EmailVerificationPage from './pages/EmailVerificationPage';
 
 function App() {
   const { isAuthLoading } = useAuth();
@@ -73,6 +73,10 @@ function App() {
               <Route path="/listing/:id" element={<ListingDetailPage />} />
               <Route path="/user/:id" element={<PublicProfilePage />} />
               <Route path="/map" element={<MapPage />} />
+
+              {/* --- 2. ADD NEW EMAIL VERIFICATION ROUTES --- */}
+              <Route path="/verify-email/:token" element={<EmailVerificationPage />} />
+              <Route path="/verify-email" element={<EmailVerificationPage />} /> {/* For showing status */}
 
               {/* Subscription Routes */}
               <Route path="/subscription" element={<SubscriptionPage />} />
