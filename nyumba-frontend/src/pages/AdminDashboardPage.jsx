@@ -4,7 +4,8 @@ import { toast } from 'react-toastify';
 import StatsCards from '../components/admin/StatsCards';
 import UserList from '../components/admin/UserList';
 import VerificationQueue from '../components/admin/VerificationQueue';
-import ForumCategoryManager from '../components/admin/ForumCategoryManager'; // 1. IMPORT
+import ForumCategoryManager from '../components/admin/ForumCategoryManager';
+import RewardManager from '../components/admin/RewardManager'; // --- 1. IMPORT REWARD MANAGER ---
 import { FaSpinner } from 'react-icons/fa';
 
 const AdminDashboardPage = () => {
@@ -50,20 +51,26 @@ const AdminDashboardPage = () => {
                     <>
                         {/* Section 1: Stats */}
                         <StatsCards stats={stats} />
+
+                        {/* --- 2. ADD NEW REWARD MANAGEMENT SECTION --- */}
+                        <div>
+                            <h2 className="text-2xl font-bold text-text-color mb-4">Rewards Management</h2>
+                            <RewardManager />
+                        </div>
                         
-                        {/* Section 2: Forum Management (NEW) */}
+                        {/* Section 3: Forum Management */}
                         <div>
                             <h2 className="text-2xl font-bold text-text-color mb-4">Community Hub Management</h2>
                             <ForumCategoryManager />
                         </div>
                         
-                        {/* Section 3: Verifications */}
+                        {/* Section 4: Verifications */}
                         <div>
                             <h2 className="text-2xl font-bold text-text-color mb-4">Pending Verifications</h2>
                             <VerificationQueue requests={requests} setRequests={setRequests} />
                         </div>
 
-                        {/* Section 4: User List */}
+                        {/* Section 5: User List */}
                         <div>
                             <h2 className="text-2xl font-bold text-text-color mb-4">All Users</h2>
                             <UserList users={users} setUsers={setUsers} />

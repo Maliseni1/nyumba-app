@@ -52,7 +52,6 @@ export const deleteAccount = () => API.delete('/users/profile');
 export const completeProfile = (data) => API.put('/users/complete-profile', data);
 export const verifyEmail = (token) => API.get(`/users/verify-email/${token}`);
 export const resendVerificationEmail = (email) => API.post('/users/resend-verification', { email });
-// --- 1. ADD NEW PREMIUM SUPPORT FUNCTION ---
 export const sendPremiumSupportTicket = (data) => API.post('/users/premium-support', data);
 
 // Listing Routes
@@ -97,6 +96,11 @@ export const createListingReview = (listingId, reviewData) => API.post(`/reviews
 // Reward Routes
 export const getRewards = () => API.get('/rewards');
 export const redeemReward = (data) => API.post('/rewards/redeem', data);
+// --- 1. ADD NEW ADMIN REWARD FUNCTIONS ---
+export const adminGetAllRewards = () => API.get('/rewards/admin/all');
+export const adminCreateReward = (data) => API.post('/rewards/admin', data);
+export const adminUpdateReward = (id, data) => API.put(`/rewards/admin/${id}`, data);
+export const adminDeleteReward = (id) => API.delete(`/rewards/admin/${id}`);
 
 // Forum Routes
 export const getForumCategories = () => API.get('/forum/categories');
