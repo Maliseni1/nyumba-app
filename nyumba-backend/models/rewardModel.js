@@ -15,24 +15,39 @@ const rewardSchema = new mongoose.Schema({
         required: true,
         min: 1,
     },
-    // 'type' tells our backend what action to perform when redeemed
     type: {
         type: String,
         required: true,
         enum: [
             'LISTING_PRIORITY', // For making a listing "featured"
             'DISCOUNT_VOUCHER', // For a discount code (future)
+            'CASHBACK', // --- 1. NEW TYPE FOR TENANTS ---
             'OTHER'
         ],
     },
-    // We can add duration (in days) for time-based rewards
+    
+    // --- 2. NEW FIELD: Who is this reward for? ---
+    role: {
+        type: String,
+        required: true,
+        enum: ['landlord', 'tenant', 'all'],
+        default: 'all'
+    },
+
     durationInDays: {
         type: Number,
-        default: null, // Not all rewards have a duration
+        default: null, 
     },
+    
+    // --- 3. NEW FIELD: Value for cashback ---
+    cashValue: {
+        type: Number,
+        default: null, // e.g., 50 (for K50)
+    },
+    
     isActive: {
         type: Boolean,
-        default: true, // Allows admin to enable/disable rewards
+        default: true,
     }
 }, {
     timestamps: true,
