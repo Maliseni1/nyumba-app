@@ -10,25 +10,29 @@ const {
     deleteListing,
     setListingStatus,
     getRecommendedListings,
+    bulkUploadListings // <-- 1. IMPORT
 } = require('../controllers/listingController');
-// --- 1. IMPORT identifyUser ---
 const { protect, identifyUser } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
+const csvUpload = require('../middleware/csvUploadMiddleware'); // <-- 2. IMPORT
 
-// --- 2. ADD identifyUser to public routes ---
 router.get('/nearby', identifyUser, getListingsNearby);
 router.get('/reverse-geocode', protect, reverseGeocode);
-
 router.get('/recommendations', protect, getRecommendedListings);
 
+// --- 3. ADD NEW BULK UPLOAD ROUTE ---
+// This uses 'protect' (must be logged in) and 'csvUpload' middleware
+router.route('/bulk-upload')
+    .post(protect, csvUpload.single('csvFile'), bulkUploadListings);
+
 router.route('/')
-    .get(identifyUser, getListings) // <-- 3. ADDED identifyUser
+    .get(identifyUser, getListings)
     .post(protect, upload.array('images', 5), createListing);
 
 router.route('/:id/status').put(protect, setListingStatus);
 
 router.route('/:id')
-    .get(identifyUser, getListingById) // <-- 4. ADDED identifyUser
+    .get(identifyUser, getListingById)
     .put(protect, upload.array('images', 5), updateListing)
     .delete(protect, deleteListing);
 

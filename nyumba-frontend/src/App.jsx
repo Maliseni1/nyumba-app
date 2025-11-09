@@ -39,8 +39,10 @@ import ForumHomePage from './pages/ForumHomePage';
 import PostListPage from './pages/PostListPage';
 import PostDetailPage from './pages/PostDetailPage';
 import CompleteProfilePage from './pages/CompleteProfilePage'; 
-// --- 1. IMPORT NEW EMAIL VERIFICATION PAGE ---
 import EmailVerificationPage from './pages/EmailVerificationPage';
+import BulkUploadPage from './pages/BulkUploadPage';
+// --- 1. IMPORT THE NEW VERIFIED ROUTE ---
+import VerifiedLandlordRoute from './components/VerifiedLandlordRoute';
 
 function App() {
   const { isAuthLoading } = useAuth();
@@ -73,10 +75,8 @@ function App() {
               <Route path="/listing/:id" element={<ListingDetailPage />} />
               <Route path="/user/:id" element={<PublicProfilePage />} />
               <Route path="/map" element={<MapPage />} />
-
-              {/* --- 2. ADD NEW EMAIL VERIFICATION ROUTES --- */}
               <Route path="/verify-email/:token" element={<EmailVerificationPage />} />
-              <Route path="/verify-email" element={<EmailVerificationPage />} /> {/* For showing status */}
+              <Route path="/verify-email" element={<EmailVerificationPage />} />
 
               {/* Subscription Routes */}
               <Route path="/subscription" element={<SubscriptionPage />} />
@@ -108,10 +108,17 @@ function App() {
                 <Route path="/rewards" element={<RewardsPage />} />
               </Route>
               
-              {/* Landlord Routes */}
+              {/* --- 2. UPDATE LANDLORD ROUTES --- */}
+              {/* Routes for ALL landlords (verified or not) */}
               <Route path="/landlord" element={<LandlordRoute />}>
-                <Route path="dashboard" element={<LandlordDashboardPage />} />
+                <Route path="bulk-upload" element={<BulkUploadPage />} />
+                
+                {/* Routes for ONLY VERIFIED landlords */}
+                <Route path="" element={<VerifiedLandlordRoute />}>
+                    <Route path="dashboard" element={<LandlordDashboardPage />} />
+                </Route>
               </Route>
+              {/* --- END OF UPDATE --- */}
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminRoute />}>

@@ -2,6 +2,13 @@ const asyncHandler = require('express-async-handler');
 const Listing = require('../models/listingModel');
 const User = require('../models/userModel');
 const geocoder = require('../utils/geocoder');
+// --- 1. IMPORT NEW MODULES FOR CSV PROCESSING ---
+const fs = require('fs');
+const path = require('path');
+const csv = require('fast-csv');
+
+// --- Helper function for delay ---
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const getListings = asyncHandler(async (req, res) => {
     const { searchTerm } = req.query;
@@ -18,28 +25,23 @@ const getListings = asyncHandler(async (req, res) => {
         ];
     }
 
-    // --- THIS IS THE FIX ---
-    // Show listings that are public OR were created before this feature
     if (!isPremiumTenant) {
-        // If $or already exists (from search), add to it. Otherwise, create it.
         if (filter.$or) {
             filter.$and = [
-                { $or: filter.$or }, // Keep the search terms
-                { $or: [ // Add the date requirement
+                { $or: filter.$or }, 
+                { $or: [ 
                     { publicReleaseAt: { $lte: new Date() } },
                     { publicReleaseAt: { $exists: false } }
                 ]}
             ];
-            delete filter.$or; // Remove the original $or to avoid conflict
+            delete filter.$or; 
         } else {
-            // If no search term, just add the date filter
             filter.$or = [
                 { publicReleaseAt: { $lte: new Date() } },
-                { publicReleaseAt: { $exists: false } } // This line fixes your old listings
+                { publicReleaseAt: { $exists: false } }
             ];
         }
     }
-    // --- END OF FIX ---
     
     const listings = await Listing.find(filter)
         .populate('owner', 'name profilePicture')
@@ -60,7 +62,6 @@ const getListingsNearby = asyncHandler(async (req, res) => {
     const isPremiumTenant = req.user?.isPremiumTenant || false;
     let dateFilter = {};
     if (!isPremiumTenant) {
-        // --- ADDED THE SAME FIX HERE ---
         dateFilter['$match'] = {
             $or: [
                 { publicReleaseAt: { $lte: new Date() } },
@@ -135,7 +136,6 @@ const getListingById = asyncHandler(async (req, res) => {
     }
 
     const isPremiumTenant = req.user?.isPremiumTenant || false;
-    // If the field doesn't exist, it's not an early access listing.
     const isEarlyAccess = listing.publicReleaseAt && new Date(listing.publicReleaseAt) > new Date();
 
     if (isEarlyAccess && !isPremiumTenant) {
@@ -266,8 +266,6 @@ const getRecommendedListings = asyncHandler(async (req, res) => {
     const excludeIds = [...savedListingIds, ...ownedListingIds];
 
     let recommendations = [];
-
-    // Base query for all recommendations
     const baseQuery = {
         status: 'available',
         _id: { $nin: excludeIds },
@@ -278,12 +276,10 @@ const getRecommendedListings = asyncHandler(async (req, res) => {
     };
 
     if (user.savedListings.length > 0) {
-        // --- Smart Recommendations ---
-        
         const totalPrice = user.savedListings.reduce((acc, l) => acc + l.price, 0);
         const avgPrice = totalPrice / user.savedListings.length;
-        const minPrice = avgPrice * 0.75; // 25% below avg
-        const maxPrice = avgPrice * 1.25; // 25% above avg
+        const minPrice = avgPrice * 0.75;
+        const maxPrice = avgPrice * 1.25;
 
         const typeCounts = user.savedListings.reduce((acc, l) => {
             acc[l.propertyType] = (acc[l.propertyType] || 0) + 1;
@@ -291,7 +287,6 @@ const getRecommendedListings = asyncHandler(async (req, res) => {
         }, {});
         const mostCommonType = Object.keys(typeCounts).reduce((a, b) => typeCounts[a] > typeCounts[b] ? a : b, null);
 
-        // Build the smart query on top of the base query
         const smartQuery = {
             ...baseQuery,
             $or: [
@@ -305,16 +300,118 @@ const getRecommendedListings = asyncHandler(async (req, res) => {
             .populate('owner', 'name profilePicture');
     }
 
-    // --- Cold Start Fallback ---
     if (recommendations.length === 0) {
         recommendations = await Listing.find(baseQuery)
         .sort({ createdAt: -1 })
         .limit(6)
         .populate('owner', 'name profilePicture');
     }
-
     res.json(recommendations);
 });
+
+
+// --- 2. NEW FUNCTION: Bulk Upload Listings ---
+const bulkUploadListings = asyncHandler(async (req, res) => {
+    if (req.user.role !== 'landlord') {
+        res.status(403);
+        throw new Error('Only landlords can bulk upload listings.');
+    }
+    
+    if (!req.file) {
+        res.status(400);
+        throw new Error('No CSV file uploaded.');
+    }
+
+    const listings = [];
+    const errors = [];
+    let successCount = 0;
+    let errorCount = 0;
+    const filePath = path.resolve(req.file.path);
+
+    // Wrap the stream in a promise to handle async flow
+    await new Promise((resolve, reject) => {
+        fs.createReadStream(filePath)
+            .pipe(csv.parse({ headers: true, trim: true }))
+            .on('error', (error) => {
+                console.error(error);
+                reject(new Error('Error parsing CSV file.'));
+            })
+            .on('data', (row) => {
+                // 'data' event is synchronous, so we just collect rows
+                listings.push(row);
+            })
+            .on('end', async (rowCount) => {
+                console.log(`Parsed ${rowCount} rows from CSV.`);
+                
+                // Now, process each row asynchronously with a delay
+                for (const row of listings) {
+                    try {
+                        // --- CRITICAL: 1.1 second delay to respect Nominatim's rate limit ---
+                        await delay(1100); 
+
+                        const { title, description, price, location, bedrooms, bathrooms, propertyType } = row;
+
+                        // Basic validation
+                        if (!title || !price || !location || !bedrooms || !bathrooms || !propertyType) {
+                            throw new Error('Missing required fields (title, price, location, bedrooms, bathrooms, propertyType).');
+                        }
+
+                        // Geocode the location
+                        const geoData = await geocoder.geocode(location);
+                        if (!geoData || !geoData.length) {
+                            throw new Error(`Address not found for: ${location}`);
+                        }
+
+                        const { longitude, latitude, formattedAddress } = geoData[0];
+                        const locationData = {
+                            type: 'Point',
+                            coordinates: [longitude, latitude],
+                            address: formattedAddress || location,
+                        };
+
+                        const publicReleaseDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+                        // Create and save the new listing
+                        const newListing = new Listing({
+                            title,
+                            description: description || '',
+                            price: parseFloat(price),
+                            location: locationData,
+                            bedrooms: parseInt(bedrooms, 10),
+                            bathrooms: parseInt(bathrooms, 10),
+                            propertyType,
+                            images: [], // Bulk upload does not support images per row
+                            owner: req.user._id,
+                            publicReleaseAt: publicReleaseDate
+                        });
+
+                        await newListing.save();
+                        successCount++;
+
+                    } catch (error) {
+                        errorCount++;
+                        errors.push({ rowTitle: row.title || `Row ${successCount + errorCount}`, error: error.message });
+                    }
+                }
+                resolve(); // Resolve the promise when all rows are processed
+            });
+    });
+
+    // Clean up the uploaded file
+    try {
+        fs.unlinkSync(filePath);
+    } catch (err) {
+        console.error("Error deleting temp CSV file:", err);
+    }
+    
+    res.status(201).json({
+        message: `Bulk upload complete. ${successCount} listings created, ${errorCount} failed.`,
+        successCount,
+        errorCount,
+        errors,
+    });
+});
+
 
 module.exports = {
     getListings,
@@ -326,4 +423,5 @@ module.exports = {
     deleteListing,
     setListingStatus,
     getRecommendedListings,
+    bulkUploadListings // <-- 3. EXPORT NEW FUNCTION
 };
