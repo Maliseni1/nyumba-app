@@ -14,7 +14,8 @@ const {
     applyForVerification,
     getMyReferralData,
     changePassword,
-    scheduleAccountDeletion // <-- 1. IMPORT
+    scheduleAccountDeletion,
+    completeProfile // <-- 1. IMPORT
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -32,7 +33,10 @@ router.put('/resetpassword/:resettoken', resetPassword);
 router.route('/profile')
     .get(protect, getUserProfile)
     .put(protect, upload.single('profilePicture'), updateUserProfile)
-    .delete(protect, scheduleAccountDeletion); // <-- 2. DELETE ROUTE
+    .delete(protect, scheduleAccountDeletion);
+
+// --- 2. ADD NEW COMPLETE PROFILE ROUTE ---
+router.put('/complete-profile', protect, completeProfile);
 
 router.get('/unread-count', protect, getUnreadMessageCount);
 router.post('/save/:listingId', protect, toggleSaveListing);

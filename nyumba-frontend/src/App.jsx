@@ -35,12 +35,12 @@ import RewardsPage from './pages/RewardsPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import LandlordSubscriptionPage from './pages/LandlordSubscriptionPage';
 import TenantSubscriptionPage from './pages/TenantSubscriptionPage';
-
-// --- 1. IMPORT THE NEW FORUM PAGES ---
 import ForumHomePage from './pages/ForumHomePage';
-import PostListPage from './pages/PostListPage';
+// --- THIS IS THE FIX ---
+import PostListPage from './pages/PostListPage'; // Was "./pages.PostListPage"
+// --- END OF FIX ---
 import PostDetailPage from './pages/PostDetailPage';
-
+import CompleteProfilePage from './pages/CompleteProfilePage'; 
 
 function App() {
   const { isAuthLoading } = useAuth();
@@ -50,8 +50,7 @@ function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsSplashVisible(false);
-    }, 2500); // 2.5 seconds
-    
+    }, 2500); 
     return () => clearTimeout(timer);
   }, []);
 
@@ -84,16 +83,16 @@ function App() {
               <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
               <Route path="/resetpassword/:resettoken" element={<ResetPasswordPage />} />
 
-              {/* --- 2. ADD NEW FORUM ROUTES (must be inside PrivateRoute) --- */}
+              {/* Forum Routes */}
               <Route path="/forum" element={<PrivateRoute />}>
                 <Route index element={<ForumHomePage />} />
                 <Route path="category/:categoryId" element={<PostListPage />} />
                 <Route path="post/:postId" element={<PostDetailPage />} />
               </Route>
-              {/* --- END OF NEW ROUTES --- */}
 
               {/* Private Routes (All logged-in users) */}
               <Route path="" element={<PrivateRoute />}>
+                <Route path="/complete-profile" element={<CompleteProfilePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/profile/edit" element={<EditProfilePage />} />
                 <Route path="/add-listing" element={<ListingFormPage />} />
@@ -105,7 +104,7 @@ function App() {
                 <Route path="/rewards" element={<RewardsPage />} />
               </Route>
               
-              {/* Routes for verified landlords only */}
+              {/* Landlord Routes */}
               <Route path="/landlord" element={<LandlordRoute />}>
                 <Route path="dashboard" element={<LandlordDashboardPage />} />
               </Route>

@@ -4,7 +4,8 @@ import { toast } from 'react-toastify';
 import StatsCards from '../components/admin/StatsCards';
 import UserList from '../components/admin/UserList';
 import VerificationQueue from '../components/admin/VerificationQueue';
-import { FaSpinner } from 'react-icons/fa'; // Import spinner
+import ForumCategoryManager from '../components/admin/ForumCategoryManager'; // 1. IMPORT
+import { FaSpinner } from 'react-icons/fa';
 
 const AdminDashboardPage = () => {
     const [stats, setStats] = useState(null);
@@ -37,11 +38,9 @@ const AdminDashboardPage = () => {
 
     return (
         <div className="pt-24 max-w-7xl mx-auto pb-12 px-4 space-y-8">
-            {/* --- 1. UPDATED TEXT --- */}
             <h1 className="text-4xl font-bold text-text-color mb-8">Admin Dashboard</h1>
             
             {loading ? (
-                // --- 2. UPDATED LOADING STATE ---
                 <div className="text-center text-subtle-text-color flex items-center justify-center gap-3 py-10">
                     <FaSpinner className="animate-spin text-accent-color" />
                     Loading admin data...
@@ -49,20 +48,24 @@ const AdminDashboardPage = () => {
             ) : (
                 stats && (
                     <>
-                        {/* This component will need to be updated */}
+                        {/* Section 1: Stats */}
                         <StatsCards stats={stats} />
                         
+                        {/* Section 2: Forum Management (NEW) */}
                         <div>
-                            {/* --- 3. UPDATED TEXT --- */}
+                            <h2 className="text-2xl font-bold text-text-color mb-4">Community Hub Management</h2>
+                            <ForumCategoryManager />
+                        </div>
+                        
+                        {/* Section 3: Verifications */}
+                        <div>
                             <h2 className="text-2xl font-bold text-text-color mb-4">Pending Verifications</h2>
-                            {/* This component will need to be updated */}
                             <VerificationQueue requests={requests} setRequests={setRequests} />
                         </div>
 
+                        {/* Section 4: User List */}
                         <div>
-                            {/* --- 4. UPDATED TEXT --- */}
                             <h2 className="text-2xl font-bold text-text-color mb-4">All Users</h2>
-                            {/* This component will need to be updated */}
                             <UserList users={users} setUsers={setUsers} />
                         </div>
                     </>

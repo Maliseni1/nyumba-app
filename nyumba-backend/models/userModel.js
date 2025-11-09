@@ -15,7 +15,10 @@ const userSchema = new mongoose.Schema({
     savedListings: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Listing' }],
     listings: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Listing' }],
     isAdmin: { type: Boolean, required: true, default: false },
-    role: { type: String, enum: ['tenant', 'landlord'], default: 'tenant' },
+    role: { 
+        type: String, 
+        enum: ['tenant', 'landlord'], 
+    },
     numReviews: { type: Number, default: 0 },
     averageRating: { type: Number, default: 0 },
     points: { type: Number, default: 0 },
@@ -49,14 +52,18 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
-
-    // --- 1. NEW FIELD FOR BANNING USERS ---
     isBanned: {
         type: Boolean,
         default: false,
         index: true
     },
-    // --- END OF NEW FIELD ---
+
+    // --- THIS IS THE FIX ---
+    isProfileComplete: {
+        type: Boolean,
+        default: true, // Default to TRUE. New Google users will be set to false.
+    },
+    // --- END OF FIX ---
 
 }, {
     timestamps: true,
