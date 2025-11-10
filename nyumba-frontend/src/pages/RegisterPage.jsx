@@ -1,9 +1,48 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { registerUser, googleLogin } from '../services/api';
-import { GoogleLogin } from '@react-oauth/google';
+import { registerUser } from '../services/api'; // Removed googleLogin, using GoogleLoginButton
+import GoogleLoginButton from '../components/GoogleLoginButton'; // Import the button
 import { toast } from 'react-toastify';
-import { FaUserPlus } from 'react-icons/fa'; 
+// --- 1. IMPORT ICONS ---
+import { FaUserPlus, FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa'; 
+
+// --- 2. NEW PASSWORD STRENGTH COMPONENT ---
+const PasswordStrengthMeter = ({ password }) => {
+    const getStrength = () => {
+        let score = 0;
+        if (password.length >= 8) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[0-9]/.test(password)) score++;
+        if (/[^A-Za-z0-9]/.test(password)) score++;
+        return score;
+    };
+
+    const strength = getStrength();
+    const width = `${(strength / 4) * 100}%`;
+    const color = [
+        'bg-red-500', // 0 or 1
+        'bg-red-500', // 1
+        'bg-yellow-500', // 2
+        'bg-blue-500', // 3
+        'bg-green-500' // 4
+    ][strength];
+    const label = ['Very Weak', 'Weak', 'Medium', 'Strong', 'Very Strong'][strength];
+
+    if (password.length === 0) return null;
+
+    return (
+        <div className="mt-2">
+            <div className="h-2 w-full bg-border-color rounded-full">
+                <div
+                    className={`h-2 rounded-full transition-all duration-300 ${color}`}
+                    style={{ width: width }}
+                ></div>
+            </div>
+            <p className={`text-xs mt-1 ${color.replace('bg-', 'text-')}`}>{label}</p>
+        </div>
+    );
+};
+// --- END OF NEW COMPONENT ---
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({ 
@@ -16,6 +55,10 @@ const RegisterPage = () => {
         referralCode: ''
     });
     const [loading, setLoading] = useState(false);
+    // --- 3. NEW STATE for password visibility ---
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -23,7 +66,6 @@ const RegisterPage = () => {
     };
 
     const handleSubmit = async (e) => {
-        // ... (function is unchanged)
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
             toast.error('Passwords do not match');
@@ -31,8 +73,10 @@ const RegisterPage = () => {
         }
         setLoading(true);
         try {
-            await registerUser(formData);
-            toast.success('Registration successful! Please log in.');
+            // Send only the required data, not confirmPassword
+            const { confirmPassword, ...dataToSubmit } = formData;
+            const { data } = await registerUser(dataToSubmit);
+            toast.success(data.message || 'Registration successful! Please check your email.');
             navigate('/login');
         } catch (error) {
             toast.error(error.response?.data?.message || 'Registration failed');
@@ -41,26 +85,11 @@ const RegisterPage = () => {
         }
     };
 
-    const handleGoogleSuccess = async (credentialResponse) => {
-        // ... (function is unchanged)
-        try {
-            const res = await googleLogin(credentialResponse.credential);
-            localStorage.setItem('user', JSON.stringify(res.data));
-            toast.success('Google registration successful!');
-            navigate('/');
-            window.location.reload(); 
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Google registration failed');
-        }
-    };
-
     return (
         <div className="pt-24 min-h-screen flex items-center justify-center py-12 px-4">
-            {/* --- 1. UPDATED CARD --- */}
             <div className="max-w-md w-full bg-card-color border border-border-color backdrop-blur-sm rounded-lg shadow-xl p-8 space-y-6">
                 
                 <div className="text-center">
-                    {/* --- 2. UPDATED ICON/TEXT --- */}
                     <FaUserPlus className="mx-auto h-12 w-auto text-accent-color" />
                     <h1 className="text-3xl font-bold text-text-color mt-4">
                         Create Your Account
@@ -68,7 +97,6 @@ const RegisterPage = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* --- 3. UPDATED INPUTS --- */}
                     <input 
                         type="text" 
                         name="name" 
@@ -85,22 +113,48 @@ const RegisterPage = () => {
                         className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
                         required 
                     />
-                    <input 
-                        type="password" 
-                        name="password" 
-                        placeholder="Password" 
-                        onChange={handleChange} 
-                        className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
-                        required 
-                    />
-                    <input 
-                        type="password" 
-                        name="confirmPassword" 
-                        placeholder="Confirm Password" 
-                        onChange={handleChange} 
-                        className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
-                        required 
-                    />
+                    
+                    {/* --- 4. PASSWORD 1 WITH TOGGLE AND METER --- */}
+                    <div className="relative">
+                        <input 
+                            type={showPassword ? 'text' : 'password'} 
+                            name="password" 
+                            placeholder="Password" 
+                            onChange={handleChange} 
+                            className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
+                            required 
+                        />
+                         <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 px-3 flex items-center text-subtle-text-color hover:text-text-color"
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                    </div>
+                    <PasswordStrengthMeter password={formData.password} />
+                    {/* --- END OF PASSWORD 1 --- */}
+
+                    {/* --- 5. PASSWORD 2 WITH TOGGLE --- */}
+                    <div className="relative">
+                        <input 
+                            type={showConfirmPassword ? 'text' : 'password'} 
+                            name="confirmPassword" 
+                            placeholder="Confirm Password" 
+                            onChange={handleChange} 
+                            className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
+                            required 
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute inset-y-0 right-0 px-3 flex items-center text-subtle-text-color hover:text-text-color"
+                        >
+                            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                    </div>
+                    {/* --- END OF PASSWORD 2 --- */}
+
                     <input 
                         type="text" 
                         name="whatsappNumber" 
@@ -118,7 +172,6 @@ const RegisterPage = () => {
                         className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color placeholder-subtle-text-color" 
                     />
 
-                    {/* --- 4. UPDATED RADIO/LABELS --- */}
                     <div className="pt-2">
                         <label className="block text-sm font-medium text-subtle-text-color mb-2">I am a...</label>
                         <div className="flex gap-x-6">
@@ -153,13 +206,12 @@ const RegisterPage = () => {
                         </div>
                     </div>
 
-                    {/* --- 5. UPDATED BUTTON --- */}
                     <button 
                         type="submit" 
                         disabled={loading}
                         className="w-full bg-accent-color text-white font-bold py-3 rounded-md hover:bg-accent-hover-color transition-colors disabled:bg-subtle-text-color"
                     >
-                        {loading ? 'Creating Account...' : 'Register'}
+                        {loading ? <FaSpinner className="animate-spin mx-auto" /> : 'Register'}
                     </button>
                 </form>
 
@@ -168,30 +220,17 @@ const RegisterPage = () => {
                         <>
                             <div className="relative my-6">
                                 <div className="absolute inset-0 flex items-center">
-                                    {/* --- 6. UPDATED DIVIDER --- */}
                                     <div className="w-full border-t border-border-color"></div>
                                 </div>
                                 <div className="relative flex justify-center text-sm">
-                                    {/* --- 7. UPDATED 'OR' SPAN --- */}
                                     <span className="bg-card-color px-2 text-subtle-text-color">OR</span>
                                 </div>
                             </div>
                             
-                            {/* --- 8. UPDATED GOOGLE BUTTON WRAPPER --- */}
-                            <div className="w-full bg-card-color border border-border-color rounded-lg shadow-sm hover:bg-bg-color transition duration-150">
-                                <GoogleLogin 
-                                    onSuccess={handleGoogleSuccess} 
-                                    onError={() => { toast.error('Google Sign-Up Failed'); }} 
-                                    width="100%"
-                                    theme="outline" // 'outline' theme works well on both light and dark
-                                    size="large"
-                                    text="signup_with"
-                                />
-                            </div>
+                            <GoogleLoginButton />
                         </>
                     )}
 
-                    {/* --- 9. UPDATED TEXT/LINK --- */}
                     <p className="mt-6 text-subtle-text-color">
                         Already have an account?{' '}
                         <Link to="/login" className="font-medium text-accent-color hover:underline">

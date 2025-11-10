@@ -8,16 +8,16 @@ const { Server } = require('socket.io');
 const path = require('path');
 const cron = require('node-cron'); 
 
-// IMPORT MODELS NEEDED FOR DELETION
+// IMPORT MODELS
 const User = require('./models/userModel');
-// --- 1. FIX THE LISTING IMPORT ---
-const { Listing } = require('./models/listingModel');
+const { Listing } = require('./models/listingModel'); // Fixed import
 const Conversation = require('./models/conversationModel');
 const Message = require('./models/messageModel');
 
-// Configure dotenv to load from the correct path
+// Configure dotenv
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+// --- Environment Variable Check (unchanged) ---
 const requiredEnvVars = [
     'MONGO_URI',
     'JWT_SECRET',
@@ -26,11 +26,9 @@ const requiredEnvVars = [
     'CLOUDINARY_API_KEY',
     'CLOUDINARY_API_SECRET'
 ];
-
 const isValidEnvVar = (value) => {
     return value && value.trim() !== '' && value !== 'undefined';
 };
-
 const missingVars = requiredEnvVars.filter(varName => !isValidEnvVar(process.env[varName]));
 if (missingVars.length > 0) {
     console.error("FATAL ERROR: Missing required environment variables!");
@@ -38,6 +36,7 @@ if (missingVars.length > 0) {
     missingVars.forEach(varName => console.error(`- ${varName}`));
     process.exit(1);
 }
+// --- End Env Check ---
 
 const userRoutes = require('./routes/userRoutes');
 const listingRoutes = require('./routes/listingRoutes');
@@ -60,21 +59,22 @@ const io = new Server(server, {
     transports: ['websocket']
 });
 
-// --- 2. UPDATED CORS CONFIGURATION ---
+// --- UPDATED CORS CONFIGURATION ---
 const whitelist = [
     'http://localhost:5173',
     'http://localhost:5174',
-    'https://nyumba-app.vercel.app',
-    'https://nyumba-app-git-master-maliseni1.vercel.app',
+    'https.nyumba-app.vercel.app',
+    'https.nyumba-app-git-master-maliseni1.vercel.app',
     process.env.FRONTEND_URL
-].filter(Boolean);
+].filter(Boolean); // Filter out undefined values
 
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or server-to-server)
+        // Allow requests with no origin (like Postman, mobile apps, server-to-server)
         if (!origin || whitelist.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.error('CORS Error: Origin not allowed:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -83,10 +83,10 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization']
 };
 
-// Handle OPTIONS requests (preflight)
-// This is critical for POST/PUT requests with custom headers
+// Handle OPTIONS requests (preflight) before any other route
 app.options('*', cors(corsOptions));
 
+// Enable CORS for all routes
 app.use(cors(corsOptions));
 // --- END OF CORS UPDATE ---
 

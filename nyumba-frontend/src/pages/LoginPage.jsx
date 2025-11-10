@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-// --- 1. IMPORT resendVerificationEmail ---
 import { loginUser, resendVerificationEmail } from '../services/api';
 import { toast } from 'react-toastify';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 import { useAuth } from '../context/AuthContext';
-import { FaSpinner } from 'react-icons/fa'; // Import spinner
+// --- 1. IMPORT ICONS ---
+import { FaSpinner, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    // --- 2. NEW STATE for resend link ---
     const [showResend, setShowResend] = useState(false);
+    // --- 2. NEW STATE for password visibility ---
+    const [showPassword, setShowPassword] = useState(false);
     
     const navigate = useNavigate();
     const location = useLocation();
     const { login, authUser, isAuthLoading } = useAuth(); 
 
-    const redirectTo = location.state?.redirectTo || '/';
-
+    // RedirectIfLoggedIn logic (unchanged)
     useEffect(() => {
         if (!isAuthLoading && authUser) {
             navigate('/');
@@ -29,15 +29,13 @@ const LoginPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setShowResend(false); // Hide link on new attempt
+        setShowResend(false);
         try {
             const { data } = await loginUser({ email, password });
-            login(data); // This now handles the redirect logic
-            // No need to navigate here, login() does it.
+            login(data);
         } catch (error) {
             const message = error.response?.data?.message || 'Login failed';
             toast.error(message);
-            // --- 3. CHECK FOR VERIFICATION ERROR ---
             if (message.includes('Please verify your email')) {
                 setShowResend(true);
             }
@@ -46,7 +44,6 @@ const LoginPage = () => {
         }
     };
     
-    // --- 4. NEW HANDLER for resend ---
     const handleResend = async () => {
         if (!email) {
             toast.error('Please enter your email address above to resend.');
@@ -54,9 +51,9 @@ const LoginPage = () => {
         }
         setLoading(true);
         try {
-            const { data } = await resendVerificationEmail(email);
+            const { data } = await resendVerificationEmail({ email }); // Pass email as object
             toast.success(data.message);
-            setShowResend(false); // Hide link after success
+            setShowResend(false);
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to resend email.');
         } finally {
@@ -85,14 +82,27 @@ const LoginPage = () => {
                         className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color" 
                         required 
                     />
-                    <input 
-                        type="password" 
-                        placeholder="Password" 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)} 
-                        className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color" 
-                        required 
-                    />
+                    
+                    {/* --- 3. NEW PASSWORD INPUT WRAPPER --- */}
+                    <div className="relative">
+                        <input 
+                            type={showPassword ? 'text' : 'password'} 
+                            placeholder="Password" 
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)} 
+                            className="w-full p-3 bg-bg-color rounded-md border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color text-text-color" 
+                            required 
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 px-3 flex items-center text-subtle-text-color hover:text-text-color"
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                    </div>
+                    {/* --- END OF WRAPPER --- */}
+
 
                     <div className="text-right">
                         <Link to="/forgotpassword" className="text-sm text-accent-color hover:underline">
@@ -109,7 +119,6 @@ const LoginPage = () => {
                     </button>
                 </form>
 
-                {/* --- 5. NEW RESEND LINK SECTION --- */}
                 {showResend && (
                     <div className="text-center mt-4">
                         <p className="text-subtle-text-color">
