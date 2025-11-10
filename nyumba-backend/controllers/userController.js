@@ -1,10 +1,8 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
-// --- FIX THE LISTING IMPORT ---
 const { Listing } = require('../models/listingModel');
 const Conversation = require('../models/conversationModel');
 const Message = require('../models/messageModel');
-// --- 1. IMPORT NEW PREFERENCE MODEL ---
 const TenantPreference = require('../models/tenantPreferenceModel');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
@@ -15,6 +13,7 @@ const PointsHistory = require('../models/pointsHistoryModel');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// --- sendVerificationEmail (unchanged) ---
 const sendVerificationEmail = async (user, res) => {
     const verificationToken = user.getEmailVerificationToken();
     await user.save({ validateBeforeSave: false }); 
@@ -43,6 +42,7 @@ const sendVerificationEmail = async (user, res) => {
     }
 };
 
+// --- registerUser (unchanged) ---
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password, whatsappNumber, role, referralCode } = req.body;
     
@@ -106,6 +106,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 });
 
+// --- loginUser (unchanged) ---
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -158,6 +159,7 @@ const loginUser = asyncHandler(async (req, res) => {
     });
 });
 
+// --- googleLogin (unchanged) ---
 const googleLogin = asyncHandler(async (req, res) => {
     const { token } = req.body;
     const ticket = await client.verifyIdToken({
@@ -217,6 +219,7 @@ const googleLogin = asyncHandler(async (req, res) => {
     });
 });
 
+// --- forgotPassword (unchanged) ---
 const forgotPassword = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
@@ -239,6 +242,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     }
 });
 
+// --- resetPassword (unchanged) ---
 const resetPassword = asyncHandler(async (req, res) => {
     const resetPasswordToken = crypto.createHash('sha256').update(req.params.resettoken).digest('hex');
     const user = await User.findOne({
@@ -273,6 +277,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     });
 });
 
+// --- getUserProfile (unchanged) ---
 const getUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id)
         .select('-password')
@@ -314,6 +319,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
+// --- getPublicUserProfile (unchanged) ---
 const getPublicUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id).select('-password');
     if (user) {
@@ -340,6 +346,7 @@ const getPublicUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
+// --- updateUserProfile (unchanged) ---
 const updateUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
     if (user) {
@@ -390,6 +397,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
+// --- changePassword (unchanged) ---
 const changePassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     
@@ -410,6 +418,7 @@ const changePassword = asyncHandler(async (req, res) => {
     }
 });
 
+// --- getUnreadMessageCount (unchanged) ---
 const getUnreadMessageCount = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const conversations = await Conversation.find({ participants: userId });
@@ -422,6 +431,7 @@ const getUnreadMessageCount = asyncHandler(async (req, res) => {
     res.status(200).json({ unreadCount });
 });
 
+// --- toggleSaveListing (unchanged) ---
 const toggleSaveListing = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const { listingId } = req.params;
@@ -443,6 +453,7 @@ const toggleSaveListing = asyncHandler(async (req, res) => {
     }
 });
 
+// --- applyForVerification (unchanged) ---
 const applyForVerification = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
@@ -496,6 +507,7 @@ const applyForVerification = asyncHandler(async (req, res) => {
     });
 });
 
+// --- getMyReferralData (unchanged) ---
 const getMyReferralData = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select('referralCode points');
 
@@ -510,6 +522,7 @@ const getMyReferralData = asyncHandler(async (req, res) => {
     });
 });
 
+// --- scheduleAccountDeletion (unchanged) ---
 const scheduleAccountDeletion = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
     
@@ -531,6 +544,7 @@ const scheduleAccountDeletion = asyncHandler(async (req, res) => {
     });
 });
 
+// --- completeProfile (unchanged) ---
 const completeProfile = asyncHandler(async (req, res) => {
     const { role, whatsappNumber } = req.body;
     const user = await User.findById(req.user._id);
@@ -576,6 +590,7 @@ const completeProfile = asyncHandler(async (req, res) => {
     });
 });
 
+// --- verifyEmail (unchanged) ---
 const verifyEmail = asyncHandler(async (req, res) => {
     const verificationToken = crypto
         .createHash('sha256')
@@ -615,6 +630,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
     });
 });
 
+// --- resendVerificationEmail (unchanged) ---
 const resendVerificationEmail = asyncHandler(async (req, res) => {
     const { email } = req.body;
     if (!email) {
@@ -641,6 +657,7 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
     }
 });
 
+// --- sendPremiumSupportTicket (unchanged) ---
 const sendPremiumSupportTicket = asyncHandler(async (req, res) => {
     const { subject, message } = req.body;
     const user = req.user; 
@@ -686,11 +703,7 @@ const sendPremiumSupportTicket = asyncHandler(async (req, res) => {
     }
 });
 
-// --- 2. NEW PREFERENCE FUNCTIONS ---
-
-// @desc    Get tenant preferences
-// @route   GET /api/users/preferences
-// @access  Private
+// --- getTenantPreferences (unchanged) ---
 const getTenantPreferences = asyncHandler(async (req, res) => {
     if (req.user.role !== 'tenant') {
         res.status(403);
@@ -700,7 +713,6 @@ const getTenantPreferences = asyncHandler(async (req, res) => {
     const preferences = await TenantPreference.findOne({ user: req.user._id });
     
     if (!preferences) {
-        // Return a default, empty preference object if none exists
         return res.json({
             user: req.user._id,
             location: '',
@@ -717,9 +729,7 @@ const getTenantPreferences = asyncHandler(async (req, res) => {
     res.json(preferences);
 });
 
-// @desc    Update tenant preferences
-// @route   PUT /api/users/preferences
-// @access  Private
+// --- updateTenantPreferences (unchanged) ---
 const updateTenantPreferences = asyncHandler(async (req, res) => {
     if (req.user.role !== 'tenant') {
         res.status(403);
@@ -737,13 +747,11 @@ const updateTenantPreferences = asyncHandler(async (req, res) => {
         notifyImmediately
     } = req.body;
 
-    // Find existing preferences or create new ones
     let preferences = await TenantPreference.findOne({ user: req.user._id });
     if (!preferences) {
         preferences = new TenantPreference({ user: req.user._id });
     }
 
-    // Update the fields
     preferences.location = location || undefined;
     preferences.propertyTypes = propertyTypes || [];
     preferences.minPrice = minPrice || 0;
@@ -757,7 +765,109 @@ const updateTenantPreferences = asyncHandler(async (req, res) => {
     res.json(updatedPreferences);
 });
 
-// --- 3. EXPORT NEW FUNCTIONS ---
+// --- 4. NEW: getTenantMatchAnalytics ---
+// @desc    Get tenant match score and tips
+// @route   GET /api/users/match-analytics
+// @access  Private
+const getTenantMatchAnalytics = asyncHandler(async (req, res) => {
+    if (req.user.role !== 'tenant') {
+        res.status(403);
+        throw new Error('Only tenants can have preferences.');
+    }
+
+    // 1. Get user's preferences
+    const preferences = await TenantPreference.findOne({ user: req.user._id });
+    if (!preferences) {
+        return res.json({
+            score: 0,
+            tip: "Save your preferences to see your match score.",
+            totalListings: await Listing.countDocuments({ status: 'available' }),
+            matchingListings: 0,
+        });
+    }
+
+    // 2. Get all available listings
+    const allListings = await Listing.find({ status: 'available' }).lean();
+    const totalListings = allListings.length;
+    if (totalListings === 0) {
+        return res.json({
+            score: 0,
+            tip: "The market is empty right now. Check back soon!",
+            totalListings: 0,
+            matchingListings: 0,
+        });
+    }
+
+    // 3. Run the matching logic in-memory
+    const { 
+        location, 
+        propertyTypes, 
+        minPrice, 
+        maxPrice, 
+        minBedrooms, 
+        minBathrooms, 
+        amenities 
+    } = preferences;
+
+    let matchedListings = allListings.filter(listing => {
+        // Price
+        if (listing.price < minPrice) return false;
+        if (maxPrice && listing.price > maxPrice) return false;
+        
+        // Beds/Baths
+        if (listing.bedrooms < minBedrooms) return false;
+        if (listing.bathrooms < minBathrooms) return false;
+
+        // Property Types
+        if (propertyTypes && propertyTypes.length > 0) {
+            if (!propertyTypes.includes(listing.propertyType)) return false;
+        }
+
+        // Amenities
+        if (amenities && amenities.length > 0) {
+            const listingAmenities = listing.amenities || [];
+            // Check if every required amenity is in the listing
+            const hasAllAmenities = amenities.every(a => listingAmenities.includes(a));
+            if (!hasAllAmenities) return false;
+        }
+
+        // Location
+        if (location && listing.location.address) {
+            const prefLocation = location.toLowerCase();
+            const listingLocation = listing.location.address.toLowerCase();
+            if (!listingLocation.includes(prefLocation)) return false;
+        }
+        
+        return true; // Passed all filters
+    });
+
+    const matchingCount = matchedListings.length;
+    const score = Math.round((matchingCount / totalListings) * 100);
+
+    // 4. Generate a tip
+    let tip = "Your preferences are a great match for the current market!";
+    if (score < 30) {
+        // Find the most restrictive filter
+        if (amenities && amenities.length > 0) {
+            tip = `The amenities you require (like "${amenities[0]}") are rare. Try unchecking a few to see more listings.`;
+        } else if (maxPrice) {
+            tip = "Your 'Max Price' might be too low. Try increasing your budget to see more options.";
+        } else if (location) {
+            tip = `Your location "${location}" is very specific. Try searching a wider area.`;
+        } else {
+            tip = "Your filters are very restrictive. Try broadening your search.";
+        }
+    }
+
+    res.json({
+        score,
+        tip,
+        totalListings,
+        matchingListings: matchingCount,
+    });
+});
+
+
 module.exports = {
     registerUser,
     loginUser,
@@ -777,6 +887,7 @@ module.exports = {
     verifyEmail,
     resendVerificationEmail,
     sendPremiumSupportTicket,
-    getTenantPreferences,    // <-- ADDED
-    updateTenantPreferences  // <-- ADDED
+    getTenantPreferences,
+    updateTenantPreferences,
+    getTenantMatchAnalytics // <-- 5. EXPORT NEW FUNCTION
 };

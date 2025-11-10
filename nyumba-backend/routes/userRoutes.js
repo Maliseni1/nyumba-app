@@ -19,8 +19,9 @@ const {
     verifyEmail,
     resendVerificationEmail,
     sendPremiumSupportTicket,
-    getTenantPreferences,     // <-- 1. IMPORT
-    updateTenantPreferences   // <-- 1. IMPORT
+    getTenantPreferences,
+    updateTenantPreferences,
+    getTenantMatchAnalytics // <-- 1. IMPORT
 } = require('../controllers/userController');
 const { protect, premiumUser } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -54,10 +55,14 @@ router.put('/changepassword', protect, changePassword);
 // --- Premium Support Route ---
 router.post('/premium-support', protect, premiumUser, sendPremiumSupportTicket);
 
-// --- 2. NEW TENANT PREFERENCE ROUTES ---
+// --- Tenant Preference Routes ---
 router.route('/preferences')
     .get(protect, getTenantPreferences)
     .put(protect, updateTenantPreferences);
+    
+// --- 2. NEW MATCH ANALYTICS ROUTE ---
+router.route('/match-analytics')
+    .get(protect, getTenantMatchAnalytics);
 
 // --- Public Profile Route (Keep this last) ---
 router.get('/:id', getPublicUserProfile);

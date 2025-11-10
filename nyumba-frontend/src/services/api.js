@@ -7,7 +7,8 @@ const silentGetRoutes = [
     '/users/profile',
     '/users/unread-count',
     '/forum/categories',
-    '/users/preferences', // <-- 1. ADDED: Make fetching preferences silent
+    '/users/preferences',
+    '/users/match-analytics', // <-- 1. ADDED: Make analytics silent
 ];
 API.interceptors.request.use((req) => {
     const isSilent = silentGetRoutes.some(route => req.url.endsWith(route));
@@ -54,9 +55,11 @@ export const completeProfile = (data) => API.put('/users/complete-profile', data
 export const verifyEmail = (token) => API.get(`/users/verify-email/${token}`);
 export const resendVerificationEmail = (email) => API.post('/users/resend-verification', { email });
 export const sendPremiumSupportTicket = (data) => API.post('/users/premium-support', data);
-// --- 2. ADD NEW PREFERENCE FUNCTIONS ---
 export const getTenantPreferences = () => API.get('/users/preferences');
 export const updateTenantPreferences = (data) => API.put('/users/preferences', data);
+// --- 2. ADD NEW ANALYTICS FUNCTION ---
+export const getTenantMatchAnalytics = () => API.get('/users/match-analytics');
+
 
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });
