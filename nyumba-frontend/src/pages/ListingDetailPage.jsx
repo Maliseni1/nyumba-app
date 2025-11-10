@@ -5,10 +5,19 @@ import ImageSlider from '../components/ImageSlider';
 import PaymentModal from '../components/PaymentModal';
 import PaymentConfirmation from '../components/PaymentConfirmation';
 import { toast } from 'react-toastify';
-// --- 1. IMPORT NEW ICONS AND CONFIRM ALERT ---
-import { FaBed, FaBath, FaHome, FaCommentDots, FaEdit, FaTrash, FaCreditCard, FaStar, FaRocket, FaLock } from 'react-icons/fa';
+// --- 1. IMPORT ICONS AND SHARE BUTTONS ---
+import { 
+    FaBed, FaBath, FaHome, FaCommentDots, FaEdit, FaTrash, FaCreditCard, 
+    FaStar, FaRocket, FaLock, FaShareAlt, FaLink,
+    FaWhatsapp, FaFacebook, FaTwitter 
+} from 'react-icons/fa';
+import {
+    WhatsappShareButton,
+    FacebookShareButton,
+    TwitterShareButton,
+} from 'react-share';
 import { confirmAlert } from 'react-confirm-alert';
-import 'react-confirm-alert/src/react-confirm-alert.css'; // Import alert CSS
+import 'react-confirm-alert/src/react-confirm-alert.css';
 import StarRating from '../components/StarRating';
 import ListingReviews from '../components/ListingReviews';
 
@@ -23,19 +32,17 @@ const ListingDetailPage = () => {
 
     const currentUser = JSON.parse(localStorage.getItem('user'));
 
-    // --- 2. UPDATE USEEFFECT TO HANDLE 403 ERRORS ---
     useEffect(() => {
         const fetchListing = async () => {
             setLoading(true);
             try {
                 const { data } = await getListingById(id);
                 setListing(data);
-                setLoading(false); // Success, stop loading
+                setLoading(false);
             } catch (error) {
-                setLoading(false); // Stop loading on error
+                setLoading(false);
                 
                 if (error.response && error.response.status === 403) {
-                    // 403 Forbidden: This is an Early Access listing
                     confirmAlert({
                         customUI: ({ onClose }) => (
                             <div className="react-confirm-alert-body">
@@ -66,15 +73,13 @@ const ListingDetailPage = () => {
                         )
                     });
                 } else {
-                    // Other error (e.g., 404, 500)
                     toast.error(error.response?.data?.message || "Could not fetch listing details.");
-                    navigate('/'); // Go home on other errors
+                    navigate('/');
                 }
             }
         };
         fetchListing();
     }, [id, navigate]);
-    // --- END OF USEEFFECT UPDATE ---
 
 
     const handleStartChat = async () => { /* ... (function is unchanged) ... */ };
@@ -83,17 +88,23 @@ const ListingDetailPage = () => {
     const handlePaymentError = (error) => { /* ... (function is unchanged) ... */ };
     const handleBookNow = () => { /* ... (function is unchanged) ... */ };
 
+    // --- 2. NEW: Function to copy link to clipboard ---
+    const shareUrl = window.location.href;
+    const handleCopyLink = () => {
+        navigator.clipboard.writeText(shareUrl);
+        toast.success("Link copied to clipboard!");
+    };
+
     if (loading) return <div className="pt-24 text-center text-subtle-text-color">Loading Listing...</div>;
-    // We return null if the listing is not found or is early access
-    // The confirmAlert will handle the UI
     if (!listing) return null;
 
     const isOwnListing = currentUser && currentUser._id === listing?.owner?._id;
     const displayAddress = listing.location?.address || listing.location || "Location not specified";
-
-    // --- 3. CHECK FOR LISTING STATUSES ---
     const isEarlyAccess = new Date(listing.publicReleaseAt) > new Date();
     const isPriority = listing.isPriority;
+
+    // --- 3. Share button title/quote ---
+    const shareTitle = `Check out this listing on Nyumba: ${listing.title}`;
 
     return (
         <div className="pt-16 pb-12">
@@ -105,7 +116,6 @@ const ListingDetailPage = () => {
                         <div>
                             <h1 className="text-4xl font-bold text-text-color">{listing.title}</h1>
                             
-                            {/* --- 4. ADD NEW BADGES --- */}
                             <div className="flex items-center gap-2 mt-2">
                                 {isEarlyAccess && (
                                     <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full">
@@ -120,7 +130,6 @@ const ListingDetailPage = () => {
                                     </span>
                                 )}
                             </div>
-                            {/* --- END OF NEW BADGES --- */}
 
                             <p className="text-subtle-text-color mt-2 text-lg">{displayAddress}</p>
                         </div>
@@ -139,12 +148,46 @@ const ListingDetailPage = () => {
                         </div>
                     </div>
 
+                    {/* --- 4. NEW: Share Button Section --- */}
+                    <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-text-color mb-3 flex items-center gap-2">
+                            <FaShareAlt /> Share this Listing
+                        </h3>
+                        <div className="flex items-center gap-3">
+                            <WhatsappShareButton url={shareUrl} title={shareTitle} separator=":: ">
+                                <div className="h-10 w-10 flex items-center justify-center rounded-full bg-[#25D366] text-white hover:opacity-80 transition-opacity">
+                                    <FaWhatsapp size={20} />
+                                </div>
+                            </WhatsappShareButton>
+                            
+                            <FacebookShareButton url={shareUrl} quote={shareTitle}>
+                                <div className="h-10 w-10 flex items-center justify-center rounded-full bg-[#1877F2] text-white hover:opacity-80 transition-opacity">
+                                    <FaFacebook size={20} />
+                                </div>
+                            </FacebookShareButton>
+                            
+                            <TwitterShareButton url={shareUrl} title={shareTitle}>
+                                <div className="h-10 w-10 flex items-center justify-center rounded-full bg-black text-white hover:opacity-80 transition-opacity border border-border-color">
+                                    <FaTwitter size={20} />
+                                </div>
+                            </TwitterShareButton>
+
+                            <button 
+                                onClick={handleCopyLink}
+                                title="Copy Link"
+                                className="h-10 w-10 flex items-center justify-center rounded-full bg-bg-color text-subtle-text-color hover:bg-border-color hover:text-text-color transition-colors border border-border-color"
+                            >
+                                <FaLink size={18} />
+                            </button>
+                        </div>
+                    </div>
+                    {/* --- END: Share Button Section --- */}
+
                     <div>
                         <h2 className="text-2xl font-bold text-text-color mb-2">Description</h2>
                         <p className="text-text-color whitespace-pre-wrap">{listing.description}</p>
                     </div>
 
-                    {/* --- (Rest of the page is unchanged) --- */}
                     {isOwnListing ? (
                         <div className="mt-8 pt-6 border-t border-border-color">
                              <h2 className="text-2xl font-bold text-text-color mb-4">Manage Your Listing</h2>
