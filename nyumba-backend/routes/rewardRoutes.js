@@ -8,6 +8,7 @@ const {
     updateReward,
     deleteReward
 } = require('../controllers/rewardController');
+
 // --- 2. Import 'admin' middleware ---
 const { protect, admin } = require('../middleware/authMiddleware');
 

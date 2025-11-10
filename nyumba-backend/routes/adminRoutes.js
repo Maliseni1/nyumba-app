@@ -5,33 +5,21 @@ const {
     getAllUsers,
     getVerificationRequests,
     handleVerificationRequest,
-    banUser,    // <-- 1. Import
-    deleteUser  // <-- 1. Import
+    banUser,
+    deleteUser
 } = require('../controllers/adminController');
-const { protect, admin } = require('../middleware/authMiddleware'); // <-- 1. Import admin
+
+// --- THIS IS THE FIX ---
+// The 'admin' function is in 'authMiddleware.js', not 'adminMiddleware.js'
+const { protect, admin } = require('../middleware/authMiddleware'); 
+// --- END OF FIX ---
 
 // All routes are protected by protect + admin middleware
-
-// GET /api/admin/stats
 router.route('/stats').get(protect, admin, getAppStats);
-
-// GET /api/admin/users
 router.route('/users').get(protect, admin, getAllUsers);
-
-// GET /api/admin/verification-requests
 router.route('/verification-requests').get(protect, admin, getVerificationRequests);
-
-// PUT /api/admin/verify/:id
 router.route('/verify/:id').put(protect, admin, handleVerificationRequest);
-
-// --- 2. NEW USER MANAGEMENT ROUTES ---
-
-// PUT /api/admin/ban/:id
 router.route('/ban/:id').put(protect, admin, banUser);
-
-// DELETE /api/admin/user/:id
 router.route('/user/:id').delete(protect, admin, deleteUser);
-
-// --- END OF NEW ROUTES ---
 
 module.exports = router;

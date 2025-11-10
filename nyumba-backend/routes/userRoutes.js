@@ -18,9 +18,10 @@ const {
     completeProfile,
     verifyEmail,
     resendVerificationEmail,
-    sendPremiumSupportTicket // <-- 1. IMPORT
+    sendPremiumSupportTicket,
+    getTenantPreferences,     // <-- 1. IMPORT
+    updateTenantPreferences   // <-- 1. IMPORT
 } = require('../controllers/userController');
-// --- 2. IMPORT 'premiumUser' MIDDLEWARE ---
 const { protect, premiumUser } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -50,9 +51,13 @@ router.post('/apply-verification', protect, applyForVerification);
 router.get('/referral-data', protect, getMyReferralData);
 router.put('/changepassword', protect, changePassword);
 
-// --- 3. NEW PREMIUM SUPPORT ROUTE ---
-// This route is protected by both 'protect' and 'premiumUser'
+// --- Premium Support Route ---
 router.post('/premium-support', protect, premiumUser, sendPremiumSupportTicket);
+
+// --- 2. NEW TENANT PREFERENCE ROUTES ---
+router.route('/preferences')
+    .get(protect, getTenantPreferences)
+    .put(protect, updateTenantPreferences);
 
 // --- Public Profile Route (Keep this last) ---
 router.get('/:id', getPublicUserProfile);

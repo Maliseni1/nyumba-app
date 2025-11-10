@@ -1,6 +1,9 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
-const Listing = require('../models/listingModel');
+// --- THIS IS THE FIX ---
+// We must destructure the import because listingModel now exports an object
+const { Listing } = require('../models/listingModel');
+// --- END OF FIX ---
 const Conversation = require('../models/conversationModel');
 const Message = require('../models/messageModel');
 
@@ -9,7 +12,8 @@ const Message = require('../models/messageModel');
 // @access  Private/Admin
 const getAppStats = asyncHandler(async (req, res) => {
     const userCount = await User.countDocuments({});
-    const listingCount = await Listing.countDocuments({});
+    // This line will now work
+    const listingCount = await Listing.countDocuments({}); 
     
     const pendingVerificationCount = await User.countDocuments({
         verificationStatus: 'pending'
@@ -73,7 +77,6 @@ const handleVerificationRequest = asyncHandler(async (req, res) => {
     res.json(users);
 });
 
-// --- 1. NEW FUNCTION: Ban/Unban a user ---
 // @desc    Ban or unban a user
 // @route   PUT /api/admin/ban/:id
 // @access  Private/Admin
@@ -94,7 +97,6 @@ const banUser = asyncHandler(async (req, res) => {
     res.json(allUsers);
 });
 
-// --- 2. NEW FUNCTION: Admin Delete User ---
 // @desc    Permanently delete a user (Admin)
 // @route   DELETE /api/admin/user/:id
 // @access  Private/Admin
@@ -114,6 +116,7 @@ const deleteUser = asyncHandler(async (req, res) => {
     // Perform the same full deletion as the cron job
     console.log(`ADMIN: Deleting user ${user.email} (ID: ${user._id})`);
     
+    // This line will now work
     await Listing.deleteMany({ owner: user._id });
     await Conversation.deleteMany({ participants: user._id });
     await Message.deleteMany({ sender: user._id });
@@ -131,7 +134,6 @@ const deleteUser = asyncHandler(async (req, res) => {
 });
 
 
-// --- 3. EXPORT NEW FUNCTIONS ---
 module.exports = {
     getAppStats,
     getAllUsers,

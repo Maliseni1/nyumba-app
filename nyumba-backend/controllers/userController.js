@@ -1,8 +1,11 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
-const Listing = require('../models/listingModel');
+// --- FIX THE LISTING IMPORT ---
+const { Listing } = require('../models/listingModel');
 const Conversation = require('../models/conversationModel');
 const Message = require('../models/messageModel');
+// --- 1. IMPORT NEW PREFERENCE MODEL ---
+const TenantPreference = require('../models/tenantPreferenceModel');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
 const { OAuth2Client } = require('google-auth-library');
@@ -638,17 +641,15 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
     }
 });
 
-// --- 1. NEW PREMIUM SUPPORT FUNCTION ---
 const sendPremiumSupportTicket = asyncHandler(async (req, res) => {
     const { subject, message } = req.body;
-    const user = req.user; // We get this from the 'protect' middleware
+    const user = req.user; 
 
     if (!subject || !message) {
         res.status(400);
         throw new Error('Please provide a subject and a message.');
     }
 
-    // This is your support email from your .env file
     const supportEmail = process.env.SUPPORT_EMAIL;
     if (!supportEmail) {
         console.error('SUPPORT_EMAIL is not set in .env file.');
@@ -658,7 +659,7 @@ const sendPremiumSupportTicket = asyncHandler(async (req, res) => {
 
     const userEmail = user.email;
     const userName = user.name;
-    const userType = user.subscriptionType; // e.g., 'landlord_pro'
+    const userType = user.subscriptionType; 
 
     const emailSubject = `[Premium Support Ticket - ${userType}] ${subject}`;
     const emailHtml = `
@@ -672,10 +673,10 @@ const sendPremiumSupportTicket = asyncHandler(async (req, res) => {
 
     try {
         await sendEmail({
-            email: supportEmail, // Send *to* your support address
+            email: supportEmail,
             subject: emailSubject,
             html: emailHtml,
-            replyTo: userEmail // Set the 'reply-to' to the user's email
+            replyTo: userEmail 
         });
         res.status(200).json({ message: 'Support ticket sent successfully. We will get back to you shortly.' });
     } catch (error) {
@@ -684,8 +685,79 @@ const sendPremiumSupportTicket = asyncHandler(async (req, res) => {
         throw new Error('Could not send support ticket. Please try again later.');
     }
 });
-// --- END OF NEW FUNCTION ---
 
+// --- 2. NEW PREFERENCE FUNCTIONS ---
+
+// @desc    Get tenant preferences
+// @route   GET /api/users/preferences
+// @access  Private
+const getTenantPreferences = asyncHandler(async (req, res) => {
+    if (req.user.role !== 'tenant') {
+        res.status(403);
+        throw new Error('Only tenants can have preferences.');
+    }
+    
+    const preferences = await TenantPreference.findOne({ user: req.user._id });
+    
+    if (!preferences) {
+        // Return a default, empty preference object if none exists
+        return res.json({
+            user: req.user._id,
+            location: '',
+            propertyTypes: [],
+            minPrice: '',
+            maxPrice: '',
+            minBedrooms: 1,
+            minBathrooms: 1,
+            amenities: [],
+            notifyImmediately: true,
+        });
+    }
+    
+    res.json(preferences);
+});
+
+// @desc    Update tenant preferences
+// @route   PUT /api/users/preferences
+// @access  Private
+const updateTenantPreferences = asyncHandler(async (req, res) => {
+    if (req.user.role !== 'tenant') {
+        res.status(403);
+        throw new Error('Only tenants can have preferences.');
+    }
+
+    const {
+        location,
+        propertyTypes,
+        minPrice,
+        maxPrice,
+        minBedrooms,
+        minBathrooms,
+        amenities,
+        notifyImmediately
+    } = req.body;
+
+    // Find existing preferences or create new ones
+    let preferences = await TenantPreference.findOne({ user: req.user._id });
+    if (!preferences) {
+        preferences = new TenantPreference({ user: req.user._id });
+    }
+
+    // Update the fields
+    preferences.location = location || undefined;
+    preferences.propertyTypes = propertyTypes || [];
+    preferences.minPrice = minPrice || 0;
+    preferences.maxPrice = maxPrice || undefined;
+    preferences.minBedrooms = minBedrooms || 1;
+    preferences.minBathrooms = minBathrooms || 1;
+    preferences.amenities = amenities || [];
+    preferences.notifyImmediately = notifyImmediately;
+
+    const updatedPreferences = await preferences.save();
+    res.json(updatedPreferences);
+});
+
+// --- 3. EXPORT NEW FUNCTIONS ---
 module.exports = {
     registerUser,
     loginUser,
@@ -704,5 +776,7 @@ module.exports = {
     completeProfile,
     verifyEmail,
     resendVerificationEmail,
-    sendPremiumSupportTicket // <-- 2. EXPORT NEW FUNCTION
+    sendPremiumSupportTicket,
+    getTenantPreferences,    // <-- ADDED
+    updateTenantPreferences  // <-- ADDED
 };

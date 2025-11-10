@@ -7,6 +7,7 @@ const silentGetRoutes = [
     '/users/profile',
     '/users/unread-count',
     '/forum/categories',
+    '/users/preferences', // --- ADDED: Make fetching preferences silent ---
 ];
 API.interceptors.request.use((req) => {
     const isSilent = silentGetRoutes.some(route => req.url.endsWith(route));
@@ -53,6 +54,9 @@ export const completeProfile = (data) => API.put('/users/complete-profile', data
 export const verifyEmail = (token) => API.get(`/users/verify-email/${token}`);
 export const resendVerificationEmail = (email) => API.post('/users/resend-verification', { email });
 export const sendPremiumSupportTicket = (data) => API.post('/users/premium-support', data);
+// --- 1. ADD NEW PREFERENCE FUNCTIONS ---
+export const getTenantPreferences = () => API.get('/users/preferences');
+export const updateTenantPreferences = (data) => API.put('/users/preferences', data);
 
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });
@@ -96,7 +100,6 @@ export const createListingReview = (listingId, reviewData) => API.post(`/reviews
 // Reward Routes
 export const getRewards = () => API.get('/rewards');
 export const redeemReward = (data) => API.post('/rewards/redeem', data);
-// --- 1. ADD NEW ADMIN REWARD FUNCTIONS ---
 export const adminGetAllRewards = () => API.get('/rewards/admin/all');
 export const adminCreateReward = (data) => API.post('/rewards/admin', data);
 export const adminUpdateReward = (id, data) => API.put(`/rewards/admin/${id}`, data);

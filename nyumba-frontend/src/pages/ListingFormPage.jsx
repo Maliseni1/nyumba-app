@@ -6,6 +6,17 @@ import ImageUpload from '../components/ImageUpload';
 import imageCompression from 'browser-image-compression';
 import { FaCrosshairs } from 'react-icons/fa';
 
+// --- 1. Define Amenity Options (must match backend model) ---
+const amenityOptions = [
+    'Pet Friendly',
+    'Furnished',
+    'WiFi Included',
+    'Parking Available',
+    'Security',
+    'Borehole',
+    'Pool'
+];
+
 const ListingFormPage = () => {
     const [formData, setFormData] = useState({
         title: '',
@@ -15,6 +26,7 @@ const ListingFormPage = () => {
         bedrooms: '',
         bathrooms: '',
         propertyType: 'House',
+        amenities: [], // <-- 2. Add amenities to initial state
     });
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -36,6 +48,7 @@ const ListingFormPage = () => {
                         bedrooms: data.bedrooms,
                         bathrooms: data.bathrooms,
                         propertyType: data.propertyType,
+                        amenities: data.amenities || [], // <-- 2. Load existing amenities
                     });
                     setImages(data.images);
                 } catch (error) {
@@ -49,6 +62,20 @@ const ListingFormPage = () => {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    // --- 3. Add new handler for amenity checkboxes ---
+    const handleAmenityChange = (e) => {
+        const { value, checked } = e.target;
+        setFormData(prevData => {
+            if (checked) {
+                // Add amenity to the array if it's not already there
+                return { ...prevData, amenities: [...new Set([...prevData.amenities, value])] };
+            } else {
+                // Remove amenity from the array
+                return { ...prevData, amenities: prevData.amenities.filter(amenity => amenity !== value) };
+            }
+        });
     };
 
     const handleUseCurrentLocation = () => {
@@ -84,7 +111,19 @@ const ListingFormPage = () => {
         e.preventDefault();
         setLoading(true);
         const listingData = new FormData();
-        Object.keys(formData).forEach(key => listingData.append(key, formData[key]));
+
+        // --- 4. Update handleSubmit to correctly append amenities ---
+        // Append all keys EXCEPT amenities
+        Object.keys(formData).forEach(key => {
+            if (key !== 'amenities') {
+                listingData.append(key, formData[key]);
+            }
+        });
+        // Append amenities array items individually
+        formData.amenities.forEach(amenity => {
+            listingData.append('amenities', amenity);
+        });
+        // --- End of new logic ---
 
         const compressionOptions = {
             maxSizeMB: 1,
@@ -175,6 +214,27 @@ const ListingFormPage = () => {
                     <option>Commercial</option>
                 </select>
                 
+                {/* --- 5. Add Amenity Checkbox Section --- */}
+                <div>
+                    <label className="block text-sm font-medium text-text-color mb-3">Amenities</label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {amenityOptions.map(amenity => (
+                            <label key={amenity} className="flex items-center gap-2 text-subtle-text-color">
+                                <input
+                                    type="checkbox"
+                                    name="amenities"
+                                    value={amenity}
+                                    checked={formData.amenities.includes(amenity)}
+                                    onChange={handleAmenityChange}
+                                    className="h-4 w-4 rounded text-accent-color border-border-color focus:ring-accent-color"
+                                />
+                                {amenity}
+                            </label>
+                        ))}
+                    </div>
+                </div>
+                {/* --- End of Amenity Section --- */}
+
                 <ImageUpload images={images} setImages={setImages} />
                 
                 <button 
@@ -188,4 +248,5 @@ const ListingFormPage = () => {
         </div>
     );
 };
+
 export default ListingFormPage;

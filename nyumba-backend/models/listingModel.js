@@ -1,5 +1,17 @@
 const mongoose = require('mongoose');
 
+// --- 1. DEFINE A-LIST OF AMENITIES ---
+// We define this once so we can reuse it in the TenantPreference model
+const amenityOptions = [
+    'Pet Friendly',
+    'Furnished',
+    'WiFi Included',
+    'Parking Available',
+    'Security',
+    'Borehole',
+    'Pool'
+];
+
 const listingSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -54,18 +66,11 @@ const listingSchema = new mongoose.Schema({
         enum: ['available', 'occupied'],
         default: 'available',
     },
-
-    // --- 1. NEW FIELD FOR PRIORITY ACCESS ---
-    // This is the time when the listing becomes visible to FREE users.
-    // Premium tenants will be able to see it immediately.
     publicReleaseAt: {
         type: Date,
-        default: Date.now, // Defaults to now, but we will override this
-        index: true, // Add index for fast querying
+        default: Date.now, 
+        index: true,
     },
-    // --- END OF NEW FIELD ---
-
-    // --- REWARD FIELDS ---
     isPriority: {
         type: Boolean,
         default: false,
@@ -74,7 +79,6 @@ const listingSchema = new mongoose.Schema({
     priorityExpiresAt: {
         type: Date,
     },
-
     analytics: {
         views: {
             type: Number,
@@ -93,10 +97,24 @@ const listingSchema = new mongoose.Schema({
             default: 0,
         },
     },
+
+    // --- 2. NEW AMENITIES FIELD ---
+    amenities: [{
+        type: String,
+        enum: amenityOptions // Use the list defined above
+    }]
+    // --- END OF NEW FIELD ---
+
 }, {
     timestamps: true,
 });
 
 const Listing = mongoose.model('Listing', listingSchema);
 
-module.exports = Listing;
+// --- 3. EXPORT THE AMENITIES LIST ---
+// We export this so we can import it in other files
+// without having to type it twice.
+module.exports = {
+    Listing,
+    amenityOptions 
+};

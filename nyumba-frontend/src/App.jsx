@@ -42,8 +42,9 @@ import CompleteProfilePage from './pages/CompleteProfilePage';
 import EmailVerificationPage from './pages/EmailVerificationPage';
 import BulkUploadPage from './pages/BulkUploadPage';
 import VerifiedLandlordRoute from './components/VerifiedLandlordRoute';
-// --- 1. IMPORT NEW PREMIUM SUPPORT PAGE ---
 import PremiumSupportPage from './pages/PremiumSupportPage';
+// --- 1. IMPORT NEW PREFERENCES PAGE ---
+import TenantPreferencesPage from './pages/TenantPreferencesPage';
 
 function App() {
   const { isAuthLoading } = useAuth();
@@ -107,8 +108,9 @@ function App() {
                 <Route path="/payments" element={<PaymentHistoryPage />} />
                 <Route path="/verification" element={<VerificationPage />} />
                 <Route path="/rewards" element={<RewardsPage />} />
-                {/* --- 2. ADD NEW PREMIUM SUPPORT ROUTE --- */}
                 <Route path="/support" element={<PremiumSupportPage />} />
+                {/* --- 2. ADD NEW PREFERENCES ROUTE --- */}
+                <Route path="/preferences" element={<TenantPreferencesPage />} />
               </Route>
               
               {/* Landlord Routes */}

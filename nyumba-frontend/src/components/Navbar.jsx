@@ -15,7 +15,8 @@ import {
     FaGift,
     FaComments,
     FaFileUpload,
-    FaHeadset // --- 1. IMPORT NEW ICON ---
+    FaHeadset,
+    FaSlidersH // --- 1. IMPORT NEW ICON ---
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { Menu, Transition } from '@headlessui/react';
@@ -40,7 +41,6 @@ const Navbar = () => {
         setIsMobileMenuOpen(false);
     };
     
-    // --- 2. CHECK FOR PREMIUM STATUS ---
     const isPremium = authUser && authUser.subscriptionStatus === 'active';
 
     // --- DESKTOP LINKS ---
@@ -52,9 +52,13 @@ const Navbar = () => {
                     <Link to="/map" title="Map View" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaMap /></Link>
                     <Link to="/forum" title="Community Hub" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaComments /></Link>
                     
-                    {/* --- 3. ADD PREMIUM SUPPORT LINK (Desktop) --- */}
                     {isPremium && (
                         <Link to="/support" title="Premium Support" className="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors text-2xl"><FaHeadset /></Link>
+                    )}
+
+                    {/* --- 2. ADD PREFERENCES LINK FOR TENANTS (Desktop) --- */}
+                    {authUser.role === 'tenant' && (
+                         <Link to="/preferences" title="My Preferences" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaSlidersH /></Link>
                     )}
 
                     {authUser.isAdmin && (
@@ -102,10 +106,16 @@ const Navbar = () => {
                     <Link to="/map" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaMap /> Map View</Link>
                     <Link to="/forum" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaComments /> Community</Link>
                     
-                    {/* --- 4. ADD PREMIUM SUPPORT LINK (Mobile) --- */}
                     {isPremium && (
                         <Link to="/support" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-500 dark:text-amber-400 hover:bg-border-color rounded-md">
                             <FaHeadset /> Premium Support
+                        </Link>
+                    )}
+
+                    {/* --- 3. ADD PREFERENCES LINK FOR TENANTS (Mobile) --- */}
+                    {authUser.role === 'tenant' && (
+                        <Link to="/preferences" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md">
+                            <FaSlidersH /> My Preferences
                         </Link>
                     )}
 
@@ -190,4 +200,5 @@ const Navbar = () => {
         </nav>
     );
 };
+
 export default Navbar;
