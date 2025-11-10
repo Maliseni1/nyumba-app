@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-// --- FIX THE LISTING IMPORT ---
-// We now import the object from listingModel
+// --- 1. THIS IS THE FIX ---
+// Listing model now exports an object, so we destructure the import.
 const { Listing } = require('./listingModel'); 
 
 const userSchema = new mongoose.Schema({

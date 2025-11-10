@@ -16,7 +16,8 @@ import {
     FaComments,
     FaFileUpload,
     FaHeadset,
-    FaSlidersH // --- 1. IMPORT NEW ICON ---
+    FaSlidersH,
+    FaCalculator // --- 1. IMPORT NEW ICON ---
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { Menu, Transition } from '@headlessui/react';
@@ -49,6 +50,8 @@ const Navbar = () => {
             {authUser ? (
                 <>
                     <span className="text-subtle-text-color hidden sm:block">Welcome, {authUser.name}</span>
+                    {/* --- 2. ADD CALCULATOR LINK (Logged-In) --- */}
+                    <Link to="/budget-calculator" title="Budget Calculator" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaCalculator /></Link>
                     <Link to="/map" title="Map View" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaMap /></Link>
                     <Link to="/forum" title="Community Hub" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaComments /></Link>
                     
@@ -56,7 +59,6 @@ const Navbar = () => {
                         <Link to="/support" title="Premium Support" className="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors text-2xl"><FaHeadset /></Link>
                     )}
 
-                    {/* --- 2. ADD PREFERENCES LINK FOR TENANTS (Desktop) --- */}
                     {authUser.role === 'tenant' && (
                          <Link to="/preferences" title="My Preferences" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaSlidersH /></Link>
                     )}
@@ -90,6 +92,8 @@ const Navbar = () => {
                 </>
             ) : (
                 <>
+                    {/* --- 3. ADD CALCULATOR LINK (Logged-Out) --- */}
+                    <Link to="/budget-calculator" title="Budget Calculator" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaCalculator /></Link>
                     <Link to="/subscription" title="Subscription" className="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors text-2xl"><FaGem /></Link>
                     <Link to="/login" className="text-subtle-text-color hover:text-text-color transition-colors">Login</Link>
                     <Link to="/register" className="bg-accent-color hover:bg-accent-hover-color text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">Register</Link>
@@ -103,6 +107,8 @@ const Navbar = () => {
         <div className="px-2 pt-2 pb-3 space-y-1">
             {authUser ? (
                 <>
+                    {/* --- 4. ADD CALCULATOR LINK (Logged-In) --- */}
+                    <Link to="/budget-calculator" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaCalculator /> Budget Calculator</Link>
                     <Link to="/map" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaMap /> Map View</Link>
                     <Link to="/forum" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaComments /> Community</Link>
                     
@@ -112,7 +118,6 @@ const Navbar = () => {
                         </Link>
                     )}
 
-                    {/* --- 3. ADD PREFERENCES LINK FOR TENANTS (Mobile) --- */}
                     {authUser.role === 'tenant' && (
                         <Link to="/preferences" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md">
                             <FaSlidersH /> My Preferences
@@ -147,6 +152,10 @@ const Navbar = () => {
                 </>
             ) : (
                 <>
+                    {/* --- 5. ADD CALCULATOR LINK (Logged-Out) --- */}
+                    <Link to="/budget-calculator" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md">
+                        <FaCalculator /> Budget Calculator
+                    </Link>
                     <Link to="/subscription" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-amber-500 dark:text-amber-400 hover:bg-border-color rounded-md"><FaGem /> Subscription</Link>
                     <Link to="/login" onClick={handleLinkClick} className="block px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md">Login</Link>
                     <Link to="/register" onClick={handleLinkClick} className="block px-3 py-2 text-base font-medium text-white bg-accent-color hover:bg-accent-hover-color rounded-md">Register</Link>

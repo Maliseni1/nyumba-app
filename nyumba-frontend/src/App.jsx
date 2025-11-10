@@ -43,8 +43,9 @@ import EmailVerificationPage from './pages/EmailVerificationPage';
 import BulkUploadPage from './pages/BulkUploadPage';
 import VerifiedLandlordRoute from './components/VerifiedLandlordRoute';
 import PremiumSupportPage from './pages/PremiumSupportPage';
-// --- 1. IMPORT NEW PREFERENCES PAGE ---
 import TenantPreferencesPage from './pages/TenantPreferencesPage';
+// --- 1. IMPORT NEW CALCULATOR PAGE ---
+import BudgetCalculatorPage from './pages/BudgetCalculatorPage';
 
 function App() {
   const { isAuthLoading } = useAuth();
@@ -79,6 +80,8 @@ function App() {
               <Route path="/map" element={<MapPage />} />
               <Route path="/verify-email/:token" element={<EmailVerificationPage />} />
               <Route path="/verify-email" element={<EmailVerificationPage />} />
+              {/* --- 2. ADD NEW CALCULATOR ROUTE --- */}
+              <Route path="/budget-calculator" element={<BudgetCalculatorPage />} />
 
               {/* Subscription Routes */}
               <Route path="/subscription" element={<SubscriptionPage />} />
@@ -109,7 +112,6 @@ function App() {
                 <Route path="/verification" element={<VerificationPage />} />
                 <Route path="/rewards" element={<RewardsPage />} />
                 <Route path="/support" element={<PremiumSupportPage />} />
-                {/* --- 2. ADD NEW PREFERENCES ROUTE --- */}
                 <Route path="/preferences" element={<TenantPreferencesPage />} />
               </Route>
               

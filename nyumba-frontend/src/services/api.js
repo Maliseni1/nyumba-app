@@ -2,12 +2,12 @@ import axios from 'axios';
 
 const API = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL });
 
-// --- LOADER LOGIC (unchanged) ---
+// --- LOADER LOGIC (UPDATED) ---
 const silentGetRoutes = [
     '/users/profile',
     '/users/unread-count',
     '/forum/categories',
-    '/users/preferences', // --- ADDED: Make fetching preferences silent ---
+    '/users/preferences', // <-- 1. ADDED: Make fetching preferences silent
 ];
 API.interceptors.request.use((req) => {
     const isSilent = silentGetRoutes.some(route => req.url.endsWith(route));
@@ -54,7 +54,7 @@ export const completeProfile = (data) => API.put('/users/complete-profile', data
 export const verifyEmail = (token) => API.get(`/users/verify-email/${token}`);
 export const resendVerificationEmail = (email) => API.post('/users/resend-verification', { email });
 export const sendPremiumSupportTicket = (data) => API.post('/users/premium-support', data);
-// --- 1. ADD NEW PREFERENCE FUNCTIONS ---
+// --- 2. ADD NEW PREFERENCE FUNCTIONS ---
 export const getTenantPreferences = () => API.get('/users/preferences');
 export const updateTenantPreferences = (data) => API.put('/users/preferences', data);
 

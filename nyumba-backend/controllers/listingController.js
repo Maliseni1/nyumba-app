@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const csv = require('fast-csv');
 
+// --- Helper function for delay ---
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- 3. NEW HELPER FUNCTION: Smart Match Notifier ---
@@ -18,11 +19,11 @@ const findAndNotifyMatches = async (listing) => {
         // 1. Build the matching query
         const query = {
             notifyImmediately: true,
-            status: 'available', // Ensure listing is available
             
             // Price: Find prefs where listing price is within range
             $or: [
                 { maxPrice: { $exists: false } }, // No max price set
+                { maxPrice: null }, // No max price set
                 { maxPrice: { $gte: listing.price } } // Listing price is <= pref max
             ],
             minPrice: { $lte: listing.price }, // Listing price is >= pref min
@@ -33,26 +34,36 @@ const findAndNotifyMatches = async (listing) => {
         };
 
         // 2. Property Types: If pref has types, listing must be one of them
-        query['$or'] = [
-            { propertyTypes: { $exists: false } },
-            { propertyTypes: { $size: 0 } },
-            { propertyTypes: listing.propertyType }
+        query['$and'] = [
+            { $or: [
+                { propertyTypes: { $exists: false } },
+                { propertyTypes: { $size: 0 } }, // No property types specified
+                { propertyTypes: listing.propertyType } // Listing type is in pref list
+            ]}
         ];
 
         // 3. Amenities: Listing must have ALL amenities the tenant requires
-        query['$or'] = [
-            { amenities: { $exists: false } },
-            { amenities: { $size: 0 } },
-            { amenities: { $not: { $elemMatch: { $nin: listing.amenities } } } }
-        ];
+        query['$and'].push(
+            { $or: [
+                { amenities: { $exists: false } },
+                { amenities: { $size: 0 } }, // No amenities required
+                { amenities: { $not: { $elemMatch: { $nin: listing.amenities || [] } } } } // All required amenities are in the listing's amenities
+            ]}
+        );
 
         // 4. Location: Simple text match (case-insensitive)
         if (listing.location && listing.location.address) {
-            query['$or'] = [
-                { location: { $exists: false } },
-                { location: '' },
-                { location: { $regex: new RegExp(listing.location.address.split(',')[0], 'i') } } // Match first part of address (e.g., "Roma")
-            ];
+            // Build a regex to match any part of the address (e.g., "Roma" or "Lusaka")
+            const locationTerms = listing.location.address.split(',').map(term => term.trim()).filter(Boolean);
+            const locationRegex = new RegExp(locationTerms.join('|'), 'i');
+
+            query['$and'].push(
+                { $or: [
+                    { location: { $exists: false } },
+                    { location: '' }, // No location specified
+                    { location: locationRegex } // Matches part of the preference
+                ]}
+            );
         }
 
         // 5. Find all matching preferences and populate the user's email
@@ -90,7 +101,8 @@ const findAndNotifyMatches = async (listing) => {
                 `;
 
                 try {
-                    await sendEmail({
+                    // Do not wait for the email to send, just fire it off
+                    sendEmail({
                         email: pref.user.email,
                         subject: `New Match Found: ${listing.title}`,
                         html: message,
@@ -102,8 +114,6 @@ const findAndNotifyMatches = async (listing) => {
         }
 
     } catch (error) {
-        // We log the error but do not throw, as the listing creation
-        // should still be considered successful.
         console.error("Error in findAndNotifyMatches:", error);
     }
 };
@@ -289,6 +299,8 @@ const createListing = asyncHandler(async (req, res) => {
     await user.save();
     
     // --- 6. TRIGGER SMART MATCH (don't wait for it) ---
+    // We run this in the background and don't await it,
+    // so the landlord gets a fast response.
     findAndNotifyMatches(createdListing);
 
     res.status(201).json(createdListing);
@@ -494,6 +506,7 @@ const bulkUploadListings = asyncHandler(async (req, res) => {
                         successCount++;
                         
                         // --- 11. TRIGGER SMART MATCH (don't wait for it) ---
+                        // We run this in the background and don't await it
                         findAndNotifyMatches(createdListing);
 
                     } catch (error) {
