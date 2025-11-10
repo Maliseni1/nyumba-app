@@ -10,7 +10,8 @@ const cron = require('node-cron');
 
 // IMPORT MODELS NEEDED FOR DELETION
 const User = require('./models/userModel');
-const Listing = require('./models/listingModel');
+// --- 1. FIX THE LISTING IMPORT ---
+const { Listing } = require('./models/listingModel');
 const Conversation = require('./models/conversationModel');
 const Message = require('./models/messageModel');
 
@@ -26,7 +27,6 @@ const requiredEnvVars = [
     'CLOUDINARY_API_SECRET'
 ];
 
-// Allow placeholder values for development
 const isValidEnvVar = (value) => {
     return value && value.trim() !== '' && value !== 'undefined';
 };
@@ -46,7 +46,7 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const rewardRoutes = require('./routes/rewardRoutes');
-const forumRoutes = require('./routes/forumRoutes'); // <-- 1. IMPORT FORUM ROUTES
+const forumRoutes = require('./routes/forumRoutes');
 
 connectDB();
 
@@ -60,21 +60,36 @@ const io = new Server(server, {
     transports: ['websocket']
 });
 
-// CORS configuration
+// --- 2. UPDATED CORS CONFIGURATION ---
+const whitelist = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://nyumba-app.vercel.app',
+    'https://nyumba-app-git-master-maliseni1.vercel.app',
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
 const corsOptions = {
-    origin: [
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'https://nyumba-app.vercel.app',
-        'https://nyumba-app-git-master-maliseni1.vercel.app',
-        process.env.FRONTEND_URL
-    ].filter(Boolean),
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or server-to-server)
+        if (!origin || whitelist.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
 
+// Handle OPTIONS requests (preflight)
+// This is critical for POST/PUT requests with custom headers
+app.options('*', cors(corsOptions));
+
 app.use(cors(corsOptions));
+// --- END OF CORS UPDATE ---
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -89,7 +104,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/rewards', rewardRoutes);
-app.use('/api/forum', forumRoutes); // <-- 2. USE FORUM ROUTES
+app.use('/api/forum', forumRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -112,7 +127,7 @@ io.on('connection', (socket) => {
 });
 
 
-// --- SCHEDULED JOB FOR ACCOUNT DELETION ---
+// --- SCHEDULED JOB (unchanged) ---
 console.log('Setting up daily job for account deletion...');
 cron.schedule('0 0 * * *', async () => {
     console.log('RUNNING DAILY CRON JOB: Checking for accounts pending deletion...');
