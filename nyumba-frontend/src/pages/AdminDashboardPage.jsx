@@ -5,7 +5,8 @@ import StatsCards from '../components/admin/StatsCards';
 import UserList from '../components/admin/UserList';
 import VerificationQueue from '../components/admin/VerificationQueue';
 import ForumCategoryManager from '../components/admin/ForumCategoryManager';
-import RewardManager from '../components/admin/RewardManager'; // --- 1. IMPORT REWARD MANAGER ---
+import RewardManager from '../components/admin/RewardManager';
+import AdManager from '../components/admin/AdManager'; // --- 1. IMPORT AD MANAGER ---
 import { FaSpinner } from 'react-icons/fa';
 
 const AdminDashboardPage = () => {
@@ -52,25 +53,31 @@ const AdminDashboardPage = () => {
                         {/* Section 1: Stats */}
                         <StatsCards stats={stats} />
 
-                        {/* --- 2. ADD NEW REWARD MANAGEMENT SECTION --- */}
+                        {/* --- 2. ADD NEW AD MANAGEMENT SECTION --- */}
+                        <div>
+                            <h2 className="text-2xl font-bold text-text-color mb-4">Ad Management</h2>
+                            <AdManager />
+                        </div>
+                        
+                        {/* Section 3: Rewards Management */}
                         <div>
                             <h2 className="text-2xl font-bold text-text-color mb-4">Rewards Management</h2>
                             <RewardManager />
                         </div>
                         
-                        {/* Section 3: Forum Management */}
+                        {/* Section 4: Forum Management */}
                         <div>
                             <h2 className="text-2xl font-bold text-text-color mb-4">Community Hub Management</h2>
                             <ForumCategoryManager />
                         </div>
                         
-                        {/* Section 4: Verifications */}
+                        {/* Section 5: Verifications */}
                         <div>
                             <h2 className="text-2xl font-bold text-text-color mb-4">Pending Verifications</h2>
                             <VerificationQueue requests={requests} setRequests={setRequests} />
                         </div>
 
-                        {/* Section 5: User List */}
+                        {/* Section 6: User List */}
                         <div>
                             <h2 className="text-2xl font-bold text-text-color mb-4">All Users</h2>
                             <UserList users={users} setUsers={setUsers} />

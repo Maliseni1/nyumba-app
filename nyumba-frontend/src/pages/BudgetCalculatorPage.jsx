@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
 import { FaCalculator, FaExclamationTriangle } from 'react-icons/fa';
+import { toast } from 'react-toastify'; // <-- 1. IMPORT TOAST
 
 const BudgetCalculatorPage = () => {
     const [income, setIncome] = useState('');
     const [debts, setDebts] = useState('');
     const [result, setResult] = useState(null);
+
+    // --- 2. NEW: Helper function to allow only numbers ---
+    const handleNumericChange = (setter) => (e) => {
+        const { value } = e.target;
+        // This regex allows only numbers and a single decimal point
+        if (/^\d*\.?\d*$/.test(value)) {
+            setter(value);
+        }
+    };
 
     const handleCalculate = (e) => {
         e.preventDefault();
@@ -26,9 +36,7 @@ const BudgetCalculatorPage = () => {
             return;
         }
 
-        // 30% rule - Recommended budget
         const recommendedRent = disposableIncome * 0.30;
-        // 40% rule - "Stretched" budget
         const stretchRent = disposableIncome * 0.40;
 
         setResult({
@@ -38,7 +46,6 @@ const BudgetCalculatorPage = () => {
         });
     };
 
-    // Helper to format currency
     const formatCurrency = (value) => {
         return `K${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
@@ -62,10 +69,11 @@ const BudgetCalculatorPage = () => {
                             Your Total Monthly Income (after taxes)
                         </label>
                         <input
-                            type="number"
+                            type="text" // <-- 3. CHANGED to "text"
+                            inputMode="decimal" // <-- 4. ADDED for mobile numeric pad
                             id="income"
                             value={income}
-                            onChange={(e) => setIncome(e.target.value)}
+                            onChange={handleNumericChange(setIncome)} // <-- 5. USE new handler
                             placeholder="e.g., 25000"
                             className={inputStyle}
                             required
@@ -77,10 +85,11 @@ const BudgetCalculatorPage = () => {
                             Total Monthly Debts (Optional)
                         </label>
                         <input
-                            type="number"
+                            type="text" // <-- 3. CHANGED to "text"
+                            inputMode="decimal" // <-- 4. ADDED for mobile numeric pad
                             id="debts"
                             value={debts}
-                            onChange={(e) => setDebts(e.target.value)}
+                            onChange={handleNumericChange(setDebts)} // <-- 5. USE new handler
                             placeholder="e.g., 1500 (loans, etc.)"
                             className={inputStyle}
                         />

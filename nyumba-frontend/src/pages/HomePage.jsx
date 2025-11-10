@@ -6,6 +6,7 @@ import SearchBar from '../components/SearchBar';
 import ListingCardSkeleton from '../components/ListingCardSkeleton';
 import { toast } from 'react-toastify';
 import { FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
+import AdSlot from '../components/AdSlot'; // --- 1. IMPORT THE ADSLOT ---
 
 const HomePage = () => {
     const [listings, setListings] = useState([]);
@@ -16,7 +17,6 @@ const HomePage = () => {
     const user = JSON.parse(localStorage.getItem('user'));
     const navigate = useNavigate();
 
-    // ... (All functions like fetchListings, handleSearch, etc. are unchanged) ...
     const fetchListings = useCallback(async (query) => {
         setLoading(true);
         setIsNearbySearch(false);
@@ -45,16 +45,36 @@ const HomePage = () => {
     };
 
     const handleNearbySearch = () => {
-        if (!user) { /* ... */ }
-        if (!navigator.geolocation) { /* ... */ }
+        if (!user) { 
+            toast.info('Please log in or register to search.');
+            navigate('/login');
+            return;
+        }
+        if (!navigator.geolocation) { 
+            toast.error('Geolocation is not supported by your browser.');
+            return;
+        }
         setIsLocating(true);
         setLoading(true);
         navigator.geolocation.getCurrentPosition(
             async (position) => {
-                // ... (geolocation logic) ...
+                const { latitude, longitude } = position.coords;
+                try {
+                    const { data } = await getListingsNearby({ lat: latitude, lng: longitude });
+                    setListings(Array.isArray(data) ? data : []);
+                    setIsNearbySearch(true);
+                } catch (error) {
+                    toast.error(error.response?.data?.message || 'Could not find listings near you.');
+                    setListings([]);
+                } finally {
+                    setLoading(false);
+                    setIsLocating(false);
+                }
             },
             (error) => {
-                // ... (error logic) ...
+                toast.error('Unable to retrieve your location. Please check browser permissions.');
+                setLoading(false);
+                setIsLocating(false);
             }
         );
     };
@@ -68,15 +88,11 @@ const HomePage = () => {
 
     return (
         <div>
-            {/* --- HERO SECTION (THE FIX) --- */}
-            {/* 1. Added light-mode bg-accent-color and dark-mode bg-transparent */}
+            {/* --- HERO SECTION --- */}
             <div className="relative h-[50vh] flex items-center justify-center text-center px-4 bg-accent-color dark:bg-transparent">
-                {/* 2. Kept the image but made it HIDDEN in light mode */}
                 <div className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block" style={{ backgroundImage: "url('/hero-image.jpg')" }}></div>
-                {/* 3. Kept the overlay but made it HIDDEN in light mode */}
                 <div className="absolute inset-0 bg-slate-900/30 dark:bg-black/60 backdrop-blur-sm hidden dark:block"></div>
                 
-                {/* 4. The content is unchanged. 'text-white' now looks great on the blue bg */}
                 <div className="relative z-10 w-full">
                     <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 leading-tight hero-text-glow">
                         Find Your Dream Home
@@ -99,8 +115,13 @@ const HomePage = () => {
                 </div>
             </div>
 
-            {/* --- LISTINGS SECTION (Unchanged, already themed) --- */}
+            {/* --- LISTINGS SECTION --- */}
             <div className="max-w-7xl mx-auto py-12 px-4">
+                
+                {/* --- 2. ADD THE ADSLOT COMPONENT --- */}
+                {/* This will automatically be hidden for premium users */}
+                <AdSlot />
+                
                 <div className="flex justify-between items-center mb-8">
                     <h2 className="text-3xl font-bold text-text-color">
                         {isNearbySearch ? 'Listings Near You' : 'Available Listings'}

@@ -1,18 +1,16 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
-// --- THIS IS THE FIX ---
-// We must destructure the import because listingModel now exports an object
 const { Listing } = require('../models/listingModel');
-// --- END OF FIX ---
 const Conversation = require('../models/conversationModel');
 const Message = require('../models/messageModel');
+// --- 1. IMPORT THE NEW AD MODEL ---
+const { Ad } = require('../models/adModel');
 
 // @desc    Get application statistics
 // @route   GET /api/admin/stats
 // @access  Private/Admin
 const getAppStats = asyncHandler(async (req, res) => {
     const userCount = await User.countDocuments({});
-    // This line will now work
     const listingCount = await Listing.countDocuments({}); 
     
     const pendingVerificationCount = await User.countDocuments({
@@ -88,11 +86,9 @@ const banUser = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    // Toggle the ban status
     user.isBanned = !user.isBanned;
     await user.save();
 
-    // Return all users so the list can refresh
     const allUsers = await User.find({}).select('-password').sort({ createdAt: -1 });
     res.json(allUsers);
 });
@@ -113,10 +109,8 @@ const deleteUser = asyncHandler(async (req, res) => {
         throw new Error('Cannot delete an admin account.');
     }
 
-    // Perform the same full deletion as the cron job
     console.log(`ADMIN: Deleting user ${user.email} (ID: ${user._id})`);
     
-    // This line will now work
     await Listing.deleteMany({ owner: user._id });
     await Conversation.deleteMany({ participants: user._id });
     await Message.deleteMany({ sender: user._id });
@@ -128,17 +122,105 @@ const deleteUser = asyncHandler(async (req, res) => {
     
     console.log(`ADMIN: Successfully deleted user ${user.email}.`);
 
-    // Return all users so the list can refresh
     const allUsers = await User.find({}).select('-password').sort({ createdAt: -1 });
     res.json(allUsers);
 });
 
+// --- 2. NEW AD MANAGEMENT FUNCTIONS ---
 
+// @desc    Get all ads
+// @route   GET /api/admin/ads
+// @access  Private/Admin
+const adminGetAllAds = asyncHandler(async (req, res) => {
+    const ads = await Ad.find({}).sort({ createdAt: -1 });
+    res.json(ads);
+});
+
+// @desc    Create a new ad
+// @route   POST /api/admin/ads
+// @access  Private/Admin
+const adminCreateAd = asyncHandler(async (req, res) => {
+    const { companyName, linkUrl, location, isActive, expiresAt } = req.body;
+
+    if (!req.file) {
+        res.status(400);
+        throw new Error('Ad image is required.');
+    }
+    if (!companyName || !linkUrl || !location) {
+        res.status(400);
+        throw new Error('CompanyName, linkUrl, and location are required.');
+    }
+
+    const ad = await Ad.create({
+        companyName,
+        linkUrl,
+        location,
+        imageUrl: req.file.path, // Get image URL from Cloudinary upload
+        isActive: isActive !== undefined ? isActive : false,
+        expiresAt: expiresAt || null,
+    });
+
+    res.status(201).json(ad);
+});
+
+// @desc    Update an ad
+// @route   PUT /api/admin/ads/:id
+// @access  Private/Admin
+const adminUpdateAd = asyncHandler(async (req, res) => {
+    const { companyName, linkUrl, location, isActive, expiresAt } = req.body;
+    const ad = await Ad.findById(req.params.id);
+
+    if (!ad) {
+        res.status(404);
+        throw new Error('Ad not found');
+    }
+
+    ad.companyName = companyName || ad.companyName;
+    ad.linkUrl = linkUrl || ad.linkUrl;
+    ad.location = location || ad.location;
+    ad.isActive = isActive !== undefined ? isActive : ad.isActive;
+    ad.expiresAt = expiresAt || null; // Allow setting/clearing expiry
+
+    // Check if a new image was uploaded
+    if (req.file) {
+        ad.imageUrl = req.file.path;
+    }
+
+    const updatedAd = await ad.save();
+    res.json(updatedAd);
+});
+
+// @desc    Delete an ad
+// @route   DELETE /api/admin/ads/:id
+// @access  Private/Admin
+const adminDeleteAd = asyncHandler(async (req, res) => {
+    const ad = await Ad.findById(req.params.id);
+
+    if (!ad) {
+        res.status(404);
+        throw new Error('Ad not found');
+    }
+
+    // Note: We are permanently deleting. 
+    // If you prefer to deactivate, change this to:
+    // ad.isActive = false;
+    // await ad.save();
+    await ad.deleteOne();
+    
+    res.json({ message: 'Ad removed successfully.' });
+});
+
+
+// --- 3. EXPORT ALL FUNCTIONS ---
 module.exports = {
     getAppStats,
     getAllUsers,
     getVerificationRequests,
     handleVerificationRequest,
     banUser,
-    deleteUser
+    deleteUser,
+    adminGetAllAds,      // <-- ADDED
+    adminCreateAd,       // <-- ADDED
+    adminUpdateAd,       // <-- ADDED
+    adminDeleteAd        // <-- ADDED
 };

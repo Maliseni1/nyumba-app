@@ -8,7 +8,8 @@ const silentGetRoutes = [
     '/users/unread-count',
     '/forum/categories',
     '/users/preferences',
-    '/users/match-analytics', // <-- 1. ADDED: Make analytics silent
+    '/users/match-analytics',
+    '/admin/ads', // <-- 1. Make fetching ads silent
 ];
 API.interceptors.request.use((req) => {
     const isSilent = silentGetRoutes.some(route => req.url.endsWith(route));
@@ -57,7 +58,6 @@ export const resendVerificationEmail = (email) => API.post('/users/resend-verifi
 export const sendPremiumSupportTicket = (data) => API.post('/users/premium-support', data);
 export const getTenantPreferences = () => API.get('/users/preferences');
 export const updateTenantPreferences = (data) => API.put('/users/preferences', data);
-// --- 2. ADD NEW ANALYTICS FUNCTION ---
 export const getTenantMatchAnalytics = () => API.get('/users/match-analytics');
 
 
@@ -95,6 +95,20 @@ export const approveVerification = (id) => API.put(`/admin/verify/${id}`, { acti
 export const rejectVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'reject' });
 export const adminBanUser = (id) => API.put(`/admin/ban/${id}`);
 export const adminDeleteUser = (id) => API.delete(`/admin/user/${id}`);
+// --- 2. ADD NEW ADMIN AD FUNCTIONS ---
+export const adminGetAllAds = () => API.get('/admin/ads');
+export const adminCreateAd = (formData) => API.post('/admin/ads', formData, {
+    headers: {
+        'Content-Type': 'multipart/form-data',
+    },
+});
+export const adminUpdateAd = (id, formData) => API.put(`/admin/ads/${id}`, formData, {
+    headers: {
+        'Content-Type': 'multipart/form-data',
+    },
+});
+export const adminDeleteAd = (id) => API.delete(`/admin/ads/${id}`);
+
 
 // Review Routes
 export const getListingReviews = (listingId) => API.get(`/reviews/${listingId}`);
