@@ -24,7 +24,7 @@ const AdSlot = ({ adData }) => {
     const placeholderAd = {
         linkUrl: '/subscription', // Links to the subscription page
         imageUrl: '/ad-placeholder.png', // You'll need to add a placeholder image
-        companyName: 'Your Ad Here'
+        companyName: 'Nyumba Premium',
     };
     
     // Replace `placeholderAd` with `adData` once we fetch it.
