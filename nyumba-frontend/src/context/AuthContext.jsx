@@ -1,5 +1,7 @@
 import { createContext, useState, useEffect, useContext, useCallback } from 'react';
-// --- 1. REMOVE useNavigate and toast ---
+// --- 1. RE-IMPORT useNavigate AND toast ---
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import io from 'socket.io-client';
 import { getUnreadMessageCount, getUserProfile } from '../services/api';
 
@@ -19,7 +21,8 @@ export const AuthContextProvider = ({ children }) => {
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [messages, setMessages] = useState([]);
     
-    // We no longer need useNavigate here
+    // --- 2. INITIALIZE useNavigate ---
+    const navigate = useNavigate();
 
     useEffect(() => {
         const verifyUser = async () => {
@@ -28,16 +31,6 @@ export const AuthContextProvider = ({ children }) => {
                 try {
                     const { data } = await getUserProfile(); 
                     setAuthUser(data);
-                    
-                    // --- 2. REMOVE THE BUGGY REDIRECT LOGIC ---
-                    // This logic was causing the toast spam.
-                    // The PrivateRoute.jsx component correctly handles this.
-                    // if (data && !data.isProfileComplete) {
-                    //     toast.info('Please complete your profile to continue.');
-                    //     navigate('/complete-profile');
-                    // }
-                    // --- END OF REMOVAL ---
-
                 } catch (error) {
                     console.error("Auth verification failed, logging out.", error);
                     localStorage.removeItem("user");
@@ -47,11 +40,13 @@ export const AuthContextProvider = ({ children }) => {
             setIsAuthLoading(false);
         };
         verifyUser();
-    }, []); // <-- 3. REMOVED navigate dependency
+    }, []); // <-- Dependency array is correct, no navigate needed here
 
+    // ... (socket useEffect is unchanged) ...
     useEffect(() => {
         if (authUser) {
-            const newSocket = io("http://localhost:5000", {
+            // Use environment variable for Socket.IO connection
+            const newSocket = io(import.meta.env.VITE_API_BASE_URL, {
                 query: { userId: authUser._id },
                 transports: ['websocket']
             });
@@ -75,6 +70,7 @@ export const AuthContextProvider = ({ children }) => {
         }
     }, [authUser]);
 
+    // ... (loader useEffect is unchanged) ...
     const showPageLoader = useCallback(() => setIsPageLoading(true), []);
     const hidePageLoader = useCallback(() => setIsPageLoading(false), []);
 
@@ -88,31 +84,36 @@ export const AuthContextProvider = ({ children }) => {
     }, [showPageLoader, hidePageLoader]);
 
 
-    // This 'login' function is now responsible for the redirect.
-    // This is correct.
+    // --- 3. UPDATED login FUNCTION ---
     const login = (userData) => {
         localStorage.setItem("user", JSON.stringify(userData));
         setAuthUser(userData);
 
+        let welcomeToastShown = false;
+
         if (userData.welcomeBack) {
             toast.success('Welcome back! Your account deletion has been cancelled.');
+            welcomeToastShown = true;
         }
 
-        // This check is correct and will only run ONCE on login
         if (!userData.isProfileComplete) {
             toast.info('Welcome! Please complete your profile to continue.');
-            // We can't use useNavigate() here, so we'll do a full redirect
-            window.location.href = '/complete-profile';
+            welcomeToastShown = true; // This counts as a welcome
+            navigate('/complete-profile'); // Use navigate
         } else {
-            window.location.href = '/';
+            if (!welcomeToastShown) { // Only show generic if no other toast was shown
+                toast.success(`Welcome back, ${userData.name}!`);
+            }
+            navigate('/'); // Use navigate
         }
     };
 
+    // --- 4. UPDATED logout FUNCTION ---
     const logout = () => {
         localStorage.removeItem("user");
         setAuthUser(null);
         setSelectedConversation(null);
-        window.location.href = '/login'; // Full redirect on logout
+        navigate('/login'); // Use navigate
     };
     
     const updateAuthUser = (updatedData) => {

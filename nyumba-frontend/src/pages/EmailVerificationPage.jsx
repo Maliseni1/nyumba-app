@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { verifyEmail } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { FaCheckCircle, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
@@ -9,7 +9,6 @@ const EmailVerificationPage = () => {
     const [status, setStatus] = useState('loading'); // 'loading', 'success', 'error'
     const [error, setError] = useState('');
     const { login } = useAuth();
-    const navigate = useNavigate();
 
     useEffect(() => {
         if (token) {
@@ -17,9 +16,9 @@ const EmailVerificationPage = () => {
                 try {
                     const { data } = await verifyEmail(token);
                     // Log the user in and save their data
+                    // The login function will show the welcome toast and navigate
                     login(data); 
                     setStatus('success');
-                    // Redirect to home (or profile completion) will be handled by login()
                 } catch (err) {
                     setError(err.response?.data?.message || 'Verification failed.');
                     setStatus('error');
@@ -30,7 +29,7 @@ const EmailVerificationPage = () => {
             // If no token, just show an info page
             setStatus('info');
         }
-    }, [token, login, navigate]);
+    }, [token, login]); // <-- REMOVED 'navigate' from dependency array
 
     return (
         <div className="pt-24 min-h-screen flex items-center justify-center">

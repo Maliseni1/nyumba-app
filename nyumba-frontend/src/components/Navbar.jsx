@@ -49,7 +49,7 @@ const Navbar = () => {
         <div className="hidden md:flex items-center space-x-6">
             {authUser ? (
                 <>
-                    <span className="text-subtle-text-color hidden sm:block">Welcome, {authUser.name}</span>
+                    {/* --- 1. REMOVED STATIC "Welcome" MESSAGE --- */}
                     <Link to="/budget-calculator" title="Budget Calculator" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaCalculator /></Link>
                     <Link to="/map" title="Map View" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaMap /></Link>
                     <Link to="/forum" title="Community Hub" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaComments /></Link>
@@ -81,13 +81,9 @@ const Navbar = () => {
                             <Link to="/landlord/bulk-upload" title="Bulk Upload" className="text-accent-color hover:text-accent-hover-color transition-colors text-2xl"><FaFileUpload /></Link>
                         </>
                     )}
-                    
-                    {/* --- THIS IS THE FIX --- */}
-                    {/* Show dashboard link if role is 'landlord' AND verification status is 'approved' */}
                     {authUser.role === 'landlord' && authUser.verificationStatus === 'approved' && (
                         <Link to="/landlord/dashboard" title="Landlord Dashboard" className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors text-2xl"><FaChartBar /></Link>
                     )}
-                    {/* --- END OF FIX --- */}
 
                     <Link to="/payments" title="Payment History" className="text-subtle-text-color hover:text-text-color transition-colors text-2xl"><FaCreditCard /></Link>
                     <Link to="/rewards" title="My Rewards" className="text-amber-500 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors text-2xl"><FaGift /></Link>
@@ -109,6 +105,7 @@ const Navbar = () => {
         <div className="px-2 pt-2 pb-3 space-y-1">
             {authUser ? (
                 <>
+                    {/* --- 2. REMOVED STATIC "Welcome" MESSAGE (it wasn't here) --- */}
                     <Link to="/budget-calculator" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaCalculator /> Budget Calculator</Link>
                     <Link to="/map" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaMap /> Map View</Link>
                     <Link to="/forum" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaComments /> Community</Link>
@@ -137,14 +134,11 @@ const Navbar = () => {
                             <Link to="/landlord/bulk-upload" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-accent-color hover:bg-border-color rounded-md"><FaFileUpload /> Bulk Upload</Link>
                         </>
                     )}
-                    
-                    {/* --- THIS IS THE FIX --- */}
                     {authUser.role === 'landlord' && authUser.verificationStatus === 'approved' && (
                         <Link to="/landlord/dashboard" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-emerald-500 dark:text-emerald-400 hover:bg-border-color rounded-md">
                             <FaChartBar /> Landlord Dashboard
                         </Link>
                     )}
-                    {/* --- END OF FIX --- */}
 
                     <Link to="/payments" onClick={handleLinkClick} className="flex items-center gap-3 px-3 py-2 text-base font-medium text-subtle-text-color hover:bg-border-color hover:text-text-color rounded-md"><FaCreditCard /> Payments</Link>
                     
