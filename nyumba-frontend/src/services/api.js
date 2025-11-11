@@ -9,10 +9,12 @@ const silentGetRoutes = [
     '/forum/categories',
     '/users/preferences',
     '/users/match-analytics',
-    '/admin/ads', // <-- 1. Make fetching ads silent
+    '/admin/ads',
+    '/ads', // <-- 1. Make fetching public ads silent
 ];
 API.interceptors.request.use((req) => {
-    const isSilent = silentGetRoutes.some(route => req.url.endsWith(route));
+    // Use .some() and .includes() to check against the list
+    const isSilent = silentGetRoutes.some(route => req.url.includes(route));
     if (!isSilent) {
         window.dispatchEvent(new CustomEvent('api-request-start'));
     }
@@ -23,7 +25,7 @@ API.interceptors.request.use((req) => {
 });
 API.interceptors.response.use(
     (res) => {
-        const isSilent = silentGetRoutes.some(route => res.config.url.endsWith(route));
+        const isSilent = silentGetRoutes.some(route => res.config.url.includes(route));
         if (!isSilent) {
             window.dispatchEvent(new CustomEvent('api-request-end'));
         }
@@ -46,15 +48,15 @@ export const getPublicUserProfile = (id) => API.get(`/users/${id}`);
 export const updateUserProfile = (formData) => API.put('/users/profile', formData);
 export const toggleSaveListing = (listingId) => API.post(`/users/save/${listingId}`);
 export const getUnreadMessageCount = () => API.get('/users/unread-count');
-export const forgotPassword = (email) => API.post('/users/forgotpassword', email);
-export const resetPassword = (token, password) => API.put(`/users/resetpassword/${token}`, password);
+export const forgotPassword = (email) => API.post('/users/forgotpassword', { email });
+export const resetPassword = (token, password) => API.put(`/users/resetpassword/${token}`, { password });
 export const applyForVerification = () => API.post('/users/apply-verification');
 export const getMyReferralData = () => API.get('/users/referral-data');
 export const changePassword = (formData) => API.put('/users/changepassword', formData);
 export const deleteAccount = () => API.delete('/users/profile');
 export const completeProfile = (data) => API.put('/users/complete-profile', data);
 export const verifyEmail = (token) => API.get(`/users/verify-email/${token}`);
-export const resendVerificationEmail = (email) => API.post('/users/resend-verification', { email });
+export const resendVerificationEmail = (email) => API.post('/users/resend-verification', email);
 export const sendPremiumSupportTicket = (data) => API.post('/users/premium-support', data);
 export const getTenantPreferences = () => API.get('/users/preferences');
 export const updateTenantPreferences = (data) => API.put('/users/preferences', data);
@@ -64,8 +66,12 @@ export const getTenantMatchAnalytics = () => API.get('/users/match-analytics');
 // Listing Routes
 export const getListings = (params) => API.get('/listings', { params });
 export const getListingById = (id) => API.get(`/listings/${id}`);
-export const createListing = (listingData) => API.post('/listings', listingData);
-export const updateListing = (id, listingData) => API.put(`/listings/${id}`, listingData);
+export const createListing = (listingData) => API.post('/listings', listingData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+});
+export const updateListing = (id, listingData) => API.put(`/listings/${id}`, listingData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+});
 export const deleteListing = (id) => API.delete(`/listings/${id}`);
 export const getListingsNearby = (params) => API.get('/listings/nearby', { params });
 export const reverseGeocode = (params) => API.get('/listings/reverse-geocode', { params });
@@ -95,7 +101,6 @@ export const approveVerification = (id) => API.put(`/admin/verify/${id}`, { acti
 export const rejectVerification = (id) => API.put(`/admin/verify/${id}`, { action: 'reject' });
 export const adminBanUser = (id) => API.put(`/admin/ban/${id}`);
 export const adminDeleteUser = (id) => API.delete(`/admin/user/${id}`);
-// --- 2. ADD NEW ADMIN AD FUNCTIONS ---
 export const adminGetAllAds = () => API.get('/admin/ads');
 export const adminCreateAd = (formData) => API.post('/admin/ads', formData, {
     headers: {
@@ -132,3 +137,7 @@ export const deleteForumPost = (postId) => API.delete(`/forum/posts/${postId}`);
 export const getForumReplies = (postId) => API.get(`/forum/replies/${postId}`);
 export const createForumReply = (data) => API.post('/forum/replies', data);
 export const deleteForumReply = (replyId) => API.delete(`/forum/replies/${replyId}`);
+
+// --- 2. NEW PUBLIC AD ROUTES ---
+export const getPublicAd = (location) => API.get(`/ads?location=${location}`);
+export const trackAdClick = (adId) => API.post('/ads/click', { adId });

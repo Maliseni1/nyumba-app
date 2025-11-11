@@ -10,7 +10,6 @@ const cron = require('node-cron');
 
 // IMPORT MODELS
 const User = require('./models/userModel');
-// --- 1. FIX THE LISTING IMPORT ---
 const { Listing } = require('./models/listingModel');
 const Conversation = require('./models/conversationModel');
 const Message = require('./models/messageModel');
@@ -47,6 +46,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const rewardRoutes = require('./routes/rewardRoutes');
 const forumRoutes = require('./routes/forumRoutes');
+const adRoutes = require('./routes/adRoutes'); // <-- 1. IMPORT NEW AD ROUTES
 
 connectDB();
 
@@ -60,18 +60,16 @@ const io = new Server(server, {
     transports: ['websocket']
 });
 
-// --- 2. UPDATED CORS CONFIGURATION ---
+// --- CORS Configuration (unchanged) ---
 const whitelist = [
     'http://localhost:5173',
     'http://localhost:5174',
-    'https://nyumba-app.vercel.app', // Your main Vercel URL
-    'https://nyumba-app-git-master-maliseni1.vercel.app', // Your specific branch URL
-    process.env.FRONTEND_URL // The URL from your .env file
-].filter(Boolean); // Filter out undefined values
-
+    'https://nyumba-app.vercel.app',
+    'https://nyumba-app-git-master-maliseni1.vercel.app',
+    process.env.FRONTEND_URL
+].filter(Boolean);
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (like Postman, mobile apps, server-to-server)
         if (!origin || whitelist.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
@@ -83,14 +81,9 @@ const corsOptions = {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
-
-// Handle OPTIONS requests (preflight) before any other route
-// This is critical for POST/PUT requests with custom headers
 app.options('*', cors(corsOptions));
-
-// Enable CORS for all routes
 app.use(cors(corsOptions));
-// --- END OF CORS UPDATE ---
+// --- END OF CORS ---
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -107,6 +100,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/forum', forumRoutes);
+app.use('/api/ads', adRoutes); // <-- 2. USE NEW AD ROUTES
 
 app.use(notFound);
 app.use(errorHandler);
@@ -114,6 +108,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 io.on('connection', (socket) => {
+    // ... (socket logic unchanged)
     const userId = socket.handshake.query.userId;
     if (userId && userId !== "undefined") {
         userSocketMap[userId] = socket.id;
@@ -132,6 +127,7 @@ io.on('connection', (socket) => {
 // --- SCHEDULED JOB (unchanged) ---
 console.log('Setting up daily job for account deletion...');
 cron.schedule('0 0 * * *', async () => {
+    // ... (cron job logic unchanged)
     console.log('RUNNING DAILY CRON JOB: Checking for accounts pending deletion...');
     try {
         const usersToDelete = await User.find({

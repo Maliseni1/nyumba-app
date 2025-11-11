@@ -1,41 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+// --- 1. IMPORT API FUNCTIONS ---
+import { getPublicAd, trackAdClick } from '../services/api';
 
-// This is a simple, local ad component.
-// We will also need to add functions to the 'api.js' to fetch and track ads.
-const AdSlot = ({ adData }) => {
+// --- 2. ACCEPT 'location' PROP ---
+const AdSlot = ({ location }) => {
     const { authUser } = useAuth();
+    // --- 3. NEW STATE for the live ad ---
+    const [ad, setAd] = useState(null);
     
-    // Check if the user is a premium member
     const isPremium = authUser && authUser.subscriptionStatus === 'active';
 
-    // 1. If the user is premium, show nothing (this is the "Ad-Free Experience").
+    useEffect(() => {
+        // If the user is premium, don't bother fetching an ad
+        if (isPremium) return;
+
+        const fetchAd = async () => {
+            try {
+                // Fetch a random, active ad for the specified location
+                const { data } = await getPublicAd(location);
+                if (data) {
+                    setAd(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch ad:", error);
+            }
+        };
+
+        fetchAd();
+    }, [isPremium, location]); // Re-run if location or premium status changes
+
+    // --- 4. NEW Click Handler ---
+    const handleAdClick = () => {
+        if (ad && ad._id) {
+            // Track the click in the background. Don't wait for it.
+            trackAdClick(ad._id).catch(err => console.error("Failed to track ad click:", err));
+        }
+    };
+
+    // 1. If the user is premium, show nothing.
     if (isPremium) {
         return null;
     }
 
-    // 2. If the user is on the FREE tier, show the ad.
-    // We will build the logic to fetch a real ad from your admin panel next.
-    // For now, we will use a placeholder.
-    
-    // --- THIS IS A PLACEHOLDER ---
-    // In the next step, we will replace this with a real ad
-    // fetched from your `adModel` database.
-    const placeholderAd = {
-        linkUrl: '/subscription', // Links to the subscription page
-        imageUrl: '/ad-placeholder.png', // You'll need to add a placeholder image
-        companyName: 'Nyumba Premium',
-    };
-    
-    // Replace `placeholderAd` with `adData` once we fetch it.
-    const ad = placeholderAd; 
+    // 2. If user is free AND no ad was found (or is still loading), show nothing.
+    if (!ad) {
+        return null; // Don't show an empty box
+    }
 
+    // 3. If user is free AND we have an ad, show it.
     return (
         <div className="w-full p-4 bg-card-color border border-border-color rounded-lg text-center my-8">
-            <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" title={ad.companyName}>
+            <a 
+                href={ad.linkUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                title={ad.companyName} // <-- THIS REPLACES "Your Ad Here"
+                onClick={handleAdClick} // <-- 5. Track click
+            >
                 <img 
                     src={ad.imageUrl} 
-                    alt="Advertisement" 
+                    alt={ad.companyName} // Alt text for accessibility
                     className="w-full h-auto object-cover rounded-md"
                 />
             </a>

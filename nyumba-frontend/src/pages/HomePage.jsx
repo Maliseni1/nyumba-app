@@ -120,7 +120,7 @@ const HomePage = () => {
                 
                 {/* --- 2. ADD THE ADSLOT COMPONENT --- */}
                 {/* This will automatically be hidden for premium users */}
-                <AdSlot />
+                <AdSlot location="homepage_banner" />
                 
                 <div className="flex justify-between items-center mb-8">
                     <h2 className="text-3xl font-bold text-text-color">
