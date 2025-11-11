@@ -5,11 +5,11 @@ import ImageSlider from '../components/ImageSlider';
 import PaymentModal from '../components/PaymentModal';
 import PaymentConfirmation from '../components/PaymentConfirmation';
 import { toast } from 'react-toastify';
-// --- 1. IMPORT ICONS AND SHARE BUTTONS ---
 import { 
     FaBed, FaBath, FaHome, FaCommentDots, FaEdit, FaTrash, FaCreditCard, 
     FaStar, FaRocket, FaLock, FaShareAlt, FaLink,
-    FaWhatsapp, FaFacebook, FaTwitter 
+    FaWhatsapp, FaFacebook, FaTwitter, 
+    FaVideo // --- 1. IMPORT VIDEO ICON ---
 } from 'react-icons/fa';
 import {
     WhatsappShareButton,
@@ -33,6 +33,7 @@ const ListingDetailPage = () => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
 
     useEffect(() => {
+        // ... (fetchListing function is unchanged)
         const fetchListing = async () => {
             setLoading(true);
             try {
@@ -88,7 +89,6 @@ const ListingDetailPage = () => {
     const handlePaymentError = (error) => { /* ... (function is unchanged) ... */ };
     const handleBookNow = () => { /* ... (function is unchanged) ... */ };
 
-    // --- 2. NEW: Function to copy link to clipboard ---
     const shareUrl = window.location.href;
     const handleCopyLink = () => {
         navigator.clipboard.writeText(shareUrl);
@@ -102,35 +102,55 @@ const ListingDetailPage = () => {
     const displayAddress = listing.location?.address || listing.location || "Location not specified";
     const isEarlyAccess = new Date(listing.publicReleaseAt) > new Date();
     const isPriority = listing.isPriority;
-
-    // --- 3. Share button title/quote ---
     const shareTitle = `Check out this listing on Nyumba: ${listing.title}`;
 
     return (
         <div className="pt-16 pb-12">
             <div className="max-w-4xl mx-auto py-8 px-4">
+                {/* 1. Image Slider */}
                 {listing.images && listing.images.length > 0 && <ImageSlider images={listing.images} />}
 
+                {/* --- 2. NEW VIDEO PLAYER SECTION --- */}
+                {listing.videoUrl && (
+                    <div className="mt-8">
+                        <h2 className="text-2xl font-bold text-text-color mb-4 flex items-center gap-2">
+                            <FaVideo /> Video Tour
+                        </h2>
+                        <div className="bg-card-color p-4 rounded-lg border border-border-color">
+                            <video
+                                key={listing.videoUrl} // Ensures player updates if URL changes
+                                className="w-full h-auto rounded-md"
+                                controls
+                                playsInline
+                                preload="metadata"
+                            >
+                                <source src={listing.videoUrl} type="video/mp4" />
+                                <source src={listing.videoUrl} type="video/webm" />
+                                <source src={listing.videoUrl} type="video/quicktime" />
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    </div>
+                )}
+                {/* --- END OF VIDEO SECTION --- */}
+
+                {/* 3. Main Details Card */}
                 <div className="p-8 bg-card-color mt-8 rounded-lg border border-border-color backdrop-blur-sm">
                     <div className="flex justify-between items-start">
                         <div>
                             <h1 className="text-4xl font-bold text-text-color">{listing.title}</h1>
-                            
                             <div className="flex items-center gap-2 mt-2">
                                 {isEarlyAccess && (
                                     <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                                        <FaRocket />
-                                        Early Access
+                                        <FaRocket /> Early Access
                                     </span>
                                 )}
                                 {isPriority && (
                                     <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                                        <FaStar />
-                                        Priority Listing
+                                        <FaStar /> Priority Listing
                                     </span>
                                 )}
                             </div>
-
                             <p className="text-subtle-text-color mt-2 text-lg">{displayAddress}</p>
                         </div>
                         <span className="text-3xl font-bold text-accent-color">K{listing.price.toLocaleString()}/month</span>
@@ -148,7 +168,7 @@ const ListingDetailPage = () => {
                         </div>
                     </div>
 
-                    {/* --- 4. NEW: Share Button Section --- */}
+                    {/* 4. Share Buttons (unchanged) */}
                     <div className="mb-6">
                         <h3 className="text-lg font-semibold text-text-color mb-3 flex items-center gap-2">
                             <FaShareAlt /> Share this Listing
@@ -159,19 +179,16 @@ const ListingDetailPage = () => {
                                     <FaWhatsapp size={20} />
                                 </div>
                             </WhatsappShareButton>
-                            
                             <FacebookShareButton url={shareUrl} quote={shareTitle}>
                                 <div className="h-10 w-10 flex items-center justify-center rounded-full bg-[#1877F2] text-white hover:opacity-80 transition-opacity">
                                     <FaFacebook size={20} />
                                 </div>
                             </FacebookShareButton>
-                            
                             <TwitterShareButton url={shareUrl} title={shareTitle}>
                                 <div className="h-10 w-10 flex items-center justify-center rounded-full bg-black text-white hover:opacity-80 transition-opacity border border-border-color">
                                     <FaTwitter size={20} />
                                 </div>
                             </TwitterShareButton>
-
                             <button 
                                 onClick={handleCopyLink}
                                 title="Copy Link"
@@ -181,13 +198,14 @@ const ListingDetailPage = () => {
                             </button>
                         </div>
                     </div>
-                    {/* --- END: Share Button Section --- */}
 
+                    {/* 5. Description (unchanged) */}
                     <div>
                         <h2 className="text-2xl font-bold text-text-color mb-2">Description</h2>
                         <p className="text-text-color whitespace-pre-wrap">{listing.description}</p>
                     </div>
 
+                    {/* 6. Owner/CTA section (unchanged) */}
                     {isOwnListing ? (
                         <div className="mt-8 pt-6 border-t border-border-color">
                              <h2 className="text-2xl font-bold text-text-color mb-4">Manage Your Listing</h2>
@@ -234,10 +252,12 @@ const ListingDetailPage = () => {
                         )
                     )}
 
+                    {/* 7. Reviews (unchanged) */}
                     <ListingReviews listingId={listing._id} ownerId={listing.owner?._id} />
                 </div>
             </div>
             
+            {/* 8. Modals (unchanged) */}
             <PaymentModal
                 isOpen={showPaymentModal}
                 onClose={() => setShowPaymentModal(false)}

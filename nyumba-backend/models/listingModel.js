@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
 
-// --- 1. DEFINE A-LIST OF AMENITIES ---
-// We define this once so we can reuse it in the TenantPreference model
 const amenityOptions = [
     'Pet Friendly',
     'Furnished',
@@ -56,6 +54,14 @@ const listingSchema = new mongoose.Schema({
     images: [{
         type: String,
     }],
+    
+    // --- 1. NEW VIDEO FIELD ---
+    videoUrl: {
+        type: String, // This will store the Cloudinary URL for the video
+        default: null,
+    },
+    // --- END OF NEW FIELD ---
+
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
@@ -97,23 +103,16 @@ const listingSchema = new mongoose.Schema({
             default: 0,
         },
     },
-
-    // --- 2. NEW AMENITIES FIELD ---
     amenities: [{
         type: String,
-        enum: amenityOptions // Use the list defined above
+        enum: amenityOptions
     }]
-    // --- END OF NEW FIELD ---
-
 }, {
     timestamps: true,
 });
 
 const Listing = mongoose.model('Listing', listingSchema);
 
-// --- 3. EXPORT THE AMENITIES LIST ---
-// We export this so we can import it in other files
-// without having to type it twice.
 module.exports = {
     Listing,
     amenityOptions 
