@@ -9,7 +9,7 @@ import {
     FaBed, FaBath, FaHome, FaCommentDots, FaEdit, FaTrash, FaCreditCard, 
     FaStar, FaRocket, FaLock, FaShareAlt, FaLink,
     FaWhatsapp, FaFacebook, FaTwitter, 
-    FaVideo // --- 1. IMPORT VIDEO ICON ---
+    FaVideo
 } from 'react-icons/fa';
 import {
     WhatsappShareButton,
@@ -20,6 +20,7 @@ import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
 import StarRating from '../components/StarRating';
 import ListingReviews from '../components/ListingReviews';
+import AdSlot from '../components/AdSlot'; // --- 1. IMPORT THE ADSLOT ---
 
 const ListingDetailPage = () => {
     const [listing, setListing] = useState(null);
@@ -83,11 +84,60 @@ const ListingDetailPage = () => {
     }, [id, navigate]);
 
 
-    const handleStartChat = async () => { /* ... (function is unchanged) ... */ };
-    const handleDelete = async () => { /* ... (function is unchanged) ... */ };
-    const handlePaymentSuccess = (paymentData) => { /* ... (function is unchanged) ... */ };
-    const handlePaymentError = (error) => { /* ... (function is unchanged) ... */ };
-    const handleBookNow = () => { /* ... (function is unchanged) ... */ };
+    const handleStartChat = async () => {
+        if (!currentUser) {
+            toast.error('You must be logged in to start a chat.');
+            return navigate('/login', { state: { redirectTo: `/listing/${id}` } });
+        }
+        try {
+            const { data } = await getOrCreateConversation({ recipientId: listing.owner._id, listingId: id });
+            navigate('/messages', { state: { conversationId: data.conversation._id } });
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Could not start chat.');
+        }
+    };
+    
+    const handleDelete = async () => {
+        confirmAlert({
+            title: 'Confirm Deletion',
+            message: 'Are you sure you want to delete this listing?',
+            buttons: [
+                {
+                    label: 'Yes, Delete',
+                    onClick: async () => {
+                        try {
+                            await deleteListing(id);
+                            toast.success('Listing deleted successfully');
+                            navigate('/profile');
+                        } catch (error) {
+                            toast.error(error.response?.data?.message || 'Failed to delete listing.');
+                        }
+                    }
+                },
+                {
+                    label: 'No, Cancel'
+                }
+            ]
+        });
+    };
+
+    const handlePaymentSuccess = (paymentData) => {
+        setPaymentResult(paymentData);
+        setShowPaymentModal(false);
+        setShowPaymentConfirmation(true);
+    };
+
+    const handlePaymentError = (error) => {
+        toast.error(error.message || 'Payment failed. Please try again.');
+    };
+    
+    const handleBookNow = () => {
+        if (!currentUser) {
+            toast.error('You must be logged in to book a property.');
+            return navigate('/login', { state: { redirectTo: `/listing/${id}` } });
+        }
+        setShowPaymentModal(true);
+    };
 
     const shareUrl = window.location.href;
     const handleCopyLink = () => {
@@ -110,7 +160,7 @@ const ListingDetailPage = () => {
                 {/* 1. Image Slider */}
                 {listing.images && listing.images.length > 0 && <ImageSlider images={listing.images} />}
 
-                {/* --- 2. NEW VIDEO PLAYER SECTION --- */}
+                {/* 2. Video Player Section */}
                 {listing.videoUrl && (
                     <div className="mt-8">
                         <h2 className="text-2xl font-bold text-text-color mb-4 flex items-center gap-2">
@@ -118,7 +168,7 @@ const ListingDetailPage = () => {
                         </h2>
                         <div className="bg-card-color p-4 rounded-lg border border-border-color">
                             <video
-                                key={listing.videoUrl} // Ensures player updates if URL changes
+                                key={listing.videoUrl}
                                 className="w-full h-auto rounded-md"
                                 controls
                                 playsInline
@@ -132,11 +182,11 @@ const ListingDetailPage = () => {
                         </div>
                     </div>
                 )}
-                {/* --- END OF VIDEO SECTION --- */}
 
                 {/* 3. Main Details Card */}
                 <div className="p-8 bg-card-color mt-8 rounded-lg border border-border-color backdrop-blur-sm">
                     <div className="flex justify-between items-start">
+                        {/* ... (Title, Badges, Price) ... */}
                         <div>
                             <h1 className="text-4xl font-bold text-text-color">{listing.title}</h1>
                             <div className="flex items-center gap-2 mt-2">
@@ -157,6 +207,7 @@ const ListingDetailPage = () => {
                     </div>
 
                     <div className="flex items-center flex-wrap space-x-6 text-subtle-text-color my-6 border-y border-border-color py-4">
+                        {/* ... (Beds, Baths, etc) ... */}
                         <div className="flex items-center gap-2"><FaBed /> {listing.bedrooms} Bedrooms</div>
                         <div className="flex items-center gap-2"><FaBath /> {listing.bathrooms} Bathrooms</div>
                         <div className="flex items-center gap-2"><FaHome /> Type: {listing.propertyType}</div>
@@ -168,8 +219,9 @@ const ListingDetailPage = () => {
                         </div>
                     </div>
 
-                    {/* 4. Share Buttons (unchanged) */}
+                    {/* 4. Share Buttons */}
                     <div className="mb-6">
+                        {/* ... (Share buttons) ... */}
                         <h3 className="text-lg font-semibold text-text-color mb-3 flex items-center gap-2">
                             <FaShareAlt /> Share this Listing
                         </h3>
@@ -199,13 +251,21 @@ const ListingDetailPage = () => {
                         </div>
                     </div>
 
-                    {/* 5. Description (unchanged) */}
+                    {/* 5. Description */}
                     <div>
                         <h2 className="text-2xl font-bold text-text-color mb-2">Description</h2>
                         <p className="text-text-color whitespace-pre-wrap">{listing.description}</p>
                     </div>
 
-                    {/* 6. Owner/CTA section (unchanged) */}
+                    {/* --- 2. NEW: Listing Sidebar Ad Slot --- */}
+                    {/* This ad will show between the description and the CTA */}
+                    <div className="my-6">
+                        <AdSlot location="listing_sidebar" />
+                    </div>
+                    {/* --- END OF NEW AD --- */}
+
+
+                    {/* 6. Owner/CTA section */}
                     {isOwnListing ? (
                         <div className="mt-8 pt-6 border-t border-border-color">
                              <h2 className="text-2xl font-bold text-text-color mb-4">Manage Your Listing</h2>
@@ -252,7 +312,7 @@ const ListingDetailPage = () => {
                         )
                     )}
 
-                    {/* 7. Reviews (unchanged) */}
+                    {/* 7. Reviews */}
                     <ListingReviews listingId={listing._id} ownerId={listing.owner?._id} />
                 </div>
             </div>

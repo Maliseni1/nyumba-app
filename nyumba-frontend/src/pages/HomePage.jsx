@@ -6,7 +6,7 @@ import SearchBar from '../components/SearchBar';
 import ListingCardSkeleton from '../components/ListingCardSkeleton';
 import { toast } from 'react-toastify';
 import { FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
-import AdSlot from '../components/AdSlot'; // --- 1. IMPORT THE ADSLOT ---
+import AdSlot from '../components/AdSlot'; 
 
 const HomePage = () => {
     const [listings, setListings] = useState([]);
@@ -17,6 +17,8 @@ const HomePage = () => {
     const user = JSON.parse(localStorage.getItem('user'));
     const navigate = useNavigate();
 
+    // --- 1. THIS IS THE FIX ---
+    // The dependency array is now empty, which is correct.
     const fetchListings = useCallback(async (query) => {
         setLoading(true);
         setIsNearbySearch(false);
@@ -29,7 +31,8 @@ const HomePage = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, []); 
+    // --- END OF FIX ---
 
     useEffect(() => {
         fetchListings(searchTerm);
@@ -75,7 +78,8 @@ const HomePage = () => {
                 toast.error('Unable to retrieve your location. Please check browser permissions.');
                 setLoading(false);
                 setIsLocating(false);
-            }
+            },
+            { enableHighAccuracy: true }
         );
     };
 
@@ -118,8 +122,7 @@ const HomePage = () => {
             {/* --- LISTINGS SECTION --- */}
             <div className="max-w-7xl mx-auto py-12 px-4">
                 
-                {/* --- 2. ADD THE ADSLOT COMPONENT --- */}
-                {/* This will automatically be hidden for premium users */}
+                {/* 1. Homepage Banner Ad */}
                 <AdSlot location="homepage_banner" />
                 
                 <div className="flex justify-between items-center mb-8">
@@ -137,13 +140,19 @@ const HomePage = () => {
                     )}
                 </div>
 
+                {/* --- 2. NEW: Search Results Top Ad --- */}
+                {/* This ad will show above the listings grid */}
+                <AdSlot location="search_results_top" />
+                {/* --- END OF NEW AD --- */}
+
+
                 {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
                         {[...Array(6)].map((_, i) => <ListingCardSkeleton key={i} />)}
                     </div>
                 ) : (
                     listings.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
                             {listings
                                 .filter(Boolean) 
                                 .map(listing => (
@@ -152,7 +161,7 @@ const HomePage = () => {
                             }
                         </div>
                     ) : (
-                        <div className="text-center py-12 bg-card-color rounded-lg border border-border-color">
+                        <div className="text-center py-12 bg-card-color rounded-lg border border-border-color mt-8">
                             <h3 className="text-2xl font-bold text-text-color">System Clear</h3>
                             <p className="text-subtle-text-color mt-2">No listings found.</p>
                         </div>
