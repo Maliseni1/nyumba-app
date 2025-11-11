@@ -44,8 +44,7 @@ import BulkUploadPage from './pages/BulkUploadPage';
 import VerifiedLandlordRoute from './components/VerifiedLandlordRoute';
 import PremiumSupportPage from './pages/PremiumSupportPage';
 import TenantPreferencesPage from './pages/TenantPreferencesPage';
-// --- 1. IMPORT NEW CALCULATOR PAGE ---
-import BudgetCalculatorPage from './pages/BudgetCalculatorPage';
+import BudgetCalculatorPage from './pages/BudgetCalculatorPage'; // Added this import
 
 function App() {
   const { isAuthLoading } = useAuth();
@@ -80,7 +79,6 @@ function App() {
               <Route path="/map" element={<MapPage />} />
               <Route path="/verify-email/:token" element={<EmailVerificationPage />} />
               <Route path="/verify-email" element={<EmailVerificationPage />} />
-              {/* --- 2. ADD NEW CALCULATOR ROUTE --- */}
               <Route path="/budget-calculator" element={<BudgetCalculatorPage />} />
 
               {/* Subscription Routes */}
@@ -115,13 +113,19 @@ function App() {
                 <Route path="/preferences" element={<TenantPreferencesPage />} />
               </Route>
               
-              {/* Landlord Routes */}
+              {/* --- THIS IS THE FIX --- */}
+              {/* Routes for ALL landlords (verified or not) */}
               <Route path="/landlord" element={<LandlordRoute />}>
                 <Route path="bulk-upload" element={<BulkUploadPage />} />
+                {/* The Dashboard is now here, accessible to all landlords */}
+                <Route path="dashboard" element={<LandlordDashboardPage />} />
+                
+                {/* Routes for ONLY VERIFIED (i.e., paying) landlords */}
                 <Route path="" element={<VerifiedLandlordRoute />}>
-                    <Route path="dashboard" element={<LandlordDashboardPage />} />
+                    {/* Add any future *premium* landlord features here */}
                 </Route>
               </Route>
+              {/* --- END OF FIX --- */}
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminRoute />}>

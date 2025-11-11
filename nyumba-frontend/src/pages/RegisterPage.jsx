@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { registerUser } from '../services/api'; // Removed googleLogin, using GoogleLoginButton
-import GoogleLoginButton from '../components/GoogleLoginButton'; // Import the button
+import { registerUser } from '../services/api';
+import GoogleLoginButton from '../components/GoogleLoginButton'; // Use the component
 import { toast } from 'react-toastify';
 // --- 1. IMPORT ICONS ---
 import { FaUserPlus, FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa'; 
@@ -10,14 +10,18 @@ import { FaUserPlus, FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
 const PasswordStrengthMeter = ({ password }) => {
     const getStrength = () => {
         let score = 0;
-        if (password.length >= 8) score++;
-        if (/[A-Z]/.test(password)) score++;
-        if (/[0-9]/.test(password)) score++;
-        if (/[^A-Za-z0-9]/.test(password)) score++;
+        if (password.length >= 8) score++;      // Length 8+
+        if (/[A-Z]/.test(password)) score++;    // Uppercase
+        if (/[0-9]/.test(password)) score++;    // Number
+        if (/[^A-Za-z0-9]/.test(password)) score++; // Symbol
         return score;
     };
 
     const strength = getStrength();
+    
+    // Don't show meter if password is empty
+    if (password.length === 0) return null;
+
     const width = `${(strength / 4) * 100}%`;
     const color = [
         'bg-red-500', // 0 or 1
@@ -27,8 +31,6 @@ const PasswordStrengthMeter = ({ password }) => {
         'bg-green-500' // 4
     ][strength];
     const label = ['Very Weak', 'Weak', 'Medium', 'Strong', 'Very Strong'][strength];
-
-    if (password.length === 0) return null;
 
     return (
         <div className="mt-2">
@@ -84,6 +86,9 @@ const RegisterPage = () => {
             setLoading(false);
         }
     };
+
+    // This page only handles manual registration now
+    // GoogleLoginButton handles its own logic
 
     return (
         <div className="pt-24 min-h-screen flex items-center justify-center py-12 px-4">

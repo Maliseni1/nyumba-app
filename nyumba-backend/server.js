@@ -10,7 +10,8 @@ const cron = require('node-cron');
 
 // IMPORT MODELS
 const User = require('./models/userModel');
-const { Listing } = require('./models/listingModel'); // Fixed import
+// --- 1. FIX THE LISTING IMPORT ---
+const { Listing } = require('./models/listingModel');
 const Conversation = require('./models/conversationModel');
 const Message = require('./models/messageModel');
 
@@ -59,13 +60,13 @@ const io = new Server(server, {
     transports: ['websocket']
 });
 
-// --- UPDATED CORS CONFIGURATION ---
+// --- 2. UPDATED CORS CONFIGURATION ---
 const whitelist = [
     'http://localhost:5173',
     'http://localhost:5174',
-    'https.nyumba-app.vercel.app',
-    'https.nyumba-app-git-master-maliseni1.vercel.app',
-    process.env.FRONTEND_URL
+    'https://nyumba-app.vercel.app', // Your main Vercel URL
+    'https://nyumba-app-git-master-maliseni1.vercel.app', // Your specific branch URL
+    process.env.FRONTEND_URL // The URL from your .env file
 ].filter(Boolean); // Filter out undefined values
 
 const corsOptions = {
@@ -84,6 +85,7 @@ const corsOptions = {
 };
 
 // Handle OPTIONS requests (preflight) before any other route
+// This is critical for POST/PUT requests with custom headers
 app.options('*', cors(corsOptions));
 
 // Enable CORS for all routes

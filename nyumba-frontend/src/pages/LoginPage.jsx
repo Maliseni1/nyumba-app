@@ -19,12 +19,13 @@ const LoginPage = () => {
     const location = useLocation();
     const { login, authUser, isAuthLoading } = useAuth(); 
 
-    // RedirectIfLoggedIn logic (unchanged)
+    // RedirectIfLoggedIn logic
     useEffect(() => {
         if (!isAuthLoading && authUser) {
-            navigate('/');
+            // Use replace to prevent going "back" to login page
+            navigate(location.state?.redirectTo || '/', { replace: true });
         }
-    }, [authUser, isAuthLoading, navigate]);
+    }, [authUser, isAuthLoading, navigate, location.state]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -32,7 +33,8 @@ const LoginPage = () => {
         setShowResend(false);
         try {
             const { data } = await loginUser({ email, password });
-            login(data);
+            login(data); // This now handles the redirect logic
+            // No need to navigate here, login() does it.
         } catch (error) {
             const message = error.response?.data?.message || 'Login failed';
             toast.error(message);
@@ -51,7 +53,8 @@ const LoginPage = () => {
         }
         setLoading(true);
         try {
-            const { data } = await resendVerificationEmail({ email }); // Pass email as object
+            // Pass email as an object, as required by the backend
+            const { data } = await resendVerificationEmail({ email }); 
             toast.success(data.message);
             setShowResend(false);
         } catch (error) {
