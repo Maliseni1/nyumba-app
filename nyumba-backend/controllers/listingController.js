@@ -52,10 +52,8 @@ const findAndNotifyMatches = async (listing) => {
         }
         const matches = await TenantPreference.find(query).populate('user', 'name email');
         if (matches.length === 0) {
-            console.log(`No matches found for new listing: ${listing.title}`);
             return;
         }
-        console.log(`Found ${matches.length} matches for new listing: ${listing.title}`);
         for (const pref of matches) {
             if (pref.user && pref.user.email) {
                 const listingUrl = `${process.env.FRONTEND_URL}/listing/${listing._id}`;
@@ -73,10 +71,6 @@ const findAndNotifyMatches = async (listing) => {
                     <a href="${listingUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
                         View Listing
                     </a>
-                    <br>
-                    <p style="font-size: 12px; color: #888;">
-                        To stop these notifications, you can update your preferences in your profile.
-                    </p>
                 `;
                 try {
                     sendEmail({
@@ -94,41 +88,65 @@ const findAndNotifyMatches = async (listing) => {
     }
 };
 
-// --- getListings (unchanged) ---
+// --- getListings (THIS IS THE FIX) ---
 const getListings = asyncHandler(async (req, res) => {
     const { searchTerm } = req.query;
-    const isPremiumTenant = req.user?.isPremiumTenant || false;
+    const user = req.user; // Get user from identifyUser middleware
+
+    // Check for privileged access (Premium Tenant or Admin)
+    const isPrivilegedUser = user?.isPremiumTenant || user?.isAdmin;
+
     let filter = { owner: { $ne: null } };
+
+    // 1. Add search term filter if it exists
     if (searchTerm) {
         filter.$or = [
             { title: { $regex: searchTerm, $options: 'i' } },
             { 'location.address': { $regex: searchTerm, $options: 'i' } }
         ];
     }
-    if (!isPremiumTenant) {
+
+    // 2. Add visibility (Early Access) filter if the user is NOT privileged
+    if (!isPrivilegedUser) {
+        // This is a guest or a free (non-admin) user
+        const visibilityFilter = {
+            $or: [
+                { publicReleaseAt: { $lte: new Date() } },  // Publicly released
+                { publicReleaseAt: { $exists: false } }   // Old listings before rule
+            ]
+        };
+
+        // If the user is logged in (but not privileged, e.g., free landlord), 
+        // also show them their OWN listings.
+        if (user) {
+            visibilityFilter.$or.push({ owner: user._id });
+        }
+
+        // Now, combine the visibility filter with the search filter
         if (filter.$or) {
+            // A search term *and* visibility rules are needed
             filter.$and = [
-                { $or: filter.$or }, 
-                { $or: [ 
-                    { publicReleaseAt: { $lte: new Date() } },
-                    { publicReleaseAt: { $exists: false } }
-                ]}
+                { $or: filter.$or }, // The search term
+                visibilityFilter      // The visibility rules
             ];
-            delete filter.$or; 
+            delete filter.$or;
         } else {
-            filter.$or = [
-                { publicReleaseAt: { $lte: new Date() } },
-                { publicReleaseAt: { $exists: false } }
-            ];
+            // No search term, just apply visibility rules
+            filter.$or = visibilityFilter.$or;
         }
     }
+    // If user IS privileged, no date filter is added, so they see everything.
+
+    // 3. Execute the query
     const listings = await Listing.find(filter)
         .populate('owner', 'name profilePicture')
         .sort({ isPriority: -1, createdAt: -1 }); 
+        
     res.json(listings);
 });
+// --- END OF FIX ---
 
-// --- getListingsNearby (unchanged) ---
+// --- getListingsNearby (UPDATED) ---
 const getListingsNearby = asyncHandler(async (req, res) => {
     const { lat, lng } = req.query;
     if (!lat || !lng) {
@@ -137,18 +155,29 @@ const getListingsNearby = asyncHandler(async (req, res) => {
     }
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
-    const isPremiumTenant = req.user?.isPremiumTenant || false;
+    
+    const user = req.user; // Get user from identifyUser middleware
+    const isPrivilegedUser = user?.isPremiumTenant || user?.isAdmin;
+
     let dateFilter = {};
-    if (!isPremiumTenant) {
-        dateFilter['$match'] = {
+    
+    // Build the visibility filter if the user is NOT privileged
+    if (!isPrivilegedUser) {
+        const visibilityFilter = {
             $or: [
                 { publicReleaseAt: { $lte: new Date() } },
                 { publicReleaseAt: { $exists: false } }
             ]
         };
+        // Also show their own listings
+        if (user) {
+            visibilityFilter.$or.push({ owner: user._id });
+        }
+        dateFilter['$match'] = visibilityFilter;
     } else {
-        dateFilter['$match'] = {}; 
+        dateFilter['$match'] = {}; // Privileged users see everything
     }
+
     const listings = await Listing.aggregate([
         {
             $geoNear: {
@@ -158,7 +187,7 @@ const getListingsNearby = asyncHandler(async (req, res) => {
                 spherical: true,
             },
         },
-        dateFilter, 
+        dateFilter, // Apply the visibility filter
         { $sort: { isPriority: -1, distance: 1 } },
         {
             $lookup: {
@@ -204,26 +233,36 @@ const reverseGeocode = asyncHandler(async (req, res) => {
     }
 });
 
-// --- getListingById (unchanged) ---
+// --- getListingById (unchanged, already fixed) ---
 const getListingById = asyncHandler(async (req, res) => {
     const listing = await Listing.findById(req.params.id)
         .populate('owner', '_id name profilePicture');
+
     if (!listing) {
         res.status(404);
         throw new Error('Listing not found');
     }
-    const isPremiumTenant = req.user?.isPremiumTenant || false;
+
+    const user = req.user;
+    const isPremiumTenant = user?.isPremiumTenant || false;
+    const isAdmin = user?.isAdmin || false;
+    const isOwner = user && listing.owner && user._id.toString() === listing.owner._id.toString();
     const isEarlyAccess = listing.publicReleaseAt && new Date(listing.publicReleaseAt) > new Date();
-    if (isEarlyAccess && !isPremiumTenant) {
+
+    if (isEarlyAccess && !isPremiumTenant && !isOwner && !isAdmin) {
         res.status(403);
         throw new Error('This is an early-access listing. Subscribe to Nyumba Premium to view it now.');
     }
-    listing.analytics.views = (listing.analytics.views || 0) + 1;
-    await listing.save();
+
+    if (!isOwner) {
+        listing.analytics.views = (listing.analytics.views || 0) + 1;
+        await listing.save();
+    }
+    
     res.json(listing);
 });
 
-// --- createListing (UPDATED) ---
+// --- createListing (unchanged) ---
 const createListing = asyncHandler(async (req, res) => {
     if (req.user.role !== 'landlord') {
         res.status(403);
@@ -247,36 +286,27 @@ const createListing = asyncHandler(async (req, res) => {
         coordinates: [longitude, latitude],
         address: formattedAddress || location,
     };
-
-    // --- 1. UPDATED: Handle req.files as an object ---
-    // This assumes uploadMiddleware will use upload.fields()
     const images = req.files.images ? req.files.images.map(file => file.path) : [];
     const videoFile = req.files.video ? req.files.video[0] : null;
     const videoUrl = videoFile ? videoFile.path : null;
-    // --- End of update ---
-
     const publicReleaseDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
     const newListing = new Listing({
         title, description, price, location: locationData, bedrooms, bathrooms, propertyType, 
-        images: images,       // Save images
-        videoUrl: videoUrl,   // Save video
+        images: images,
+        videoUrl: videoUrl,
         amenities: amenities || [],
         owner: req.user._id,
         publicReleaseAt: publicReleaseDate 
     });
-
     const createdListing = await newListing.save();
     const user = await User.findById(req.user._id);
     user.listings.push(createdListing._id);
     await user.save();
-    
     findAndNotifyMatches(createdListing);
-
     res.status(201).json(createdListing);
 });
 
-// --- updateListing (UPDATED) ---
+// --- updateListing (unchanged) ---
 const updateListing = asyncHandler(async (req, res) => {
     const { title, description, price, location, bedrooms, bathrooms, propertyType, existingImages, amenities, existingVideoUrl } = req.body;
     const listing = await Listing.findById(req.params.id);
@@ -303,25 +333,17 @@ const updateListing = asyncHandler(async (req, res) => {
             address: formattedAddress || location,
         };
     }
-    
-    // --- 2. UPDATED: Handle req.files as an object ---
     const newImageFiles = req.files.images ? req.files.images.map(file => file.path) : [];
     const videoFile = req.files.video ? req.files.video[0] : null;
-
-    // Handle Images
     const updatedImages = existingImages ? (Array.isArray(existingImages) ? [...existingImages, ...newImageFiles] : [existingImages, ...newImageFiles]) : newImageFiles;
     listing.images = updatedImages;
-
-    // Handle Video
     if (videoFile) {
-        listing.videoUrl = videoFile.path; // New video uploaded
+        listing.videoUrl = videoFile.path;
     } else if (existingVideoUrl) {
-        listing.videoUrl = existingVideoUrl; // Keep old video
+        listing.videoUrl = existingVideoUrl;
     } else {
-        listing.videoUrl = null; // Video was removed
+        listing.videoUrl = null;
     }
-    // --- End of update ---
-
     listing.title = title;
     listing.description = description;
     listing.price = price;
@@ -329,7 +351,6 @@ const updateListing = asyncHandler(async (req, res) => {
     listing.bathrooms = bathrooms;
     listing.propertyType = propertyType;
     listing.amenities = amenities || [];
-    
     const updatedListing = await listing.save();
     res.json(updatedListing);
 });
@@ -352,7 +373,6 @@ const deleteListing = asyncHandler(async (req, res) => {
 const setListingStatus = asyncHandler(async (req, res) => {
     const { status } = req.body;
     const listing = await Listing.findById(req.params.id);
-
     if (!listing || listing.owner.toString() !== req.user._id.toString()) {
         res.status(401);
         throw new Error('Not authorized');
@@ -361,7 +381,6 @@ const setListingStatus = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error("Invalid status. Must be 'available' or 'occupied'.");
     }
-
     listing.status = status;
     const updatedListing = await listing.save();
     res.json(updatedListing);
@@ -412,7 +431,7 @@ const getRecommendedListings = asyncHandler(async (req, res) => {
     res.json(recommendations);
 });
 
-// --- bulkUploadListings (UPDATED) ---
+// --- bulkUploadListings (unchanged) ---
 const bulkUploadListings = asyncHandler(async (req, res) => {
     if (req.user.role !== 'landlord') {
         res.status(403);
@@ -442,7 +461,6 @@ const bulkUploadListings = asyncHandler(async (req, res) => {
                 for (const row of listings) {
                     try {
                         await delay(1100); 
-                        // --- 3. ADD AMENITIES TO BULK UPLOAD ---
                         const { title, description, price, location, bedrooms, bathrooms, propertyType, amenities } = row;
                         if (!title || !price || !location || !bedrooms || !bathrooms || !propertyType) {
                             throw new Error('Missing required fields (title, price, location, bedrooms, bathrooms, propertyType).');
@@ -459,7 +477,6 @@ const bulkUploadListings = asyncHandler(async (req, res) => {
                         };
                         const publicReleaseDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
                         const amenitiesArray = amenities ? amenities.split(',').map(a => a.trim()) : [];
-
                         const newListing = new Listing({
                             title,
                             description: description || '',
@@ -469,12 +486,11 @@ const bulkUploadListings = asyncHandler(async (req, res) => {
                             bathrooms: parseInt(bathrooms, 10),
                             propertyType,
                             images: [],
-                            videoUrl: null, // Bulk upload does not support video per row
+                            videoUrl: null,
                             amenities: amenitiesArray,
                             owner: req.user._id,
                             publicReleaseAt: publicReleaseDate
                         });
-
                         const createdListing = await newListing.save();
                         successCount++;
                         findAndNotifyMatches(createdListing);
@@ -498,7 +514,6 @@ const bulkUploadListings = asyncHandler(async (req, res) => {
         errors,
     });
 });
-
 
 module.exports = {
     getListings,

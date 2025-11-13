@@ -1,18 +1,32 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-// --- 1. IMPORT NEW ICONS ---
-import { FaBed, FaBath, FaMapMarkerAlt, FaMapPin, FaRocket, FaStar } from 'react-icons/fa';
+// --- 1. IMPORT NEW ICONS FOR AMENITIES ---
+import { 
+    FaBed, FaBath, FaMapMarkerAlt, FaMapPin, FaRocket, FaStar,
+    FaPaw, FaCouch, FaWifi, FaParking, FaShieldAlt, FaWater, FaSwimmer 
+} from 'react-icons/fa';
 import SaveButton from './SaveButton';
 import { toast } from 'react-toastify';
 
 // Formats distance from meters to a readable string
 const formatDistance = (meters) => {
-    // ... (function is unchanged)
     if (meters < 1000) {
         return `${Math.round(meters)} m away`;
     }
     const km = (meters / 1000).toFixed(1);
     return `${km} km away`;
+};
+
+// --- 2. AMENITY ICON MAP ---
+// Maps amenity names (from your backend) to icons
+const amenityIcons = {
+    'Pet Friendly': <FaPaw title="Pet Friendly" />,
+    'Furnished': <FaCouch title="Furnished" />,
+    'WiFi Included': <FaWifi title="WiFi Included" />,
+    'Parking Available': <FaParking title="Parking Available" />,
+    'Security': <FaShieldAlt title="Security" />,
+    'Borehole': <FaWater title="Borehole" />,
+    'Pool': <FaSwimmer title="Pool" />,
 };
 
 const ListingCard = ({ listing, onDelete }) => {
@@ -23,10 +37,8 @@ const ListingCard = ({ listing, onDelete }) => {
         return null; 
     }
     
-    // --- 2. CHECK FOR NEW LISTING STATUSES ---
     const isEarlyAccess = new Date(listing.publicReleaseAt) > new Date();
     const isPriority = listing.isPriority;
-
     const isOwner = currentUser && currentUser._id === listing.owner._id;
 
     let displayAddress = "Location not specified";
@@ -65,6 +77,10 @@ const ListingCard = ({ listing, onDelete }) => {
         }
     };
 
+    // --- 3. LOGIC TO DISPLAY AMENITIES ---
+    const amenitiesToShow = listing.amenities?.slice(0, 3) || [];
+    const remainingAmenities = Math.max(0, (listing.amenities?.length || 0) - amenitiesToShow.length);
+
     return (
         <Link 
             to={`/listing/${listing._id}`} 
@@ -77,7 +93,6 @@ const ListingCard = ({ listing, onDelete }) => {
                     K{listing.price.toLocaleString()}
                 </div>
 
-                {/* --- 3. ADD NEW BADGES --- */}
                 <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
                     {isEarlyAccess && (
                         <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
@@ -117,6 +132,25 @@ const ListingCard = ({ listing, onDelete }) => {
                         </button>
                     )}
                 </div>
+
+                {/* --- 4. NEW AMENITIES SECTION --- */}
+                {amenitiesToShow.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3">
+                        {amenitiesToShow.map(amenity => (
+                            <span key={amenity} className="flex items-center gap-1.5 text-xs text-subtle-text-color" title={amenity}>
+                                {/* Use the icon map, with a fallback star icon */}
+                                {amenityIcons[amenity] || <FaStar />}
+                                {amenity}
+                            </span>
+                        ))}
+                        {remainingAmenities > 0 && (
+                            <span className="text-xs font-bold text-accent-color">
+                                +{remainingAmenities} more
+                            </span>
+                        )}
+                    </div>
+                )}
+                {/* --- END OF NEW SECTION --- */}
 
                 <div className="flex-grow"></div>
 

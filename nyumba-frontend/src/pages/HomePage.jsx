@@ -17,8 +17,6 @@ const HomePage = () => {
     const user = JSON.parse(localStorage.getItem('user'));
     const navigate = useNavigate();
 
-    // --- 1. THIS IS THE FIX ---
-    // The dependency array is now empty, which is correct.
     const fetchListings = useCallback(async (query) => {
         setLoading(true);
         setIsNearbySearch(false);
@@ -31,8 +29,7 @@ const HomePage = () => {
         } finally {
             setLoading(false);
         }
-    }, []); 
-    // --- END OF FIX ---
+    }, []);
 
     useEffect(() => {
         fetchListings(searchTerm);
@@ -110,7 +107,9 @@ const HomePage = () => {
                         <button
                             onClick={handleNearbySearch}
                             disabled={isLocating || !user}
-                            className="flex items-center justify-center gap-2 w-full md:w-auto px-6 py-3 bg-accent-color text-white font-semibold rounded-lg shadow-md hover:bg-accent-hover-color transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            // --- THIS IS THE FIX ---
+                            className="flex items-center justify-center gap-2 w-full md:w-auto px-6 py-3 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            // --- END OF FIX ---
                         >
                             <FaMapMarkerAlt />
                             {isLocating ? 'Locating...' : 'Find Near Me'}
@@ -122,7 +121,7 @@ const HomePage = () => {
             {/* --- LISTINGS SECTION --- */}
             <div className="max-w-7xl mx-auto py-12 px-4">
                 
-                {/* 1. Homepage Banner Ad */}
+                {/* Homepage Banner Ad */}
                 <AdSlot location="homepage_banner" />
                 
                 <div className="flex justify-between items-center mb-8">
@@ -140,10 +139,8 @@ const HomePage = () => {
                     )}
                 </div>
 
-                {/* --- 2. NEW: Search Results Top Ad --- */}
-                {/* This ad will show above the listings grid */}
+                {/* Search Results Top Ad */}
                 <AdSlot location="search_results_top" />
-                {/* --- END OF NEW AD --- */}
 
 
                 {loading ? (

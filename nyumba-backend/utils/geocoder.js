@@ -1,21 +1,23 @@
 const NodeGeocoder = require('node-geocoder');
 
+// This configuration will read from your .env file
 const options = {
-  // This must be 'openstreetmap', not 'nominatim'
-  provider: 'openstreetmap', 
-  
-  // --- THIS IS THE FIX ---
-  // Nominatim's policy requires a custom User-Agent to identify your app.
-  // We will use your app's name.
-  userAgent: 'NyumbaApp/1.0 (mailto:maliseni1205@gmail.com)', 
-  
-  // It's also good practice to set a Referer header
-  // This should be your *production* frontend URL
-  referer: process.env.FRONTEND_URL || 'https://nyumba-app.vercel.app',
-  // --- END OF FIX ---
-
-  formatter: null 
+    // 1. Read the provider name from your .env file
+    provider: process.env.GEOCODER_PROVIDER || 'locationiq', 
+    
+    // 2. We no longer need userAgent or referer
+    // We now use a professional API key
+    apiKey: process.env.GEOCODER_API_KEY, 
+    
+    formatter: null 
 };
+
+// Check if the API key is present
+if (!options.apiKey) {
+    console.error("FATAL ERROR: GEOCODER_API_KEY is not set in your .env file!");
+    console.error("Please sign up for a free key at locationiq.com and add it to .env");
+    // We don't exit the process here, but geocoding will fail
+}
 
 const geocoder = NodeGeocoder(options);
 

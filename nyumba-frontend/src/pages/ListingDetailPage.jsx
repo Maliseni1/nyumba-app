@@ -9,7 +9,9 @@ import {
     FaBed, FaBath, FaHome, FaCommentDots, FaEdit, FaTrash, FaCreditCard, 
     FaStar, FaRocket, FaLock, FaShareAlt, FaLink,
     FaWhatsapp, FaFacebook, FaTwitter, 
-    FaVideo
+    FaVideo,
+    // --- 1. IMPORT NEW AMENITY ICONS ---
+    FaPaw, FaCouch, FaWifi, FaParking, FaShieldAlt, FaWater, FaSwimmer 
 } from 'react-icons/fa';
 import {
     WhatsappShareButton,
@@ -20,7 +22,18 @@ import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
 import StarRating from '../components/StarRating';
 import ListingReviews from '../components/ListingReviews';
-import AdSlot from '../components/AdSlot'; // --- 1. IMPORT THE ADSLOT ---
+import AdSlot from '../components/AdSlot';
+
+// --- 2. ADD AMENITY ICON MAP ---
+const amenityIcons = {
+    'Pet Friendly': <FaPaw title="Pet Friendly" />,
+    'Furnished': <FaCouch title="Furnished" />,
+    'WiFi Included': <FaWifi title="WiFi Included" />,
+    'Parking Available': <FaParking title="Parking Available" />,
+    'Security': <FaShieldAlt title="Security" />,
+    'Borehole': <FaWater title="Borehole" />,
+    'Pool': <FaSwimmer title="Pool" />,
+};
 
 const ListingDetailPage = () => {
     const [listing, setListing] = useState(null);
@@ -256,16 +269,33 @@ const ListingDetailPage = () => {
                         <h2 className="text-2xl font-bold text-text-color mb-2">Description</h2>
                         <p className="text-text-color whitespace-pre-wrap">{listing.description}</p>
                     </div>
+                    
+                    {/* --- 3. NEW AMENITIES SECTION --- */}
+                    {listing.amenities && listing.amenities.length > 0 && (
+                        <div className="mt-6 pt-6 border-t border-border-color">
+                            <h2 className="text-2xl font-bold text-text-color mb-4">Amenities</h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {listing.amenities.map(amenity => (
+                                    <div key={amenity} className="flex items-center gap-3 text-text-color">
+                                        <span className="text-accent-color">
+                                            {amenityIcons[amenity] || <FaStar />}
+                                        </span>
+                                        <span>{amenity}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {/* --- END OF NEW SECTION --- */}
 
-                    {/* --- 2. NEW: Listing Sidebar Ad Slot --- */}
-                    {/* This ad will show between the description and the CTA */}
+
+                    {/* 6. Listing Sidebar Ad Slot */}
                     <div className="my-6">
                         <AdSlot location="listing_sidebar" />
                     </div>
-                    {/* --- END OF NEW AD --- */}
 
 
-                    {/* 6. Owner/CTA section */}
+                    {/* 7. Owner/CTA section */}
                     {isOwnListing ? (
                         <div className="mt-8 pt-6 border-t border-border-color">
                              <h2 className="text-2xl font-bold text-text-color mb-4">Manage Your Listing</h2>
@@ -312,12 +342,12 @@ const ListingDetailPage = () => {
                         )
                     )}
 
-                    {/* 7. Reviews */}
+                    {/* 8. Reviews */}
                     <ListingReviews listingId={listing._id} ownerId={listing.owner?._id} />
                 </div>
             </div>
             
-            {/* 8. Modals (unchanged) */}
+            {/* 9. Modals (unchanged) */}
             <PaymentModal
                 isOpen={showPaymentModal}
                 onClose={() => setShowPaymentModal(false)}
