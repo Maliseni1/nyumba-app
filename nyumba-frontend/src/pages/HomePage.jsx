@@ -7,6 +7,9 @@ import ListingCardSkeleton from '../components/ListingCardSkeleton';
 import { toast } from 'react-toastify';
 import { FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
 import AdSlot from '../components/AdSlot'; 
+// --- 1. IMPORT CAPACITOR PLUGINS ---
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 const HomePage = () => {
     const [listings, setListings] = useState([]);
@@ -44,41 +47,71 @@ const HomePage = () => {
         setSearchTerm(query);
     };
 
-    const handleNearbySearch = () => {
+    // --- 2. UPDATED "FIND NEAR ME" HANDLER ---
+    const handleNearbySearch = async () => {
         if (!user) { 
             toast.info('Please log in or register to search.');
             navigate('/login');
             return;
         }
-        if (!navigator.geolocation) { 
-            toast.error('Geolocation is not supported by your browser.');
-            return;
-        }
+
         setIsLocating(true);
         setLoading(true);
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                try {
-                    const { data } = await getListingsNearby({ lat: latitude, lng: longitude });
-                    setListings(Array.isArray(data) ? data : []);
-                    setIsNearbySearch(true);
-                } catch (error) {
-                    toast.error(error.response?.data?.message || 'Could not find listings near you.');
-                    setListings([]);
-                } finally {
-                    setLoading(false);
-                    setIsLocating(false);
+
+        try {
+            let latitude, longitude;
+
+            if (Capacitor.isNativePlatform()) {
+                // --- A. NATIVE APP LOGIC ---
+                // Request permission (required for iOS and modern Android)
+                const permissions = await Geolocation.requestPermissions();
+                if (permissions.location !== 'granted') {
+                    toast.error('Location permission is required to find listings near you.');
+                    throw new Error('Permission not granted');
                 }
-            },
-            (error) => {
-                toast.error('Unable to retrieve your location. Please check browser permissions.');
-                setLoading(false);
-                setIsLocating(false);
-            },
-            { enableHighAccuracy: true }
-        );
+                // Get native position
+                const position = await Geolocation.getCurrentPosition({
+                    enableHighAccuracy: true,
+                    timeout: 10000 // 10 seconds
+                });
+                latitude = position.coords.latitude;
+                longitude = position.coords.longitude;
+
+            } else {
+                // --- B. WEB BROWSER FALLBACK LOGIC ---
+                if (!navigator.geolocation) { 
+                    toast.error('Geolocation is not supported by your browser.');
+                    throw new Error('Geolocation not supported');
+                }
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000
+                    });
+                });
+                latitude = position.coords.latitude;
+                longitude = position.coords.longitude;
+            }
+
+            // --- C. COMMON API CALL ---
+            const { data } = await getListingsNearby({ lat: latitude, lng: longitude });
+            setListings(Array.isArray(data) ? data : []);
+            setIsNearbySearch(true);
+
+        } catch (error) {
+            // Handle all errors (native or web)
+            console.error(error);
+            const message = error.message || 'Could not find listings near you.';
+            if (!message.includes('Permission')) { // Don't double-toast permission errors
+                toast.error(message);
+            }
+            setListings([]);
+        } finally {
+            setLoading(false);
+            setIsLocating(false);
+        }
     };
+    // --- END OF UPDATE ---
 
     const clearNearbySearch = () => {
         fetchListings(searchTerm);
@@ -107,9 +140,7 @@ const HomePage = () => {
                         <button
                             onClick={handleNearbySearch}
                             disabled={isLocating || !user}
-                            // --- THIS IS THE FIX ---
                             className="flex items-center justify-center gap-2 w-full md:w-auto px-6 py-3 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            // --- END OF FIX ---
                         >
                             <FaMapMarkerAlt />
                             {isLocating ? 'Locating...' : 'Find Near Me'}

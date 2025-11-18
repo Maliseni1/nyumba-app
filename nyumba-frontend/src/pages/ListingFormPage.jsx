@@ -4,8 +4,11 @@ import { createListing, getListingById, updateListing, reverseGeocode } from '..
 import { toast } from 'react-toastify';
 import ImageUpload from '../components/ImageUpload';
 import imageCompression from 'browser-image-compression';
-// --- 1. IMPORT NEW ICONS ---
-import { FaCrosshairs, FaVideo, FaTimesCircle } from 'react-icons/fa';
+// --- 1. IMPORT CAPACITOR & CAMERA PLUGINS ---
+import { Capacitor } from '@capacitor/core';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+// --- 2. IMPORT NEW ICONS ---
+import { FaCrosshairs, FaVideo, FaTimesCircle, FaCamera } from 'react-icons/fa';
 
 const amenityOptions = [
     'Pet Friendly',
@@ -16,6 +19,16 @@ const amenityOptions = [
     'Borehole',
     'Pool'
 ];
+
+// --- 3. NEW HELPER FUNCTION (converts native path to a File object) ---
+const fetchFile = async (path) => {
+    const response = await fetch(path);
+    const blob = await response.blob();
+    return new File([blob], path.substring(path.lastIndexOf('/') + 1), {
+        type: blob.type
+    });
+};
+
 
 const ListingFormPage = () => {
     const [formData, setFormData] = useState({
@@ -29,19 +42,21 @@ const ListingFormPage = () => {
         amenities: [],
     });
     const [images, setImages] = useState([]);
-    // --- 2. ADD NEW STATE FOR VIDEO ---
-    const [videoFile, setVideoFile] = useState(null); // For the new file to upload
-    const [videoPreview, setVideoPreview] = useState(null); // For the <video> src
-    const [existingVideoUrl, setExistingVideoUrl] = useState(null); // For edit mode
-
+    const [videoFile, setVideoFile] = useState(null);
+    const [videoPreview, setVideoPreview] = useState(null);
+    const [existingVideoUrl, setExistingVideoUrl] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isLocating, setIsLocating] = useState(false);
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditMode = Boolean(id);
+    
+    // --- 4. CHECK IF ON NATIVE PLATFORM ---
+    const isNative = Capacitor.isNativePlatform();
 
     useEffect(() => {
         if (isEditMode) {
+            // ... (fetchListing logic is unchanged)
             const fetchListing = async () => {
                 try {
                     const { data } = await getListingById(id);
@@ -56,7 +71,6 @@ const ListingFormPage = () => {
                         amenities: data.amenities || [],
                     });
                     setImages(data.images);
-                    // --- 3. POPULATE VIDEO STATE ON EDIT ---
                     if (data.videoUrl) {
                         setVideoPreview(data.videoUrl);
                         setExistingVideoUrl(data.videoUrl);
@@ -75,6 +89,7 @@ const ListingFormPage = () => {
     };
 
     const handleAmenityChange = (e) => {
+        // ... (unchanged)
         const { value, checked } = e.target;
         setFormData(prevData => {
             if (checked) {
@@ -85,8 +100,8 @@ const ListingFormPage = () => {
         });
     };
 
-    // --- 4. NEW HANDLER FOR VIDEO FILE ---
     const handleVideoChange = (e) => {
+        // ... (unchanged)
         const file = e.target.files[0];
         if (file) {
             if (file.size > 100 * 1024 * 1024) { // 100MB limit (matches backend)
@@ -99,19 +114,19 @@ const ListingFormPage = () => {
             }
             setVideoFile(file);
             setVideoPreview(URL.createObjectURL(file));
-            setExistingVideoUrl(null); // Clear existing video if a new one is added
+            setExistingVideoUrl(null); 
         }
     };
 
-    // --- 5. NEW HANDLER TO REMOVE VIDEO ---
     const handleRemoveVideo = () => {
+        // ... (unchanged)
         setVideoFile(null);
         setVideoPreview(null);
         setExistingVideoUrl(null);
     };
 
     const handleUseCurrentLocation = () => {
-        // ... (unchanged)
+        // ... (unchanged, will be updated later for native geolocation)
         if (!navigator.geolocation) {
             toast.error('Geolocation is not supported by your browser.');
             return;
@@ -139,6 +154,59 @@ const ListingFormPage = () => {
             { enableHighAccuracy: true }
         );
     };
+    
+    // --- 5. NEW: NATIVE CAMERA HANDLERS ---
+    const handleTakeImage = async () => {
+        try {
+            const photo = await Camera.getPhoto({
+                quality: 90,
+                allowEditing: true,
+                resultType: CameraResultType.Uri, // Use Uri to get a file path
+                source: CameraSource.Camera // Only allow camera
+            });
+            
+            if (photo.webPath) {
+                // Convert the native webPath to a File object
+                const file = await fetchFile(photo.webPath);
+                setImages(prevImages => [...prevImages, file]);
+            }
+        } catch (error) {
+            if (error.message.includes('permission')) {
+                toast.error('Camera permission is required.');
+            } else {
+                console.error("Camera error:", error);
+            }
+        }
+    };
+
+    const handleTakeVideo = async () => {
+        try {
+            // Note: Capacitor Camera plugin captures video as MP4
+            const video = await Camera.getPhoto({
+                quality: 90,
+                resultType: CameraResultType.Uri,
+                source: CameraSource.Camera, // Only allow camera
+                mediaTypes: 'video' // Specify video
+            });
+            
+            if (video.webPath) {
+                const file = await fetchFile(video.webPath);
+                if (file.size > 100 * 1024 * 1024) {
+                    toast.error("Video file is too large. Max size is 100MB.");
+                    return;
+                }
+                setVideoFile(file);
+                setVideoPreview(video.webPath); // Use webPath for native preview
+                setExistingVideoUrl(null);
+            }
+        } catch (error) {
+            if (error.message.includes('permission')) {
+                toast.error('Camera permission is required.');
+            } else {
+                console.error("Camera error:", error);
+            }
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -154,15 +222,11 @@ const ListingFormPage = () => {
             listingData.append('amenities', amenity);
         });
 
-        // --- 6. UPDATE SUBMIT LOGIC ---
-        // Append new video file if it exists
         if (videoFile) {
             listingData.append('video', videoFile);
         } else if (isEditMode && existingVideoUrl) {
-            // Tell the backend to keep the existing video
             listingData.append('existingVideoUrl', existingVideoUrl);
         }
-        // --- End of video logic ---
 
         const compressionOptions = {
             maxSizeMB: 1,
@@ -171,14 +235,19 @@ const ListingFormPage = () => {
         };
 
         try {
-            const newImageFiles = images.filter(image => typeof image !== 'string');
+            // Separate existing URLs from new File objects
+            const newImageFiles = images.filter(image => image instanceof File);
+            const existingImageUrls = images.filter(image => typeof image === 'string');
+            
             toast.info("Compressing images... please wait.");
+            
+            // Compress only the new File objects
             const compressedImageFiles = await Promise.all(
                 newImageFiles.map(file => imageCompression(file, compressionOptions))
             );
+            
             compressedImageFiles.forEach(file => listingData.append('images', file, file.name));
 
-            const existingImageUrls = images.filter(image => typeof image === 'string');
             if (isEditMode) {
                 existingImageUrls.forEach(url => listingData.append('existingImages', url));
             }
@@ -186,14 +255,14 @@ const ListingFormPage = () => {
             if (isEditMode) {
                 await updateListing(id, listingData);
                 toast.success('Listing updated successfully!');
-                sessionStorage.setItem('profileDataStale', 'true');
-                navigate(`/listing/${id}`);
             } else {
                 const { data: newListing } = await createListing(listingData);
                 toast.success('Listing created successfully!');
-                sessionStorage.setItem('profileDataStale', 'true');
                 navigate(`/listing/${newListing._id}`);
             }
+            sessionStorage.setItem('profileDataStale', 'true');
+            if (isEditMode) navigate(`/listing/${id}`);
+
         } catch (error) {
             console.error("Submission error:", error);
             toast.error(error.response?.data?.message || 'An error occurred during submission.');
@@ -267,13 +336,34 @@ const ListingFormPage = () => {
                     </div>
                 </div>
 
-                {/* --- Image Upload (unchanged) --- */}
-                <ImageUpload images={images} setImages={setImages} />
+                {/* --- 6. UPDATED IMAGE UPLOAD SECTION --- */}
+                <div>
+                    <label className="block text-sm font-medium text-text-color mb-3">Images (Max 5)</label>
+                    {isNative && (
+                        <button 
+                            type="button" 
+                            onClick={handleTakeImage}
+                            className="flex items-center justify-center gap-2 w-full p-3 mb-3 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 transition-colors"
+                        >
+                            <FaCamera /> Use Camera
+                        </button>
+                    )}
+                    <ImageUpload images={images} setImages={setImages} />
+                </div>
                 
-                {/* --- 7. NEW VIDEO UPLOAD SECTION --- */}
+                {/* --- 7. UPDATED VIDEO UPLOAD SECTION --- */}
                 <div>
                     <label className="block text-sm font-medium text-text-color mb-3">Video Tour (Optional)</label>
                     <p className="text-xs text-subtle-text-color mb-2">Upload one short video (MP4, MOV) under 100MB.</p>
+                    {isNative && (
+                         <button 
+                            type="button" 
+                            onClick={handleTakeVideo}
+                            className="flex items-center justify-center gap-2 w-full p-3 mb-3 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 transition-colors"
+                        >
+                            <FaVideo /> Record Video
+                        </button>
+                    )}
                     {videoPreview ? (
                         <div className="relative">
                             <video src={videoPreview} controls className="w-full h-auto rounded-lg border border-border-color" />
@@ -296,7 +386,6 @@ const ListingFormPage = () => {
                         />
                     )}
                 </div>
-                {/* --- End of Video Section --- */}
                 
                 <button 
                     type="submit" 
