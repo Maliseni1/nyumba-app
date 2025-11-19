@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-// --- 1. THIS IS THE FIX ---
 // Listing model now exports an object, so we destructure the import.
 const { Listing } = require('./listingModel'); 
 
@@ -43,6 +42,12 @@ const userSchema = new mongoose.Schema({
         enum: ['landlord_pro', 'tenant_premium', 'none'],
         default: 'none',
     },
+    
+    // --- 1. NEW FIELD FOR PUSH NOTIFICATIONS ---
+    // Stores multiple tokens (phone, tablet, etc.)
+    fcmTokens: [{ type: String }],
+    // --- END OF NEW FIELD ---
+
     resetPasswordToken: String,
     resetPasswordExpire: Date,
     isScheduledForDeletion: {

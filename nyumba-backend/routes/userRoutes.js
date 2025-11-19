@@ -21,7 +21,9 @@ const {
     sendPremiumSupportTicket,
     getTenantPreferences,
     updateTenantPreferences,
-    getTenantMatchAnalytics // <-- 1. IMPORT
+    getTenantMatchAnalytics,
+    registerDevice, // <-- 1. IMPORT NEW FUNCTION
+    removeDevice // <-- 1. IMPORT NEW FUNCTION
 } = require('../controllers/userController');
 const { protect, premiumUser } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -52,6 +54,10 @@ router.post('/apply-verification', protect, applyForVerification);
 router.get('/referral-data', protect, getMyReferralData);
 router.put('/changepassword', protect, changePassword);
 
+// --- 2. NEW PUSH NOTIFICATION ROUTES ---
+router.post('/register-device', protect, registerDevice);
+router.post('/remove-device', protect, removeDevice);
+
 // --- Premium Support Route ---
 router.post('/premium-support', protect, premiumUser, sendPremiumSupportTicket);
 
@@ -60,7 +66,6 @@ router.route('/preferences')
     .get(protect, getTenantPreferences)
     .put(protect, updateTenantPreferences);
     
-// --- 2. NEW MATCH ANALYTICS ROUTE ---
 router.route('/match-analytics')
     .get(protect, getTenantMatchAnalytics);
 

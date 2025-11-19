@@ -765,10 +765,7 @@ const updateTenantPreferences = asyncHandler(async (req, res) => {
     res.json(updatedPreferences);
 });
 
-// --- 4. NEW: getTenantMatchAnalytics ---
-// @desc    Get tenant match score and tips
-// @route   GET /api/users/match-analytics
-// @access  Private
+// --- getTenantMatchAnalytics (unchanged) ---
 const getTenantMatchAnalytics = asyncHandler(async (req, res) => {
     if (req.user.role !== 'tenant') {
         res.status(403);
@@ -867,6 +864,48 @@ const getTenantMatchAnalytics = asyncHandler(async (req, res) => {
     });
 });
 
+// --- 5. NEW: registerDevice (For Push Notifications) ---
+// @desc    Register a device for push notifications
+// @route   POST /api/users/register-device
+// @access  Private
+const registerDevice = asyncHandler(async (req, res) => {
+    const { fcmToken } = req.body;
+    if (!fcmToken) {
+        res.status(400);
+        throw new Error('FCM Token is required');
+    }
+
+    const user = await User.findById(req.user._id);
+    
+    // Add the token if it's not already there
+    if (!user.fcmTokens.includes(fcmToken)) {
+        user.fcmTokens.push(fcmToken);
+        await user.save();
+    }
+
+    res.status(200).json({ message: 'Device registered successfully' });
+});
+
+// --- 6. NEW: removeDevice (For Logout) ---
+// @desc    Remove a device token on logout
+// @route   POST /api/users/remove-device
+// @access  Private
+const removeDevice = asyncHandler(async (req, res) => {
+    const { fcmToken } = req.body;
+    if (!fcmToken) {
+        res.status(400);
+        throw new Error('FCM Token is required');
+    }
+
+    const user = await User.findById(req.user._id);
+    
+    // Remove the specific token
+    user.fcmTokens = user.fcmTokens.filter(token => token !== fcmToken);
+    await user.save();
+
+    res.status(200).json({ message: 'Device removed successfully' });
+});
+
 
 module.exports = {
     registerUser,
@@ -889,5 +928,7 @@ module.exports = {
     sendPremiumSupportTicket,
     getTenantPreferences,
     updateTenantPreferences,
-    getTenantMatchAnalytics // <-- 5. EXPORT NEW FUNCTION
+    getTenantMatchAnalytics,
+    registerDevice, // <-- Exported
+    removeDevice // <-- Exported
 };

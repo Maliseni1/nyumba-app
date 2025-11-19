@@ -6,7 +6,9 @@ const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const cron = require('node-cron'); 
+const cron = require('node-cron');
+// --- 1. IMPORT FIREBASE ADMIN ---
+const admin = require('firebase-admin');
 
 // IMPORT MODELS
 const User = require('./models/userModel');
@@ -17,6 +19,21 @@ const Message = require('./models/messageModel');
 // Configure dotenv
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+// --- 2. INITIALIZE FIREBASE ---
+try {
+    const serviceAccount = require('./config/serviceAccountKey.json');
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    });
+    console.log('Firebase Admin SDK initialized successfully.');
+} catch (error) {
+    console.error('CRITICAL ERROR: Failed to initialize Firebase Admin SDK.');
+    console.error('Make sure ./config/serviceAccountKey.json exists and is valid.');
+    console.error(error.message);
+    // We don't exit the process, but push notifications will fail
+}
+// --- END OF FIREBASE INIT ---
+
 // --- Environment Variable Check (unchanged) ---
 const requiredEnvVars = [
     'MONGO_URI',
@@ -26,6 +43,7 @@ const requiredEnvVars = [
     'CLOUDINARY_API_KEY',
     'CLOUDINARY_API_SECRET'
 ];
+// ... (rest of env check is unchanged)
 const isValidEnvVar = (value) => {
     return value && value.trim() !== '' && value !== 'undefined';
 };
@@ -46,7 +64,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const rewardRoutes = require('./routes/rewardRoutes');
 const forumRoutes = require('./routes/forumRoutes');
-const adRoutes = require('./routes/adRoutes'); // <-- 1. IMPORT NEW AD ROUTES
+const adRoutes = require('./routes/adRoutes');
 
 connectDB();
 
@@ -100,7 +118,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/forum', forumRoutes);
-app.use('/api/ads', adRoutes); // <-- 2. USE NEW AD ROUTES
+app.use('/api/ads', adRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
