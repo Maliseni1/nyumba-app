@@ -4,4 +4,5 @@
     <string name="title_activity_main">Nyumba</string>
     <string name="package_name">com.nyumba.app</string>
     <string name="custom_url_scheme">com.nyumba.app</string>
+    <string name="server_client_id">130430606654-rnfbh5nn37089agcm1lhcq8hjpp9ucg3.apps.googleusercontent.com</string>
 </resources>

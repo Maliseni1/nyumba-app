@@ -10,10 +10,9 @@ const silentGetRoutes = [
     '/users/preferences',
     '/users/match-analytics',
     '/admin/ads',
-    '/ads', // <-- 1. Make fetching public ads silent
+    '/ads', 
 ];
 API.interceptors.request.use((req) => {
-    // Use .some() and .includes() to check against the list
     const isSilent = silentGetRoutes.some(route => req.url.includes(route));
     if (!isSilent) {
         window.dispatchEvent(new CustomEvent('api-request-start'));
@@ -61,6 +60,10 @@ export const sendPremiumSupportTicket = (data) => API.post('/users/premium-suppo
 export const getTenantPreferences = () => API.get('/users/preferences');
 export const updateTenantPreferences = (data) => API.put('/users/preferences', data);
 export const getTenantMatchAnalytics = () => API.get('/users/match-analytics');
+
+// --- 1. NEW PUSH NOTIFICATION API CALLS ---
+export const registerDevice = (fcmToken) => API.post('/users/register-device', { fcmToken });
+export const removeDevice = (fcmToken) => API.post('/users/remove-device', { fcmToken });
 
 
 // Listing Routes
@@ -138,6 +141,6 @@ export const getForumReplies = (postId) => API.get(`/forum/replies/${postId}`);
 export const createForumReply = (data) => API.post('/forum/replies', data);
 export const deleteForumReply = (replyId) => API.delete(`/forum/replies/${replyId}`);
 
-// --- 2. NEW PUBLIC AD ROUTES ---
+// Public Ad Routes
 export const getPublicAd = (location) => API.get(`/ads?location=${location}`);
 export const trackAdClick = (adId) => API.post('/ads/click', { adId });

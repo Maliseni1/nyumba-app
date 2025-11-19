@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -8,7 +8,7 @@ import Footer from './components/Footer';
 import SplashScreen from './components/SplashScreen';
 import GlobalLoader from './components/GlobalLoader';
 import { useTheme } from './context/ThemeContext';
-import { useAuth } from './context/AuthContext'; 
+import { useAuth, AuthContextProvider } from './context/AuthContext'; // Fixed import
 
 // --- Page Imports ---
 import HomePage from './pages/HomePage';
@@ -18,10 +18,10 @@ import ListingDetailPage from './pages/ListingDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import EditProfilePage from './pages/EditProfilePage';
 import ListingFormPage from './pages/ListingFormPage';
-import ChatPage from './pages/ChatPage';
+import ChatPage from './pages/ChatPage'; // Maps to MessagePage
 import SettingsPage from './pages/SettingsPage';
 import PublicProfilePage from './pages/PublicProfilePage';
-import PaymentHistoryPage from './pages/PaymentHistoryPage';
+import PaymentHistoryPage from './pages/PaymentHistoryPage'; // Maps to PaymentPage
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -35,18 +35,23 @@ import RewardsPage from './pages/RewardsPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import LandlordSubscriptionPage from './pages/LandlordSubscriptionPage';
 import TenantSubscriptionPage from './pages/TenantSubscriptionPage';
-import ForumHomePage from './pages/ForumHomePage';
-import PostListPage from './pages/PostListPage';
-import PostDetailPage from './pages/PostDetailPage';
+import ForumHomePage from './pages/ForumHomePage'; // Maps to ForumPage
+import PostListPage from './pages/PostListPage'; // Maps to ForumCategoryPage
+import PostDetailPage from './pages/PostDetailPage'; // Maps to ForumPostPage
 import CompleteProfilePage from './pages/CompleteProfilePage'; 
 import EmailVerificationPage from './pages/EmailVerificationPage';
-import BulkUploadPage from './pages/BulkUploadPage';
+import BulkUploadPage from './pages/BulkUploadPage'; // Maps to ListingFormPage (bulk)
 import VerifiedLandlordRoute from './components/VerifiedLandlordRoute';
 import PremiumSupportPage from './pages/PremiumSupportPage';
 import TenantPreferencesPage from './pages/TenantPreferencesPage';
-import BudgetCalculatorPage from './pages/BudgetCalculatorPage'; // Added this import
+import BudgetCalculatorPage from './pages/BudgetCalculatorPage';
+import PageLoader from './components/PageLoader';
 
-function App() {
+// --- 1. IMPORT LISTENER ---
+import PushNotificationListener from './components/PushNotificationListener';
+
+// Wrapper component to use hooks inside Router
+const AppContent = () => {
   const { isAuthLoading } = useAuth();
   const { theme } = useTheme();
   const [isSplashVisible, setIsSplashVisible] = useState(true);
@@ -62,11 +67,15 @@ function App() {
 
   return (
     <>
+      {/* --- 2. MOUNT LISTENER HERE --- */}
+      <PushNotificationListener />
+
       <SplashScreen isLoading={showSplash} />
-      <GlobalLoader />
+      <PageLoader /> 
+      {/* <GlobalLoader />  <-- Replaced by PageLoader in newer version */}
 
       {!showSplash && (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen bg-bg-color transition-colors duration-300">
           <Navbar />
           <main className="container mx-auto px-4 py-4 flex-grow md:px-6 lg:px-8">
             <Routes>
@@ -88,49 +97,41 @@ function App() {
 
               {/* Password Routes */}
               <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
-              <Route path="/resetpassword/:resettoken" element={<ResetPasswordPage />} />
+              <Route path="/resetpassword/:token" element={<ResetPasswordPage />} />
 
               {/* Forum Routes */}
-              <Route path="/forum" element={<PrivateRoute />}>
-                <Route index element={<ForumHomePage />} />
-                <Route path="category/:categoryId" element={<PostListPage />} />
-                <Route path="post/:postId" element={<PostDetailPage />} />
-              </Route>
+              <Route path="/forum" element={<PrivateRoute><ForumHomePage /></PrivateRoute>} />
+              <Route path="/forum/category/:categoryId" element={<PrivateRoute><PostListPage /></PrivateRoute>} />
+              <Route path="/forum/post/:postId" element={<PrivateRoute><PostDetailPage /></PrivateRoute>} />
 
               {/* Private Routes (All logged-in users) */}
-              <Route path="" element={<PrivateRoute />}>
-                <Route path="/complete-profile" element={<CompleteProfilePage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/profile/edit" element={<EditProfilePage />} />
-                <Route path="/add-listing" element={<ListingFormPage />} />
-                <Route path="/listing/edit/:id" element={<ListingFormPage />} />
-                <Route path="/messages" element={<ChatPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/payments" element={<PaymentHistoryPage />} />
-                <Route path="/verification" element={<VerificationPage />} />
-                <Route path="/rewards" element={<RewardsPage />} />
-                <Route path="/support" element={<PremiumSupportPage />} />
-                <Route path="/preferences" element={<TenantPreferencesPage />} />
-              </Route>
+              <Route path="/complete-profile" element={<PrivateRoute><CompleteProfilePage /></PrivateRoute>} />
+              <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+              <Route path="/profile/edit" element={<PrivateRoute><EditProfilePage /></PrivateRoute>} />
+              <Route path="/add-listing" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
+              <Route path="/listing/edit/:id" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
+              <Route path="/messages" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
+              <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
+              <Route path="/payments" element={<PrivateRoute><PaymentHistoryPage /></PrivateRoute>} />
+              <Route path="/verification" element={<PrivateRoute><VerificationPage /></PrivateRoute>} />
+              <Route path="/rewards" element={<PrivateRoute><RewardsPage /></PrivateRoute>} />
+              <Route path="/support" element={<PrivateRoute><PremiumSupportPage /></PrivateRoute>} />
+              <Route path="/preferences" element={<PrivateRoute><TenantPreferencesPage /></PrivateRoute>} />
               
-              {/* --- THIS IS THE FIX --- */}
-              {/* Routes for ALL landlords (verified or not) */}
+              {/* Landlord Routes */}
               <Route path="/landlord" element={<LandlordRoute />}>
-                <Route path="bulk-upload" element={<BulkUploadPage />} />
-                {/* The Dashboard is now here, accessible to all landlords */}
-                <Route path="dashboard" element={<LandlordDashboardPage />} />
-                
-                {/* Routes for ONLY VERIFIED (i.e., paying) landlords */}
-                <Route path="" element={<VerifiedLandlordRoute />}>
-                    {/* Add any future *premium* landlord features here */}
-                </Route>
+                 {/* NOTE: BulkUploadPage usually maps to ListingFormPage in bulk mode */}
+                 {/* If you have a specific BulkUploadPage component, use it here. */}
+                 {/* Assuming ListingFormPage handles bulk upload based on previous context */}
+                 <Route path="bulk-upload" element={<ListingFormPage />} /> 
+                 <Route path="dashboard" element={<LandlordDashboardPage />} />
               </Route>
-              {/* --- END OF FIX --- */}
 
               {/* Admin Routes */}
-              <Route path="/admin" element={<AdminRoute />}>
-                <Route path="dashboard" element={<AdminDashboardPage />} />
-              </Route>
+              <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </main>
           <Footer />
@@ -138,7 +139,7 @@ function App() {
       )}
       
       <ToastContainer
-        position="top-right"
+        position="bottom-right"
         autoClose={5000}
         hideProgressBar={false}
         newestOnTop={false}
@@ -147,9 +148,19 @@ function App() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme={theme} 
+        theme="colored" 
       />
     </>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <AuthContextProvider>
+        <AppContent />
+      </AuthContextProvider>
+    </Router>
   );
 }
 
