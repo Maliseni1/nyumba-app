@@ -12,6 +12,8 @@ import { ThemeProvider } from './context/ThemeContext.jsx';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+console.log("VITE_GOOGLE_CLIENT_ID is:", googleClientId);
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
