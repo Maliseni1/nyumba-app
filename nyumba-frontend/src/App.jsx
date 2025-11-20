@@ -8,7 +8,7 @@ import Footer from './components/Footer';
 import SplashScreen from './components/SplashScreen';
 import GlobalLoader from './components/GlobalLoader';
 import { useTheme } from './context/ThemeContext';
-import { useAuth, AuthContextProvider } from './context/AuthContext'; // Fixed import
+import { useAuth, AuthContextProvider } from './context/AuthContext'; 
 
 // --- Page Imports ---
 import HomePage from './pages/HomePage';
@@ -18,10 +18,10 @@ import ListingDetailPage from './pages/ListingDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import EditProfilePage from './pages/EditProfilePage';
 import ListingFormPage from './pages/ListingFormPage';
-import ChatPage from './pages/ChatPage'; // Maps to MessagePage
+import ChatPage from './pages/ChatPage'; 
 import SettingsPage from './pages/SettingsPage';
 import PublicProfilePage from './pages/PublicProfilePage';
-import PaymentHistoryPage from './pages/PaymentHistoryPage'; // Maps to PaymentPage
+import PaymentHistoryPage from './pages/PaymentHistoryPage'; 
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -35,12 +35,12 @@ import RewardsPage from './pages/RewardsPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import LandlordSubscriptionPage from './pages/LandlordSubscriptionPage';
 import TenantSubscriptionPage from './pages/TenantSubscriptionPage';
-import ForumHomePage from './pages/ForumHomePage'; // Maps to ForumPage
-import PostListPage from './pages/PostListPage'; // Maps to ForumCategoryPage
-import PostDetailPage from './pages/PostDetailPage'; // Maps to ForumPostPage
+import ForumHomePage from './pages/ForumHomePage'; 
+import PostListPage from './pages/PostListPage'; 
+import PostDetailPage from './pages/PostDetailPage'; 
 import CompleteProfilePage from './pages/CompleteProfilePage'; 
 import EmailVerificationPage from './pages/EmailVerificationPage';
-import BulkUploadPage from './pages/BulkUploadPage'; // Maps to ListingFormPage (bulk)
+import BulkUploadPage from './pages/BulkUploadPage'; 
 import VerifiedLandlordRoute from './components/VerifiedLandlordRoute';
 import PremiumSupportPage from './pages/PremiumSupportPage';
 import TenantPreferencesPage from './pages/TenantPreferencesPage';
@@ -55,6 +55,17 @@ const AppContent = () => {
   const { isAuthLoading } = useAuth();
   const { theme } = useTheme();
   const [isSplashVisible, setIsSplashVisible] = useState(true);
+
+  // --- ADDED ENVIRONMENT VARIABLE LOGGING FOR DEBUGGING VERCEL CRASH ---
+  console.log("--- ENV VAR CHECK ---");
+  console.log("VITE_API_BASE_URL:", import.meta.env.VITE_API_BASE_URL);
+  console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
+  console.log("VITE_BACKEND_URL:", import.meta.env.VITE_BACKEND_URL);
+  console.log("VITE_GOOGLE_CLIENT_ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
+  console.log("VITE_RECIPIENT_WALLET_ADDRESS:", import.meta.env.VITE_RECIPIENT_WALLET_ADDRESS);
+  // Add any other VITE_ variables used in your app, like a Google Maps API key
+  // console.log("VITE_MAPS_API_KEY:", import.meta.env.VITE_GOOGLE_MAPS_API_KEY); 
+  console.log("---------------------");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -72,7 +83,7 @@ const AppContent = () => {
 
       <SplashScreen isLoading={showSplash} />
       <PageLoader /> 
-      {/* <GlobalLoader />  <-- Replaced by PageLoader in newer version */}
+      {/* <GlobalLoader /> */}
 
       {!showSplash && (
         <div className="flex flex-col min-h-screen bg-bg-color transition-colors duration-300">
@@ -120,11 +131,8 @@ const AppContent = () => {
               
               {/* Landlord Routes */}
               <Route path="/landlord" element={<LandlordRoute />}>
-                 {/* NOTE: BulkUploadPage usually maps to ListingFormPage in bulk mode */}
-                 {/* If you have a specific BulkUploadPage component, use it here. */}
-                 {/* Assuming ListingFormPage handles bulk upload based on previous context */}
-                 <Route path="bulk-upload" element={<ListingFormPage />} /> 
-                 <Route path="dashboard" element={<LandlordDashboardPage />} />
+                <Route path="bulk-upload" element={<ListingFormPage />} /> 
+                <Route path="dashboard" element={<LandlordDashboardPage />} />
               </Route>
 
               {/* Admin Routes */}
