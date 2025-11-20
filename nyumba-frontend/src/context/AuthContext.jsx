@@ -1,5 +1,4 @@
 import { createContext, useState, useEffect, useContext, useCallback } from 'react';
-// --- 1. RE-IMPORT useNavigate AND toast ---
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import io from 'socket.io-client';
@@ -21,9 +20,9 @@ export const AuthContextProvider = ({ children }) => {
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [messages, setMessages] = useState([]);
     
-    // --- 2. INITIALIZE useNavigate ---
     const navigate = useNavigate();
 
+    // 1. Verify User on Mount
     useEffect(() => {
         const verifyUser = async () => {
             const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -40,24 +39,34 @@ export const AuthContextProvider = ({ children }) => {
             setIsAuthLoading(false);
         };
         verifyUser();
-    }, []); // <-- Dependency array is correct, no navigate needed here
+    }, []); 
 
-    // ... (socket useEffect is unchanged) ...
+    // 2. Socket.io Connection (WITH CRASH FIX)
     useEffect(() => {
         if (authUser) {
-            // Use environment variable for Socket.IO connection
-            const newSocket = io(import.meta.env.VITE_API_BASE_URL, {
+            // --- CRITICAL FIX: Prevent crash if Env Var is missing ---
+            const socketUrl = import.meta.env.VITE_API_BASE_URL;
+            
+            if (!socketUrl) {
+                console.error("SOCKET ERROR: VITE_API_BASE_URL is missing! Real-time features will not work.");
+                return; // Stop here to prevent crash
+            }
+
+            const newSocket = io(socketUrl, {
                 query: { userId: authUser._id },
                 transports: ['websocket']
             });
             setSocket(newSocket);
+
             newSocket.on("getOnlineUsers", (users) => setOnlineUsers(users));
             
             const fetchInitialData = async () => {
                 try {
                     const { data } = await getUnreadMessageCount();
                     setUnreadCount(data.unreadCount);
-                } catch (error) { console.error("Could not fetch unread count", error); }
+                } catch (error) { 
+                    console.error("Could not fetch unread count", error); 
+                }
             };
             fetchInitialData();
             
@@ -70,7 +79,7 @@ export const AuthContextProvider = ({ children }) => {
         }
     }, [authUser]);
 
-    // ... (loader useEffect is unchanged) ...
+    // 3. Page Loader Logic
     const showPageLoader = useCallback(() => setIsPageLoading(true), []);
     const hidePageLoader = useCallback(() => setIsPageLoading(false), []);
 
@@ -84,7 +93,7 @@ export const AuthContextProvider = ({ children }) => {
     }, [showPageLoader, hidePageLoader]);
 
 
-    // --- 3. UPDATED login FUNCTION ---
+    // 4. Login Function
     const login = (userData) => {
         localStorage.setItem("user", JSON.stringify(userData));
         setAuthUser(userData);
@@ -98,24 +107,25 @@ export const AuthContextProvider = ({ children }) => {
 
         if (!userData.isProfileComplete) {
             toast.info('Welcome! Please complete your profile to continue.');
-            welcomeToastShown = true; // This counts as a welcome
-            navigate('/complete-profile'); // Use navigate
+            welcomeToastShown = true;
+            navigate('/complete-profile');
         } else {
-            if (!welcomeToastShown) { // Only show generic if no other toast was shown
+            if (!welcomeToastShown) {
                 toast.success(`Welcome back, ${userData.name}!`);
             }
-            navigate('/'); // Use navigate
+            navigate('/');
         }
     };
 
-    // --- 4. UPDATED logout FUNCTION ---
+    // 5. Logout Function
     const logout = () => {
         localStorage.removeItem("user");
         setAuthUser(null);
         setSelectedConversation(null);
-        navigate('/login'); // Use navigate
+        navigate('/login');
     };
     
+    // 6. Update User Function
     const updateAuthUser = (updatedData) => {
         const newUser = { ...authUser, ...updatedData };
         setAuthUser(newUser);
