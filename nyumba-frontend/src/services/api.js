@@ -1,3 +1,4 @@
+import * as axios from 'axios';
 // --- CRASH TEST: ENSURE BASE URL IS PRESENT ---
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -8,6 +9,7 @@ if (!BASE_URL) {
 }
 
 const API = axios.create({ baseURL: BASE_URL });
+//const API = (axios.default || axios).create({ baseURL: import.meta.env.VITE_API_BASE_URL });
 
 // --- LOADER LOGIC (UPDATED) ---
 const silentGetRoutes = [
