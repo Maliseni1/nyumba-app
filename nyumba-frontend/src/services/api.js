@@ -1,15 +1,12 @@
-import * as axios from 'axios';
-// --- CRASH TEST: ENSURE BASE URL IS PRESENT ---
+import axios from 'axios';
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 if (!BASE_URL) {
-    // If the app is crashing before the AppContent logs, this should show up
     console.error("FATAL ERROR: VITE_API_BASE_URL is missing. Check Vercel Environment Variables.");
     throw new Error("Missing VITE_API_BASE_URL environment variable.");
 }
 
-const API = axios.create({ baseURL: BASE_URL });
-//const API = (axios.default || axios).create({ baseURL: import.meta.env.VITE_API_BASE_URL });
+const API = (axios.default || axios).create({ baseURL: BASE_URL });
 
 // --- LOADER LOGIC (UPDATED) ---
 const silentGetRoutes = [
