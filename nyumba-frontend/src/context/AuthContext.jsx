@@ -25,7 +25,19 @@ export const AuthContextProvider = ({ children }) => {
     // 1. Verify User on Mount
     useEffect(() => {
         const verifyUser = async () => {
-            const storedUser = JSON.parse(localStorage.getItem("user"));
+            // --- SAFELY PARSE LOCAL STORAGE ---
+            let storedUser = null;
+            try {
+                const rawUser = localStorage.getItem("user");
+                if (rawUser && rawUser !== "undefined") {
+                    storedUser = JSON.parse(rawUser);
+                }
+            } catch (parseError) {
+                console.error("Corrupt user data in local storage, clearing.", parseError);
+                localStorage.removeItem("user");
+            }
+            // ----------------------------------
+            
             if (storedUser) {
                 try {
                     const { data } = await getUserProfile(); 

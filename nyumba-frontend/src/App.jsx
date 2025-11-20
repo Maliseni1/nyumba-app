@@ -48,7 +48,7 @@ import BudgetCalculatorPage from './pages/BudgetCalculatorPage';
 import PageLoader from './components/PageLoader';
 
 // --- 1. IMPORT LISTENER ---
-import PushNotificationListener from './components/PushNotificationListener';
+//import PushNotificationListener from './components/PushNotificationListener';
 
 // Wrapper component to use hooks inside Router
 const AppContent = () => {
@@ -79,10 +79,10 @@ const AppContent = () => {
   return (
     <>
       {/* --- 2. MOUNT LISTENER HERE --- */}
-      <PushNotificationListener />
+      {/*<PushNotificationListener /> */}
 
-      <SplashScreen isLoading={showSplash} />
-      <PageLoader /> 
+      {/*<SplashScreen isLoading={showSplash} />*/}
+      {/*<PageLoader /> */}
       {/* <GlobalLoader /> */}
 
       {!showSplash && (
