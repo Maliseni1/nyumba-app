@@ -53,12 +53,6 @@ const AppContent = () => {
   const { theme } = useTheme();
   const [isSplashVisible, setIsSplashVisible] = useState(true);
 
-  // --- CONFIRMATION LOGS ---
-  console.log("--- ENV VAR CHECK ---");
-  console.log("VITE_API_BASE_URL:", import.meta.env.VITE_API_BASE_URL);
-  console.log("VITE_GOOGLE_CLIENT_ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
-  console.log("---------------------");
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsSplashVisible(false);
