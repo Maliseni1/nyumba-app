@@ -1,3 +1,5 @@
+// nyumba-frontend/src/pages/MapPage.jsx
+
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl } from 'react-leaflet';
 import { getListings } from '../services/api';
@@ -24,7 +26,26 @@ const MapPage = () => {
     const initialCenter = locationToView || [-15.4167, 28.2833]; // Center on listing or Lusaka
     const initialZoom = locationToView ? 16 : 13; // Zoom in close if it's a specific listing
 
+    // --- EFFECT FOR DYNAMIC CSS LOADING & DATA FETCHING ---
     useEffect(() => {
+        // --- START: Dynamic CSS Loading ---
+        const loadCss = (href) => {
+            // Check if the link is already loaded
+            if (document.querySelector(`link[href="${href}"]`)) return;
+
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            document.head.appendChild(link);
+            return link; // Return the created element for cleanup
+        };
+
+        // Load Leaflet and GeoSearch CSS using CDNs
+        const leafletLink = loadCss('https://unpkg.com/leaflet/dist/leaflet.css');
+        const geosearchLink = loadCss('https://unpkg.com/leaflet-geosearch/dist/geosearch.css');
+        
+        // --- END: Dynamic CSS Loading ---
+        
         const fetchListings = async () => {
             try {
                 const { data } = await getListings();
@@ -41,7 +62,14 @@ const MapPage = () => {
             }
         };
         fetchListings();
+
+        // Cleanup function: Remove the links when the component unmounts
+        return () => {
+            if (leafletLink) document.head.removeChild(leafletLink);
+            if (geosearchLink) document.head.removeChild(geosearchLink);
+        };
     }, []);
+    // -----------------------------------------------------------------
 
     if (loading) {
         return <div className="pt-24 text-center text-slate-400">Loading map...</div>;
