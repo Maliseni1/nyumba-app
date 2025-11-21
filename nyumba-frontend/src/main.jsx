@@ -2,8 +2,12 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-geosearch/dist/geosearch.css';
+
+// --- CRITICAL FIX: TEMPORARILY COMMENT OUT MAP IMPORTS ---
+// import 'leaflet/dist/leaflet.css';
+// import 'leaflet-geosearch/dist/geosearch.css';
+// ---------------------------------------------------------
+
 import { BrowserRouter } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthContextProvider } from './context/AuthContext.jsx';

@@ -8,7 +8,7 @@ import Footer from './components/Footer';
 import SplashScreen from './components/SplashScreen';
 import GlobalLoader from './components/GlobalLoader';
 import { useTheme } from './context/ThemeContext';
-import { useAuth, AuthContextProvider } from './context/AuthContext'; 
+import { useAuth } from './context/AuthContext'; // Removed AuthContextProvider import as it's not used here
 
 // --- Page Imports ---
 import HomePage from './pages/HomePage';
@@ -47,24 +47,16 @@ import TenantPreferencesPage from './pages/TenantPreferencesPage';
 import BudgetCalculatorPage from './pages/BudgetCalculatorPage';
 import PageLoader from './components/PageLoader';
 
-// --- 1. IMPORT LISTENER ---
-//import PushNotificationListener from './components/PushNotificationListener';
-
 // Wrapper component to use hooks inside Router
 const AppContent = () => {
   const { isAuthLoading } = useAuth();
   const { theme } = useTheme();
   const [isSplashVisible, setIsSplashVisible] = useState(true);
 
-  // --- ADDED ENVIRONMENT VARIABLE LOGGING FOR DEBUGGING VERCEL CRASH ---
+  // --- CONFIRMATION LOGS ---
   console.log("--- ENV VAR CHECK ---");
   console.log("VITE_API_BASE_URL:", import.meta.env.VITE_API_BASE_URL);
-  console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
-  console.log("VITE_BACKEND_URL:", import.meta.env.VITE_BACKEND_URL);
   console.log("VITE_GOOGLE_CLIENT_ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
-  console.log("VITE_RECIPIENT_WALLET_ADDRESS:", import.meta.env.VITE_RECIPIENT_WALLET_ADDRESS);
-  // Add any other VITE_ variables used in your app, like a Google Maps API key
-  // console.log("VITE_MAPS_API_KEY:", import.meta.env.VITE_GOOGLE_MAPS_API_KEY); 
   console.log("---------------------");
 
   useEffect(() => {
@@ -78,12 +70,7 @@ const AppContent = () => {
 
   return (
     <>
-      {/* --- 2. MOUNT LISTENER HERE --- */}
-      {/*<PushNotificationListener /> */}
-
-      {/*<SplashScreen isLoading={showSplash} />*/}
-      {/*<PageLoader /> */}
-      {/* <GlobalLoader /> */}
+      <SplashScreen isLoading={showSplash} /> 
 
       {!showSplash && (
         <div className="flex flex-col min-h-screen bg-bg-color transition-colors duration-300">
@@ -163,12 +150,9 @@ const AppContent = () => {
 };
 
 function App() {
+  // Ensure we are inside BrowserRouter (Done in main.jsx)
   return (
-    <Router>
-      <AuthContextProvider>
-        <AppContent />
-      </AuthContextProvider>
-    </Router>
+    <AppContent />
   );
 }
 
