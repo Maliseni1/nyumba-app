@@ -5,9 +5,9 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 
-// --- CRITICAL FIX: MAP IMPORTS REMAIN COMMENTED OUT ---
-// import 'leaflet/dist/leaflet.css';
-// import 'leaflet-geosearch/dist/geosearch.css';
+// --- CRITICAL FIX: UNCOMMENTING MAP IMPORTS ---
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-geosearch/dist/geosearch.css';
 // -----------------------------------------------------
 
 import { BrowserRouter } from 'react-router-dom';
@@ -15,12 +15,19 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthContextProvider } from './context/AuthContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+// Get the client ID safely, falling back to an empty string if undefined.
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
-// Console log for debugging (check this in browser console)
+// Console log for debugging
 console.log("Main.jsx - Google Client ID:", googleClientId);
 
 const Root = () => {
+  const isGoogleAuthEnabled = googleClientId && googleClientId !== 'placeholder-google-client-id';
+
+  if (!isGoogleAuthEnabled) {
+    console.warn("Google OAuth is DISABLED. Please set VITE_GOOGLE_CLIENT_ID in your environment (e.g., Vercel) to enable it.");
+  }
+
   // We define the InnerApp to avoid repeating this nesting
   const InnerApp = () => (
     <AuthContextProvider>
@@ -33,12 +40,13 @@ const Root = () => {
   return (
     <React.StrictMode>
       <BrowserRouter>
-        {googleClientId && googleClientId !== 'placeholder-google-client-id' ? (
+        {isGoogleAuthEnabled ? (
           <GoogleOAuthProvider clientId={googleClientId}>
             <InnerApp />
           </GoogleOAuthProvider>
         ) : (
-          /* If no Google ID, just render the app without the provider wrapper */
+          /* If Google ID is missing, just render the app without the provider wrapper. 
+             Components using Google OAuth will crash if they are rendered. */
           <InnerApp />
         )}
       </BrowserRouter>

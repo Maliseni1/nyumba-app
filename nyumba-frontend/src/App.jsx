@@ -1,5 +1,3 @@
-// nyumba-frontend/src/App.jsx
-
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
@@ -10,7 +8,7 @@ import Footer from './components/Footer';
 import SplashScreen from './components/SplashScreen';
 import GlobalLoader from './components/GlobalLoader';
 import { useTheme } from './context/ThemeContext';
-import { useAuth } from './context/AuthContext'; // Removed AuthContextProvider import as it's not used here
+import { useAuth } from './context/AuthContext';
 
 // --- Page Imports ---
 import HomePage from './pages/HomePage';
@@ -19,7 +17,7 @@ import RegisterPage from './pages/RegisterPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import EditProfilePage from './pages/EditProfilePage';
-import ListingFormPage from './pages/ListingFormPage';
+import ListingFormPage from './pages/ListingFormPage'; // The page that is crashing
 import ChatPage from './pages/ChatPage'; 
 import SettingsPage from './pages/SettingsPage';
 import PublicProfilePage from './pages/PublicProfilePage';
@@ -42,7 +40,7 @@ import PostListPage from './pages/PostListPage';
 import PostDetailPage from './pages/PostDetailPage'; 
 import CompleteProfilePage from './pages/CompleteProfilePage'; 
 import EmailVerificationPage from './pages/EmailVerificationPage';
-import BulkUploadPage from './pages/BulkUploadPage'; 
+import BulkUploadPage from './pages/BulkUploadPage'; // Imported, must be used for bulk upload
 import VerifiedLandlordRoute from './components/VerifiedLandlordRoute';
 import PremiumSupportPage from './pages/PremiumSupportPage';
 import TenantPreferencesPage from './pages/TenantPreferencesPage';
@@ -51,105 +49,124 @@ import PageLoader from './components/PageLoader';
 
 // Wrapper component to use hooks inside Router
 const AppContent = () => {
-  const { isAuthLoading } = useAuth();
-  const { theme } = useTheme();
-  const [isSplashVisible, setIsSplashVisible] = useState(true);
+  const { isAuthLoading } = useAuth();
+  const { theme } = useTheme();
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsSplashVisible(false);
-    }, 2500); 
-    return () => clearTimeout(timer);
-  }, []);
+  useEffect(() => {
+    // 2.5 second delay for splash screen
+    const timer = setTimeout(() => {
+      setIsSplashVisible(false);
+    }, 2500); 
+    return () => clearTimeout(timer);
+  }, []);
 
-  const showSplash = isAuthLoading || isSplashVisible;
+  // Determine the overall loading state
+  const showSplashOrAuthLoader = isAuthLoading || isSplashVisible;
 
-  return (
-    <>
-      <SplashScreen isLoading={showSplash} /> 
+  // Renders the appropriate loader during the loading phases
+  if (showSplashOrAuthLoader) {
+    // 1. If splash is still active (first 2.5s), show SplashScreen
+    if (isSplashVisible) {
+        return <SplashScreen isLoading={true} />;
+    }
+    // 2. If splash timer is over, but Auth is still loading, show GlobalLoader
+    if (isAuthLoading) {
+        return <GlobalLoader />;
+    }
+  }
 
-      {!showSplash && (
-        <div className="flex flex-col min-h-screen bg-bg-color transition-colors duration-300">
-          <Navbar />
-          <main className="container mx-auto px-4 py-4 flex-grow md:px-6 lg:px-8">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/listing/:id" element={<ListingDetailPage />} />
-              <Route path="/user/:id" element={<PublicProfilePage />} />
-              <Route path="/map" element={<MapPage />} />
-              <Route path="/verify-email/:token" element={<EmailVerificationPage />} />
-              <Route path="/verify-email" element={<EmailVerificationPage />} />
-              <Route path="/budget-calculator" element={<BudgetCalculatorPage />} />
+  // Renders the main application structure once all loading is complete
+  return (
+    <>
+      <div className="flex flex-col min-h-screen bg-bg-color transition-colors duration-300">
+        <Navbar />
+        <main className="container mx-auto px-4 py-4 flex-grow md:px-6 lg:px-8">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/listing/:id" element={<ListingDetailPage />} />
+            <Route path="/user/:id" element={<PublicProfilePage />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/verify-email/:token" element={<EmailVerificationPage />} />
+            <Route path="/verify-email" element={<EmailVerificationPage />} />
+            <Route path="/budget-calculator" element={<BudgetCalculatorPage />} />
 
-              {/* Subscription Routes */}
-              <Route path="/subscription" element={<SubscriptionPage />} />
-              <Route path="/subscription/landlord" element={<LandlordSubscriptionPage />} />
-              <Route path="/subscription/tenant" element={<TenantSubscriptionPage />} />
+            {/* Subscription Routes */}
+            <Route path="/subscription" element={<SubscriptionPage />} />
+            <Route path="/subscription/landlord" element={<LandlordSubscriptionPage />} />
+            <Route path="/subscription/tenant" element={<TenantSubscriptionPage />} />
 
-              {/* Password Routes */}
-              <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
-              <Route path="/resetpassword/:token" element={<ResetPasswordPage />} />
+            {/* Password Routes */}
+            <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
+            <Route path="/resetpassword/:token" element={<ResetPasswordPage />} />
 
-              {/* Forum Routes */}
-              <Route path="/forum" element={<PrivateRoute><ForumHomePage /></PrivateRoute>} />
-              <Route path="/forum/category/:categoryId" element={<PrivateRoute><PostListPage /></PrivateRoute>} />
-              <Route path="/forum/post/:postId" element={<PrivateRoute><PostDetailPage /></PrivateRoute>} />
+            {/* Forum Routes */}
+            <Route path="/forum" element={<PrivateRoute><ForumHomePage /></PrivateRoute>} />
+            <Route path="/forum/category/:categoryId" element={<PrivateRoute><PostListPage /></PrivateRoute>} />
+            <Route path="/forum/post/:postId" element={<PrivateRoute><PostDetailPage /></PrivateRoute>} />
 
-              {/* Private Routes (All logged-in users) */}
-              <Route path="/complete-profile" element={<PrivateRoute><CompleteProfilePage /></PrivateRoute>} />
-              <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-              <Route path="/profile/edit" element={<PrivateRoute><EditProfilePage /></PrivateRoute>} />
-              <Route path="/add-listing" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
-              <Route path="/listing/edit/:id" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
-              <Route path="/messages" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
-              <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
-              <Route path="/payments" element={<PrivateRoute><PaymentHistoryPage /></PrivateRoute>} />
-              <Route path="/verification" element={<PrivateRoute><VerificationPage /></PrivateRoute>} />
-              <Route path="/rewards" element={<PrivateRoute><RewardsPage /></PrivateRoute>} />
-              <Route path="/support" element={<PrivateRoute><PremiumSupportPage /></PrivateRoute>} />
-              <Route path="/preferences" element={<PrivateRoute><TenantPreferencesPage /></PrivateRoute>} />
-              
-              {/* Landlord Routes */}
-              <Route path="/landlord" element={<LandlordRoute />}>
-                <Route path="bulk-upload" element={<ListingFormPage />} /> 
-                <Route path="dashboard" element={<LandlordDashboardPage />} />
-              </Route>
+            {/* Private Routes (All logged-in users) */}
+            <Route path="/complete-profile" element={<PrivateRoute><CompleteProfilePage /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+            <Route path="/profile/edit" element={<PrivateRoute><EditProfilePage /></PrivateRoute>} />
+            
+            {/* Listing Creation/Editing */}
+            <Route path="/add-listing" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
+            <Route path="/listing/edit/:id" element={<PrivateRoute><ListingFormPage /></PrivateRoute>} />
+            
+            {/* NEW: Explicit route for /bulk-listing if it's meant to be a top-level URL */}
+            <Route path="/bulk-listing" element={<PrivateRoute><BulkUploadPage /></PrivateRoute>} />
 
-              {/* Admin Routes */}
-              <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+            <Route path="/messages" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
+            <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
+            <Route path="/payments" element={<PrivateRoute><PaymentHistoryPage /></PrivateRoute>} />
+            <Route path="/verification" element={<PrivateRoute><VerificationPage /></PrivateRoute>} />
+            <Route path="/rewards" element={<PrivateRoute><RewardsPage /></PrivateRoute>} />
+            <Route path="/support" element={<PrivateRoute><PremiumSupportPage /></PrivateRoute>} />
+            <Route path="/preferences" element={<PrivateRoute><TenantPreferencesPage /></PrivateRoute>} />
+            
+            {/* Landlord Routes - NOW CORRECTLY USING BulkUploadPage */}
+            <Route path="/landlord" element={<LandlordRoute />}>
+              {/* Path is '/landlord/bulk-upload'. Using the correct component: BulkUploadPage */}
+              <Route path="bulk-upload" element={<BulkUploadPage />} /> 
+              <Route path="dashboard" element={<LandlordDashboardPage />} />
+            </Route>
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      )}
-      
-      <ToastContainer
-        position="bottom-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored" 
-      />
-    </>
-  );
+            {/* Admin Routes */}
+            <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+      
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored" 
+      />
+    </>
+  );
 };
 
 function App() {
-  // Ensure we are inside BrowserRouter (Done in main.jsx)
-  return (
-    <AppContent />
-  );
+  return (
+    <Router>
+      <AppContent />
+    </Router>
+  );
 }
 
 export default App;
